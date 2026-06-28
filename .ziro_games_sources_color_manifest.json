@@ -1,0 +1,11 @@
+{
+  "patch": "ziro-games-sources-color",
+  "version": "0.1.1",
+  "changes": [
+    "Add Kodi-native source manager route for selecting game directories with folder browser",
+    "Support multiple sources per platform in SQLite",
+    "Scan configured sources instead of only hardcoded settings folders",
+    "Change source settings to folder/file pickers",
+    "Patch dev_deploy_to_kodi.bat to sync stock Estuary colors/themes for visual parity"
+  ]
+}

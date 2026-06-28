@@ -182,6 +182,36 @@ if errorlevel 8 (
   exit /b 1
 )
 
+
+REM ------------------------------------------------------------
+REM ZIRO_SYNC_ESTUARY_VISUAL_ASSETS
+REM Keep the fork visually identical to stock Estuary during dev deploy.
+REM This restores stock color/theme choices when the repo snapshot is missing them.
+REM ------------------------------------------------------------
+
+set "STOCK_ESTUARY=C:\Program Files\Kodi\addons\skin.estuary"
+if not exist "%STOCK_ESTUARY%" (
+  if exist "%KODI_EXE%" (
+    for %%I in ("%KODI_EXE%") do set "KODI_INSTALL_DIR=%%~dpI"
+    if exist "%KODI_INSTALL_DIR%addons\skin.estuary" set "STOCK_ESTUARY=%KODI_INSTALL_DIR%addons\skin.estuary"
+  )
+)
+
+if exist "%STOCK_ESTUARY%\colors" (
+  echo Syncing stock Estuary colors...
+  robocopy "%STOCK_ESTUARY%\colors" "%KODI_ADDONS%\%SKIN_ID%\colors" /MIR /NFL /NDL /NJH /NJS /NP >nul
+)
+
+if exist "%STOCK_ESTUARY%\themes" (
+  echo Syncing stock Estuary themes...
+  robocopy "%STOCK_ESTUARY%\themes" "%KODI_ADDONS%\%SKIN_ID%\themes" /MIR /NFL /NDL /NJH /NJS /NP >nul
+)
+
+if exist "%STOCK_ESTUARY%\media" if not exist "%KODI_ADDONS%\%SKIN_ID%\media" (
+  echo Copying missing stock Estuary media assets...
+  robocopy "%STOCK_ESTUARY%\media" "%KODI_ADDONS%\%SKIN_ID%\media" /MIR /NFL /NDL /NJH /NJS /NP >nul
+)
+
 REM ------------------------------------------------------------
 REM Deploy companion add-ons
 REM ------------------------------------------------------------

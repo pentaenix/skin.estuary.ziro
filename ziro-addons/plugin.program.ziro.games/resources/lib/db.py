@@ -6,7 +6,7 @@ from typing import Iterable
 
 from .paths import db_path
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS schema_info (
@@ -43,6 +43,9 @@ CREATE TABLE IF NOT EXISTS sources (
   recursive INTEGER NOT NULL DEFAULT 1,
   file_extensions TEXT NOT NULL,
   emulator_profile_id TEXT NOT NULL,
+  enabled INTEGER NOT NULL DEFAULT 1,
+  label TEXT,
+  date_added TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(platform_id, folder_path)
 );
 CREATE TABLE IF NOT EXISTS games (
@@ -56,6 +59,7 @@ CREATE TABLE IF NOT EXISTS games (
   description TEXT,
   rom_path TEXT NOT NULL UNIQUE,
   emulator_profile_id TEXT NOT NULL,
+  source_id INTEGER,
   cover_path TEXT,
   fanart_path TEXT,
   logo_path TEXT,
@@ -73,6 +77,13 @@ CREATE TABLE IF NOT EXISTS game_genres (
   PRIMARY KEY (game_id, genre_id)
 );
 """
+
+MIGRATIONS = [
+    "ALTER TABLE sources ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1",
+    "ALTER TABLE sources ADD COLUMN label TEXT",
+    "ALTER TABLE sources ADD COLUMN date_added TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP",
+    "ALTER TABLE games ADD COLUMN source_id INTEGER",
+]
 
 DEFAULT_PLATFORMS = [
     ("gamecube", "Nintendo GameCube", "GameCube", "Nintendo", 10),
@@ -107,6 +118,12 @@ class GameDatabase:
     def ensure(self) -> None:
         with self.connect() as conn:
             conn.executescript(SCHEMA)
+            for sql in MIGRATIONS:
+                try:
+                    conn.execute(sql)
+                except sqlite3.OperationalError:
+                    # Column already exists on updated databases.
+                    pass
             conn.execute("INSERT OR REPLACE INTO schema_info(key, value) VALUES('schema_version', ?)", (str(SCHEMA_VERSION),))
             conn.executemany(
                 "INSERT OR IGNORE INTO platforms(id, name, short_name, manufacturer, sort_order) VALUES(?,?,?,?,?)",
@@ -139,24 +156,24 @@ class GameDatabase:
                       sort_title=COALESCE(NULLIF(?, ''), sort_title),
                       platform_id=?,
                       emulator_profile_id=?,
+                      source_id=?,
                       hidden=0
                     WHERE rom_path=?
                     """,
-                    (game["title"], game["sort_title"], game["platform_id"], game["emulator_profile_id"], game["rom_path"]),
+                    (
+                        game["title"], game["sort_title"], game["platform_id"],
+                        game["emulator_profile_id"], game.get("source_id"), game["rom_path"],
+                    ),
                 )
             else:
                 conn.execute(
                     """
-                    INSERT INTO games(title, sort_title, platform_id, rom_path, emulator_profile_id, description)
-                    VALUES(?,?,?,?,?,?)
+                    INSERT INTO games(title, sort_title, platform_id, rom_path, emulator_profile_id, source_id, description)
+                    VALUES(?,?,?,?,?,?,?)
                     """,
                     (
-                        game["title"],
-                        game["sort_title"],
-                        game["platform_id"],
-                        game["rom_path"],
-                        game["emulator_profile_id"],
-                        game.get("description", ""),
+                        game["title"], game["sort_title"], game["platform_id"], game["rom_path"],
+                        game["emulator_profile_id"], game.get("source_id"), game.get("description", ""),
                     ),
                 )
 
@@ -176,15 +193,42 @@ class GameDatabase:
                 ),
             )
 
-    def ensure_source(self, source: dict) -> None:
+    def ensure_source(self, source: dict) -> int | None:
         with self.connect() as conn:
             conn.execute(
                 """
-                INSERT OR REPLACE INTO sources(platform_id, folder_path, recursive, file_extensions, emulator_profile_id)
-                VALUES(?,?,?,?,?)
+                INSERT OR IGNORE INTO sources(platform_id, folder_path, recursive, file_extensions, emulator_profile_id, enabled, label)
+                VALUES(?,?,?,?,?,?,?)
                 """,
                 (
                     source["platform_id"], source["folder_path"], int(source.get("recursive", True)),
-                    ",".join(source["file_extensions"]), source["emulator_profile_id"],
+                    ",".join(source["file_extensions"]), source["emulator_profile_id"], int(source.get("enabled", True)),
+                    source.get("label"),
                 ),
             )
+            row = conn.execute(
+                "SELECT id FROM sources WHERE platform_id=? AND folder_path=?",
+                (source["platform_id"], source["folder_path"]),
+            ).fetchone()
+            return int(row["id"]) if row else None
+
+    def list_sources(self, enabled_only: bool = False) -> list[dict]:
+        where = "WHERE s.enabled=1" if enabled_only else ""
+        return self.rows(
+            f"""
+            SELECT s.*, p.name AS platform_name, p.short_name AS platform_short_name
+            FROM sources s
+            LEFT JOIN platforms p ON p.id=s.platform_id
+            {where}
+            ORDER BY p.sort_order, s.folder_path
+            """
+        )
+
+    def delete_source(self, source_id: int) -> None:
+        with self.connect() as conn:
+            conn.execute("DELETE FROM sources WHERE id=?", (source_id,))
+            # Hide, do not delete, games imported from removed sources. This preserves play history/favorites.
+            conn.execute("UPDATE games SET hidden=1 WHERE source_id=?", (source_id,))
+
+    def clear_games_for_source(self, source_id: int) -> None:
+        self.execute("UPDATE games SET hidden=1 WHERE source_id=?", (source_id,))

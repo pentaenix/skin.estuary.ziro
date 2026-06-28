@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <settings version="1">
   <category id="sources" label="Sources">
-    <setting id="source_gamecube" type="string" label="GameCube folder" default="E:\Games\Nintendo GameCube"/>
-    <setting id="source_wii" type="string" label="Wii folder" default="E:\Games\Nintendo Wii"/>
-    <setting id="source_gba" type="string" label="Game Boy Advance folder" default="E:\Games\Nintendo Game Boy Advance"/>
+    <setting id="source_gamecube" type="folder" label="Legacy/default GameCube folder" default=""/>
+    <setting id="source_wii" type="folder" label="Legacy/default Wii folder" default=""/>
+    <setting id="source_gba" type="folder" label="Legacy/default Game Boy Advance folder" default=""/>
   </category>
   <category id="emulators" label="Emulators">
-    <setting id="emulator_dolphin" type="string" label="Dolphin executable" default="C:\Emulation\Emulators\Dolphin\Dolphin.exe"/>
-    <setting id="emulator_mgba" type="string" label="mGBA executable" default="C:\Emulation\Emulators\mGBA\mGBA.exe"/>
-    <setting id="emulator_retroarch" type="string" label="RetroArch executable" default="C:\Emulation\Emulators\RetroArch\retroarch.exe"/>
+    <setting id="emulator_dolphin" type="file" label="Dolphin executable" default="C:\Emulation\Emulators\Dolphin\Dolphin.exe"/>
+    <setting id="emulator_mgba" type="file" label="mGBA executable" default="C:\Emulation\Emulators\mGBA\mGBA.exe"/>
+    <setting id="emulator_retroarch" type="file" label="RetroArch executable" default="C:\Emulation\Emulators\RetroArch\retroarch.exe"/>
   </category>
   <category id="metadata" label="Metadata">
     <setting id="screenscraper_user" type="string" label="ScreenScraper username" default=""/>
