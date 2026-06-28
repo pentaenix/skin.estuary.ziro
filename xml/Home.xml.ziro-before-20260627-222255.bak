@@ -940,10 +940,10 @@
 						<item>
 							<label>$LOCALIZE[15016]</label>
 							<property name="menu_id">$NUMBER[17000]</property>
-							<onclick>ActivateWindow(Programs,plugin://plugin.program.ziro.games/home,return)</onclick>
+							<onclick>ActivateWindow(Games)</onclick>
 							<thumb>icons/sidemenu/games.png</thumb>
 							<property name="id">games</property>
-							<visible>!Skin.HasSetting(HomeMenuNoGamesButton)</visible>
+							<visible>System.GetBool(gamesgeneral.enable) + !Skin.HasSetting(HomeMenuNoGamesButton)</visible>
 						</item>
 						<item>
 							<label>$LOCALIZE[24001]</label>

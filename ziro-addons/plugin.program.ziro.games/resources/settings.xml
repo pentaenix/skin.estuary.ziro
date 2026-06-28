@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings version="1">
+  <category id="sources" label="Sources">
+    <setting id="source_gamecube" type="string" label="GameCube folder" default="E:\Games\Nintendo GameCube"/>
+    <setting id="source_wii" type="string" label="Wii folder" default="E:\Games\Nintendo Wii"/>
+    <setting id="source_gba" type="string" label="Game Boy Advance folder" default="E:\Games\Nintendo Game Boy Advance"/>
+  </category>
+  <category id="emulators" label="Emulators">
+    <setting id="emulator_dolphin" type="string" label="Dolphin executable" default="C:\Emulation\Emulators\Dolphin\Dolphin.exe"/>
+    <setting id="emulator_mgba" type="string" label="mGBA executable" default="C:\Emulation\Emulators\mGBA\mGBA.exe"/>
+    <setting id="emulator_retroarch" type="string" label="RetroArch executable" default="C:\Emulation\Emulators\RetroArch\retroarch.exe"/>
+  </category>
+  <category id="metadata" label="Metadata">
+    <setting id="screenscraper_user" type="string" label="ScreenScraper username" default=""/>
+    <setting id="screenscraper_password" type="string" label="ScreenScraper password" default="" option="hidden"/>
+    <setting id="igdb_client_id" type="string" label="IGDB client id" default=""/>
+    <setting id="igdb_client_secret" type="string" label="IGDB client secret" default="" option="hidden"/>
+    <setting id="steamgriddb_api_key" type="string" label="SteamGridDB API key" default="" option="hidden"/>
+  </category>
+  <category id="development" label="Development">
+    <setting id="dev_mock_library" type="boolean" label="Show mock games when database is empty" default="true"/>
+    <setting id="debug_logging" type="boolean" label="Debug logging" default="true"/>
+  </category>
+</settings>

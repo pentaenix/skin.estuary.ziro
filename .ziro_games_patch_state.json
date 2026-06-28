@@ -1,0 +1,18 @@
+{
+  "patch": "ziro-games-initial-setup",
+  "applied_at": "2026-06-27T22:22:55",
+  "changes": [
+    "Games menu onclick now opens plugin.program.ziro.games/home",
+    "Games menu visibility no longer depends on Kodi RetroPlayer setting",
+    "Added ziro-addons/plugin.program.ziro.games scaffold",
+    "Added ziro-addons/script.ziro.games.launcher scaffold",
+    "Added ziro-addons/service.ziro.games scaffold",
+    "Added tools for validation and packaging",
+    "Added docs for architecture, install, emulator profiles, and troubleshooting"
+  ],
+  "notes": [
+    "Add-ons were placed under ziro-addons/ so the skin fork remains separately packageable.",
+    "Run python3 tools/ziro_package_addons.py to create Kodi-installable zips under dist/.",
+    "The Estuary Games home item is routed to plugin://plugin.program.ziro.games/home when the expected token is present in xml/Home.xml."
+  ]
+}

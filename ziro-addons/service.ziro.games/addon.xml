@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon id="service.ziro.games" name="Ziro Games Service" version="0.1.0" provider-name="Ziro">
+  <requires>
+    <import addon="xbmc.python" version="3.0.0"/>
+  </requires>
+  <extension point="xbmc.service" library="service.py" start="login"/>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en_GB">Session watcher for Ziro Games.</summary>
+    <description lang="en_GB">Watches emulator sessions created by the launcher and returns focus to Kodi when a game exits.</description>
+    <platform>all</platform>
+    <license>GPL-2.0-or-later</license>
+  </extension>
+</addon>
