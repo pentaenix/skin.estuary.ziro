@@ -11,3 +11,18 @@ Thumbs.db
 *.sh
 1080i/Custom_Debug_Overlay.xml
 backgrounds/debuggrid1080.png
+
+# Ziro Games source files
+!tools/
+!tools/**
+!ziro-addons/
+!ziro-addons/**
+!docs/
+!docs/**
+!dev_deploy_to_kodi.bat
+
+# Ziro generated files should not be committed
+dist/
+*.zip
+.ziro_games_patch_state.json
+.ziro_games_initial_setup_manifest.json
