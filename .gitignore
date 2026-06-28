@@ -26,3 +26,11 @@ dist/
 *.zip
 .ziro_games_patch_state.json
 .ziro_games_initial_setup_manifest.json
+
+# Ziro Games Codex handoff docs
+!CODEX_HANDOFF.md
+!docs/
+!docs/**
+!tools/README_ZIRO_DEV.md
+!ziro-addons/README.md
+!ziro-addons/**/README.md

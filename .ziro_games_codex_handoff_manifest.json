@@ -1,0 +1,12 @@
+{
+  "patch": "ziro-games-codex-handoff",
+  "version": "0.1.3",
+  "applied_at": "2026-06-28T11:29:46",
+  "changes": [
+    "Added Codex handoff documentation at repo root",
+    "Added detailed repo map and home widget plan",
+    "Added dynamic library and launching specs",
+    "Added README files inside Ziro add-on/tool folders",
+    "Documented production constraints, dev workflow, and next tasks"
+  ]
+}
