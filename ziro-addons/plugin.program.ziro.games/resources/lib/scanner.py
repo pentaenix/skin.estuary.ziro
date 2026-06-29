@@ -8,38 +8,9 @@ import xbmcaddon
 import xbmcvfs
 
 from .db import GameDatabase
+from .platforms import LEGACY_SOURCE_SETTINGS, extensions_for, get_platform, iter_profile_defs, source_dict
 
 ADDON = xbmcaddon.Addon("plugin.program.ziro.games")
-
-SYSTEMS = {
-    "gamecube": {
-        "source_setting": "source_gamecube",
-        "profile": "dolphin_gamecube",
-        "extensions": [".rvz", ".iso", ".gcm"],
-        "emulator_setting": "emulator_dolphin",
-        "emulator_name": "Dolphin GameCube",
-        "args": '-b -e "{rom_path}"',
-        "process": "Dolphin.exe",
-    },
-    "wii": {
-        "source_setting": "source_wii",
-        "profile": "dolphin_wii",
-        "extensions": [".rvz", ".iso", ".wbfs", ".wad"],
-        "emulator_setting": "emulator_dolphin",
-        "emulator_name": "Dolphin Wii",
-        "args": '-b -e "{rom_path}"',
-        "process": "Dolphin.exe",
-    },
-    "gba": {
-        "source_setting": "source_gba",
-        "profile": "mgba_gba",
-        "extensions": [".gba", ".gb", ".gbc", ".zip"],
-        "emulator_setting": "emulator_mgba",
-        "emulator_name": "mGBA",
-        "args": '-f "{rom_path}"',
-        "process": "mGBA.exe",
-    },
-}
 
 TITLE_JUNK = re.compile(r"\s*[\(\[].*?[\)\]]\s*")
 SEPARATORS = re.compile(r"[._]+")
@@ -87,7 +58,7 @@ def iter_games(folder: str, extensions: list[str], recursive: bool = True):
     try:
         dirs, files = xbmcvfs.listdir(folder)
     except Exception as exc:
-        xbmc.log(f"[Ziro Games] cannot list folder {folder}: {exc}", xbmc.LOGWARNING)
+        xbmc.log(f"[Ziro Games Scanner] cannot list folder {folder}: {exc}", xbmc.LOGWARNING)
         return
     for filename in files:
         suffix = Path(filename).suffix.lower()
@@ -101,42 +72,33 @@ def iter_games(folder: str, extensions: list[str], recursive: bool = True):
 
 def configure_defaults(db: GameDatabase) -> None:
     """Ensure emulator profiles exist and import legacy settings-folder sources if set."""
-    for platform_id, cfg in SYSTEMS.items():
-        exe = ADDON.getSetting(cfg["emulator_setting"])
+    for profile in iter_profile_defs():
+        exe = ADDON.getSetting(profile["emulator_setting"])
         db.ensure_emulator_profile({
-            "id": cfg["profile"],
-            "name": cfg["emulator_name"],
-            "platform_id": platform_id,
+            "id": profile["id"],
+            "name": profile["name"],
+            "platform_id": profile["platform_id"],
             "executable_path": exe,
-            "arguments_template": cfg["args"],
+            "arguments_template": profile["arguments_template"],
             "working_directory": str(Path(exe).parent) if exe else "",
-            "process_name": cfg["process"],
+            "process_name": profile["process_name"],
             "exit_hotkey": "",
             "fullscreen": True,
             "return_focus_to_kodi": True,
         })
-        legacy_source = normalize_folder(ADDON.getSetting(cfg["source_setting"]))
+
+    for setting_key, platform_id in LEGACY_SOURCE_SETTINGS.items():
+        legacy_source = normalize_folder(ADDON.getSetting(setting_key))
         if legacy_source:
             db.ensure_source({
-                "platform_id": platform_id,
-                "folder_path": legacy_source,
-                "recursive": True,
-                "file_extensions": [ext.lstrip(".") for ext in cfg["extensions"]],
-                "emulator_profile_id": cfg["profile"],
-                "label": "Legacy settings source",
+                **source_dict(platform_id, legacy_source, label="Legacy settings source"),
             })
 
 
 def source_for_platform(platform_id: str, folder_path: str) -> dict:
-    cfg = SYSTEMS[platform_id]
-    return {
-        "platform_id": platform_id,
-        "folder_path": normalize_folder(folder_path),
-        "recursive": True,
-        "file_extensions": [ext.lstrip(".") for ext in cfg["extensions"]],
-        "emulator_profile_id": cfg["profile"],
-        "label": display_name(folder_path),
-    }
+    folder = normalize_folder(folder_path)
+    payload = source_dict(platform_id, folder, label=display_name(folder))
+    return payload
 
 
 def scan(db: GameDatabase) -> int:
@@ -145,23 +107,24 @@ def scan(db: GameDatabase) -> int:
     sources = db.list_sources(enabled_only=True)
     for source in sources:
         platform_id = source["platform_id"]
-        cfg = SYSTEMS.get(platform_id)
-        if not cfg:
-            xbmc.log(f"[Ziro Games] unsupported source platform: {platform_id}", xbmc.LOGWARNING)
+        platform = get_platform(platform_id)
+        if not platform:
+            xbmc.log(f"[Ziro Games Scanner] unsupported source platform: {platform_id}", xbmc.LOGWARNING)
             continue
         folder = normalize_folder(source["folder_path"])
         if not folder or not xbmcvfs.exists(folder):
-            xbmc.log(f"[Ziro Games] source missing for {platform_id}: {folder}", xbmc.LOGWARNING)
+            xbmc.log(f"[Ziro Games Scanner] source missing for {platform_id}: {folder}", xbmc.LOGWARNING)
             continue
         exts = [f".{ext.strip().lstrip('.')}" for ext in (source.get("file_extensions") or "").split(",") if ext.strip()]
-        for rom in iter_games(folder, exts or cfg["extensions"], bool(source.get("recursive", 1))) or []:
+        default_exts = [f".{ext}" if not ext.startswith(".") else ext for ext in extensions_for(platform_id)]
+        for rom in iter_games(folder, exts or default_exts, bool(source.get("recursive", 1))) or []:
             title = clean_title(rom)
             db.upsert_game({
                 "title": title,
                 "sort_title": sort_title(title),
                 "platform_id": platform_id,
                 "rom_path": str(rom),
-                "emulator_profile_id": source.get("emulator_profile_id") or cfg["profile"],
+                "emulator_profile_id": source.get("emulator_profile_id") or platform.profile_id,
                 "source_id": source.get("id"),
                 "description": f"Imported from {folder}",
             })

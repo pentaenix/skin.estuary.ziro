@@ -13,6 +13,10 @@ import xbmc
 import xbmcgui
 import xbmcvfs
 
+# Shared platform catalog lives in the plugin add-on.
+sys.path.insert(0, xbmcvfs.translatePath("special://addons/plugin.program.ziro.games"))
+from resources.lib.platforms import get_platform, resolve_core_path  # noqa: E402
+
 ADDON_DATA = Path(xbmcvfs.translatePath("special://profile/addon_data/plugin.program.ziro.games"))
 DB_PATH = ADDON_DATA / "games.db"
 SESSION_PATH = ADDON_DATA / "session.json"
@@ -54,7 +58,16 @@ def launch(game_id: int) -> None:
         raise RuntimeError(f"ROM path missing: {rom_path}")
 
     args_template = profile["arguments_template"] or '"{rom_path}"'
-    args = args_template.format(rom_path=str(rom_path), executable_path=str(executable))
+    platform = get_platform(game["platform_id"])
+    core_path = resolve_core_path(str(executable), platform.retroarch_core if platform else "")
+    args = args_template.format(
+        rom_path=str(rom_path),
+        rom_dir=str(rom_path.parent),
+        rom_file=rom_path.name,
+        rom_name=rom_path.stem,
+        executable_path=str(executable),
+        core_path=core_path,
+    )
     cwd = profile.get("working_directory") or str(executable.parent)
 
     if os.name == "nt":

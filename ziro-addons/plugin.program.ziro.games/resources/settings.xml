@@ -9,6 +9,16 @@
     <setting id="emulator_dolphin" type="file" label="Dolphin executable" default="C:\Emulation\Emulators\Dolphin\Dolphin.exe"/>
     <setting id="emulator_mgba" type="file" label="mGBA executable" default="C:\Emulation\Emulators\mGBA\mGBA.exe"/>
     <setting id="emulator_retroarch" type="file" label="RetroArch executable" default="C:\Emulation\Emulators\RetroArch\retroarch.exe"/>
+    <setting id="emulator_pcsx2" type="file" label="PCSX2 executable" default=""/>
+    <setting id="emulator_rpcs3" type="file" label="RPCS3 executable" default=""/>
+    <setting id="emulator_ppsspp" type="file" label="PPSSPP executable" default=""/>
+    <setting id="emulator_citra" type="file" label="Citra executable" default=""/>
+    <setting id="emulator_cemu" type="file" label="Cemu executable" default=""/>
+    <setting id="emulator_yuzu" type="file" label="yuzu executable" default=""/>
+    <setting id="emulator_xenia" type="file" label="Xenia executable" default=""/>
+    <setting id="emulator_xemu" type="file" label="xemu executable" default=""/>
+    <setting id="emulator_vita3k" type="file" label="Vita3K executable" default=""/>
+    <setting id="emulator_ps4" type="file" label="PS4 emulator executable" default=""/>
   </category>
   <category id="metadata" label="Metadata">
     <setting id="screenscraper_user" type="string" label="ScreenScraper username" default=""/>

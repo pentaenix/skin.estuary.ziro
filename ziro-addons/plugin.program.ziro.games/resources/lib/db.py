@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Iterable
 
 from .paths import db_path
+from .platforms import all_platform_rows
 
 SCHEMA_VERSION = 2
 
@@ -85,14 +86,7 @@ MIGRATIONS = [
     "ALTER TABLE games ADD COLUMN source_id INTEGER",
 ]
 
-DEFAULT_PLATFORMS = [
-    ("gamecube", "Nintendo GameCube", "GameCube", "Nintendo", 10),
-    ("wii", "Nintendo Wii", "Wii", "Nintendo", 20),
-    ("gba", "Game Boy Advance", "GBA", "Nintendo", 30),
-    ("snes", "Super Nintendo", "SNES", "Nintendo", 40),
-    ("n64", "Nintendo 64", "N64", "Nintendo", 50),
-    ("ps1", "PlayStation", "PS1", "Sony", 60),
-]
+DEFAULT_PLATFORMS = all_platform_rows()
 
 DEFAULT_GENRES = [
     ("rpg", "RPG"),

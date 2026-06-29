@@ -4,7 +4,8 @@ import xbmcaddon
 
 from .db import GameDatabase
 from .mock import MOCK_GAMES
-from .scanner import SYSTEMS, scan, source_for_platform
+from .platforms import get_platform, platform_ids
+from .scanner import scan, source_for_platform
 
 ADDON = xbmcaddon.Addon("plugin.program.ziro.games")
 
@@ -68,7 +69,7 @@ class Router:
         return self.db.list_sources(enabled_only=False)
 
     def add_source(self, platform_id: str, folder_path: str) -> int | None:
-        if platform_id not in SYSTEMS:
+        if platform_id not in platform_ids():
             raise ValueError(f"Unsupported platform: {platform_id}")
         return self.db.ensure_source(source_for_platform(platform_id, folder_path))
 

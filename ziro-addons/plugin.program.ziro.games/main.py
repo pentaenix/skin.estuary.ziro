@@ -9,8 +9,8 @@ import xbmcgui
 import xbmcplugin
 
 from resources.lib.db import GameDatabase
+from resources.lib.platforms import get_platform, platform_choices
 from resources.lib.routes import Router
-from resources.lib.scanner import SYSTEMS
 
 ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
@@ -95,16 +95,20 @@ def render_game_list(games: list[dict], empty_label: str = "No games yet") -> No
     xbmcplugin.endOfDirectory(HANDLE)
 
 
-def browse_for_source(platform_id: str) -> str:
-    platform_name = {
-        "gamecube": "Nintendo GameCube",
-        "wii": "Nintendo Wii",
-        "gba": "Game Boy Advance",
-    }.get(platform_id, platform_id)
+def browse_for_source(platform_name: str) -> str:
     heading = f"Choose {platform_name} folder"
     # Type 0 is directory browse. This is closer to Kodi's Movies source flow than raw settings strings.
     selected = xbmcgui.Dialog().browse(0, heading, "files", "", False, False, "")
     return selected or ""
+
+
+def pick_platform_id() -> str | None:
+    choices = platform_choices()
+    labels = [choice["label"] for choice in choices]
+    index = xbmcgui.Dialog().select("Select console", labels)
+    if index < 0:
+        return None
+    return choices[index]["id"]
 
 
 def main() -> None:
@@ -146,21 +150,28 @@ def main() -> None:
             genre_id = path.rsplit("/", 1)[-1]
             render_game_list(router.by_genre(genre_id), "No games for this genre")
         elif path == "/sources":
-            add_directory("Add Nintendo GameCube Source", "/sources/add/gamecube")
-            add_directory("Add Nintendo Wii Source", "/sources/add/wii")
-            add_directory("Add Game Boy Advance Source", "/sources/add/gba")
+            add_action("Add Game Source...", "/sources/add")
             for source in router.sources():
                 add_source_item(source)
             xbmcplugin.setContent(HANDLE, "files")
             xbmcplugin.endOfDirectory(HANDLE)
-        elif path.startswith("/sources/add/"):
-            platform_id = path.rsplit("/", 1)[-1]
-            if platform_id not in SYSTEMS:
+        elif path == "/sources/add":
+            platform_id = params.get("platform_id") or pick_platform_id()
+            if not platform_id:
+                xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
+                return
+            platform = get_platform(platform_id)
+            if not platform:
                 raise ValueError(f"Unsupported platform: {platform_id}")
-            selected = browse_for_source(platform_id)
+            selected = browse_for_source(platform.name)
             if selected:
                 router.add_source(platform_id, selected)
-                xbmcgui.Dialog().notification("Ziro Games", "Source added", xbmcgui.NOTIFICATION_INFO, 2500)
+                xbmcgui.Dialog().notification(
+                    "Ziro Games",
+                    f"{platform.name} source added",
+                    xbmcgui.NOTIFICATION_INFO,
+                    2500,
+                )
                 if xbmcgui.Dialog().yesno("Ziro Games", "Source added. Scan now?"):
                     count = router.scan_sources()
                     xbmcgui.Dialog().notification("Ziro Games", f"Scan complete: {count} games", xbmcgui.NOTIFICATION_INFO, 3000)
