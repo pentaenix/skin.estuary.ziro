@@ -1,0 +1,164 @@
+# Kodi Media Center language file
+# Addon Name: Ziro Games
+# Addon id: plugin.program.ziro.games
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: en_US\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgctxt "#32000"
+msgid ""
+msgstr "Sources"
+
+msgctxt "#32001"
+msgid ""
+msgstr "Legacy default ROM folders. Prefer Sources in the Ziro Games menu."
+
+msgctxt "#32002"
+msgid ""
+msgstr "Legacy folders"
+
+msgctxt "#32003"
+msgid ""
+msgstr "Legacy/default GameCube folder"
+
+msgctxt "#32004"
+msgid ""
+msgstr "Legacy/default Wii folder"
+
+msgctxt "#32005"
+msgid ""
+msgstr "Legacy/default Game Boy Advance folder"
+
+msgctxt "#32010"
+msgid ""
+msgstr "Emulators"
+
+msgctxt "#32011"
+msgid ""
+msgstr "Paths to emulator executables used when launching games."
+
+msgctxt "#32012"
+msgid ""
+msgstr "Installed emulators"
+
+msgctxt "#32013"
+msgid ""
+msgstr "Dolphin executable"
+
+msgctxt "#32014"
+msgid ""
+msgstr "mGBA executable"
+
+msgctxt "#32015"
+msgid ""
+msgstr "RetroArch executable"
+
+msgctxt "#32016"
+msgid ""
+msgstr "PCSX2 executable"
+
+msgctxt "#32017"
+msgid ""
+msgstr "RPCS3 executable"
+
+msgctxt "#32018"
+msgid ""
+msgstr "PPSSPP executable"
+
+msgctxt "#32019"
+msgid ""
+msgstr "Citra executable"
+
+msgctxt "#32020"
+msgid ""
+msgstr "Cemu executable"
+
+msgctxt "#32021"
+msgid ""
+msgstr "yuzu executable"
+
+msgctxt "#32022"
+msgid ""
+msgstr "Xenia executable"
+
+msgctxt "#32023"
+msgid ""
+msgstr "xemu executable"
+
+msgctxt "#32024"
+msgid ""
+msgstr "Vita3K executable"
+
+msgctxt "#32025"
+msgid ""
+msgstr "PS4 emulator executable"
+
+msgctxt "#32030"
+msgid ""
+msgstr "Metadata"
+
+msgctxt "#32031"
+msgid ""
+msgstr "Artwork and metadata providers."
+
+msgctxt "#32032"
+msgid ""
+msgstr "SteamGridDB"
+
+msgctxt "#32033"
+msgid ""
+msgstr "SteamGridDB API key"
+
+msgctxt "#32034"
+msgid ""
+msgstr "Create a free key at steamgriddb.com profile preferences."
+
+msgctxt "#32035"
+msgid ""
+msgstr "Download hero fanart from SteamGridDB"
+
+msgctxt "#32036"
+msgid ""
+msgstr "Download logos from SteamGridDB"
+
+msgctxt "#32037"
+msgid ""
+msgstr "Offer artwork fetch after scan"
+
+msgctxt "#32038"
+msgid ""
+msgstr "Optional fallbacks"
+
+msgctxt "#32039"
+msgid ""
+msgstr "ScreenScraper username (optional fallback)"
+
+msgctxt "#32040"
+msgid ""
+msgstr "ScreenScraper password"
+
+msgctxt "#32041"
+msgid ""
+msgstr "IGDB client id (optional fallback)"
+
+msgctxt "#32042"
+msgid ""
+msgstr "IGDB client secret"
+
+msgctxt "#32050"
+msgid ""
+msgstr "Development"
+
+msgctxt "#32051"
+msgid ""
+msgstr "Developer options"
+
+msgctxt "#32052"
+msgid ""
+msgstr "Show mock games when database is empty"
+
+msgctxt "#32053"
+msgid ""
+msgstr "Debug logging"
