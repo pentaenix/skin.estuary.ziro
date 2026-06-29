@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <settings version="1">
   <section id="plugin.program.ziro.games">
-    <category id="sources" label="32000" help="32001">
-      <group id="1" label="32002">
-        <setting id="source_gamecube" type="path" label="32003" help="">
+    <category id="sources" label="30000" help="30001">
+      <group id="1" label="30002">
+        <setting id="source_gamecube" type="path" label="30003" help="">
           <level>0</level>
           <default/>
           <constraints>
@@ -11,10 +11,10 @@
             <allowempty>true</allowempty>
           </constraints>
           <control type="button" format="path">
-            <heading>32003</heading>
+            <heading>30003</heading>
           </control>
         </setting>
-        <setting id="source_wii" type="path" label="32004" help="">
+        <setting id="source_wii" type="path" label="30004" help="">
           <level>0</level>
           <default/>
           <constraints>
@@ -22,10 +22,10 @@
             <allowempty>true</allowempty>
           </constraints>
           <control type="button" format="path">
-            <heading>32004</heading>
+            <heading>30004</heading>
           </control>
         </setting>
-        <setting id="source_gba" type="path" label="32005" help="">
+        <setting id="source_gba" type="path" label="30005" help="">
           <level>0</level>
           <default/>
           <constraints>
@@ -33,14 +33,14 @@
             <allowempty>true</allowempty>
           </constraints>
           <control type="button" format="path">
-            <heading>32005</heading>
+            <heading>30005</heading>
           </control>
         </setting>
       </group>
     </category>
-    <category id="emulators" label="32010" help="32011">
-      <group id="1" label="32012">
-        <setting id="emulator_dolphin" type="path" label="32013" help="">
+    <category id="emulators" label="30010" help="30011">
+      <group id="1" label="30012">
+        <setting id="emulator_dolphin" type="path" label="30013" help="">
           <level>0</level>
           <default>C:/Emulation/Emulators/Dolphin/Dolphin.exe</default>
           <constraints>
@@ -49,10 +49,10 @@
             <allowempty>true</allowempty>
           </constraints>
           <control type="button" format="file">
-            <heading>32013</heading>
+            <heading>30013</heading>
           </control>
         </setting>
-        <setting id="emulator_mgba" type="path" label="32014" help="">
+        <setting id="emulator_mgba" type="path" label="30014" help="">
           <level>0</level>
           <default>C:/Emulation/Emulators/mGBA/mGBA.exe</default>
           <constraints>
@@ -61,10 +61,10 @@
             <allowempty>true</allowempty>
           </constraints>
           <control type="button" format="file">
-            <heading>32014</heading>
+            <heading>30014</heading>
           </control>
         </setting>
-        <setting id="emulator_retroarch" type="path" label="32015" help="">
+        <setting id="emulator_retroarch" type="path" label="30015" help="">
           <level>0</level>
           <default>C:/Emulation/Emulators/RetroArch/retroarch.exe</default>
           <constraints>
@@ -73,10 +73,10 @@
             <allowempty>true</allowempty>
           </constraints>
           <control type="button" format="file">
-            <heading>32015</heading>
+            <heading>30015</heading>
           </control>
         </setting>
-        <setting id="emulator_pcsx2" type="path" label="32016" help="">
+        <setting id="emulator_pcsx2" type="path" label="30016" help="">
           <level>0</level>
           <default/>
           <constraints>
@@ -85,10 +85,10 @@
             <allowempty>true</allowempty>
           </constraints>
           <control type="button" format="file">
-            <heading>32016</heading>
+            <heading>30016</heading>
           </control>
         </setting>
-        <setting id="emulator_rpcs3" type="path" label="32017" help="">
+        <setting id="emulator_rpcs3" type="path" label="30017" help="">
           <level>0</level>
           <default/>
           <constraints>
@@ -97,10 +97,10 @@
             <allowempty>true</allowempty>
           </constraints>
           <control type="button" format="file">
-            <heading>32017</heading>
+            <heading>30017</heading>
           </control>
         </setting>
-        <setting id="emulator_ppsspp" type="path" label="32018" help="">
+        <setting id="emulator_ppsspp" type="path" label="30018" help="">
           <level>0</level>
           <default/>
           <constraints>
@@ -109,10 +109,10 @@
             <allowempty>true</allowempty>
           </constraints>
           <control type="button" format="file">
-            <heading>32018</heading>
+            <heading>30018</heading>
           </control>
         </setting>
-        <setting id="emulator_citra" type="path" label="32019" help="">
+        <setting id="emulator_citra" type="path" label="30019" help="">
           <level>0</level>
           <default/>
           <constraints>
@@ -121,10 +121,10 @@
             <allowempty>true</allowempty>
           </constraints>
           <control type="button" format="file">
-            <heading>32019</heading>
+            <heading>30019</heading>
           </control>
         </setting>
-        <setting id="emulator_cemu" type="path" label="32020" help="">
+        <setting id="emulator_cemu" type="path" label="30020" help="">
           <level>0</level>
           <default/>
           <constraints>
@@ -133,10 +133,10 @@
             <allowempty>true</allowempty>
           </constraints>
           <control type="button" format="file">
-            <heading>32020</heading>
+            <heading>30020</heading>
           </control>
         </setting>
-        <setting id="emulator_yuzu" type="path" label="32021" help="">
+        <setting id="emulator_yuzu" type="path" label="30021" help="">
           <level>0</level>
           <default/>
           <constraints>
@@ -145,10 +145,10 @@
             <allowempty>true</allowempty>
           </constraints>
           <control type="button" format="file">
-            <heading>32021</heading>
+            <heading>30021</heading>
           </control>
         </setting>
-        <setting id="emulator_xenia" type="path" label="32022" help="">
+        <setting id="emulator_xenia" type="path" label="30022" help="">
           <level>0</level>
           <default/>
           <constraints>
@@ -157,10 +157,10 @@
             <allowempty>true</allowempty>
           </constraints>
           <control type="button" format="file">
-            <heading>32022</heading>
+            <heading>30022</heading>
           </control>
         </setting>
-        <setting id="emulator_xemu" type="path" label="32023" help="">
+        <setting id="emulator_xemu" type="path" label="30023" help="">
           <level>0</level>
           <default/>
           <constraints>
@@ -169,10 +169,10 @@
             <allowempty>true</allowempty>
           </constraints>
           <control type="button" format="file">
-            <heading>32023</heading>
+            <heading>30023</heading>
           </control>
         </setting>
-        <setting id="emulator_vita3k" type="path" label="32024" help="">
+        <setting id="emulator_vita3k" type="path" label="30024" help="">
           <level>0</level>
           <default/>
           <constraints>
@@ -181,10 +181,10 @@
             <allowempty>true</allowempty>
           </constraints>
           <control type="button" format="file">
-            <heading>32024</heading>
+            <heading>30024</heading>
           </control>
         </setting>
-        <setting id="emulator_ps4" type="path" label="32025" help="">
+        <setting id="emulator_ps4" type="path" label="30025" help="">
           <level>0</level>
           <default/>
           <constraints>
@@ -193,93 +193,93 @@
             <allowempty>true</allowempty>
           </constraints>
           <control type="button" format="file">
-            <heading>32025</heading>
+            <heading>30025</heading>
           </control>
         </setting>
       </group>
     </category>
-    <category id="metadata" label="32030" help="32031">
-      <group id="1" label="32032">
-        <setting id="steamgriddb_api_key" type="string" label="32033" help="32034">
+    <category id="metadata" label="30030" help="30031">
+      <group id="1" label="30032">
+        <setting id="steamgriddb_api_key" type="string" label="30033" help="30034">
           <level>0</level>
           <default/>
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
           <control type="edit" format="string">
-            <heading>32033</heading>
+            <heading>30033</heading>
             <hidden>true</hidden>
           </control>
         </setting>
-        <setting id="metadata_fetch_fanart" type="boolean" label="32035" help="">
+        <setting id="metadata_fetch_fanart" type="boolean" label="30035" help="">
           <level>0</level>
           <default>true</default>
           <control type="toggle"/>
         </setting>
-        <setting id="metadata_fetch_logos" type="boolean" label="32036" help="">
+        <setting id="metadata_fetch_logos" type="boolean" label="30036" help="">
           <level>0</level>
           <default>true</default>
           <control type="toggle"/>
         </setting>
-        <setting id="metadata_fetch_on_scan" type="boolean" label="32037" help="">
+        <setting id="metadata_fetch_on_scan" type="boolean" label="30037" help="">
           <level>0</level>
           <default>true</default>
           <control type="toggle"/>
         </setting>
       </group>
-      <group id="2" label="32038">
-        <setting id="screenscraper_user" type="string" label="32039" help="">
+      <group id="2" label="30038">
+        <setting id="screenscraper_user" type="string" label="30039" help="">
           <level>2</level>
           <default/>
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
           <control type="edit" format="string">
-            <heading>32039</heading>
+            <heading>30039</heading>
           </control>
         </setting>
-        <setting id="screenscraper_password" type="string" label="32040" help="">
+        <setting id="screenscraper_password" type="string" label="30040" help="">
           <level>2</level>
           <default/>
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
           <control type="edit" format="string">
-            <heading>32040</heading>
+            <heading>30040</heading>
             <hidden>true</hidden>
           </control>
         </setting>
-        <setting id="igdb_client_id" type="string" label="32041" help="">
+        <setting id="igdb_client_id" type="string" label="30041" help="">
           <level>2</level>
           <default/>
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
           <control type="edit" format="string">
-            <heading>32041</heading>
+            <heading>30041</heading>
           </control>
         </setting>
-        <setting id="igdb_client_secret" type="string" label="32042" help="">
+        <setting id="igdb_client_secret" type="string" label="30042" help="">
           <level>2</level>
           <default/>
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
           <control type="edit" format="string">
-            <heading>32042</heading>
+            <heading>30042</heading>
             <hidden>true</hidden>
           </control>
         </setting>
       </group>
     </category>
-    <category id="development" label="32050" help="">
-      <group id="1" label="32051">
-        <setting id="dev_mock_library" type="boolean" label="32052" help="">
+    <category id="development" label="30050" help="">
+      <group id="1" label="30051">
+        <setting id="dev_mock_library" type="boolean" label="30052" help="">
           <level>0</level>
           <default>true</default>
           <control type="toggle"/>
         </setting>
-        <setting id="debug_logging" type="boolean" label="32053" help="">
+        <setting id="debug_logging" type="boolean" label="30053" help="">
           <level>0</level>
           <default>true</default>
           <control type="toggle"/>
