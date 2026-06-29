@@ -50,7 +50,9 @@ ProgressCallback = Callable[[int, str], bool]
 
 
 def _api_key() -> str:
-    return (ADDON.getSetting("steamgriddb_api_key") or "").strip()
+    from .http_client import normalize_api_key
+
+    return normalize_api_key(ADDON.getSetting("steamgriddb_api_key") or "")
 
 
 def _fetch_fanart() -> bool:
@@ -101,7 +103,7 @@ def enrich_game(
     force: bool = False,
     verify_key: bool = True,
 ) -> ArtworkResult:
-    api_key = (api_key or _api_key()).strip()
+    api_key = api_key or _api_key()
     game = db.get_game(game_id)
     if not game:
         return ArtworkResult(game_id, "", "missing", "Game not found")
@@ -196,7 +198,13 @@ def enrich_missing_artwork(
             batch.skipped += 1
         else:
             batch.failed += 1
-            if _debug():
+            message = result.message or result.status
+            if result.status not in {"no_match", "no_art"}:
+                xbmc.log(
+                    f"[Ziro Games SGDB] failed game_id={game['id']} title={game['title']} status={result.status} msg={message}",
+                    xbmc.LOGWARNING,
+                )
+            elif _debug():
                 xbmc.log(
                     f"[Ziro Games SGDB] failed game_id={game['id']} title={game['title']} status={result.status} msg={result.message}",
                     xbmc.LOGINFO,
