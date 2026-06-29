@@ -155,10 +155,11 @@ def run_artwork_fetch(router: Router) -> None:
     finally:
         progress.close()
 
-    if result.updated:
-        xbmcgui.Dialog().notification("Ziro Games", result.summary(), xbmcgui.NOTIFICATION_INFO, 4000)
+    summary = result.summary()
+    if result.updated and not any(item.status == "api_error" for item in result.results):
+        xbmcgui.Dialog().notification("Ziro Games", summary, xbmcgui.NOTIFICATION_INFO, 4000)
     else:
-        xbmcgui.Dialog().ok("Ziro Games — Artwork", result.summary())
+        xbmcgui.Dialog().ok("Ziro Games — Artwork", summary)
     xbmc.executebuiltin("Container.Refresh")
 
 

@@ -38,12 +38,20 @@ class ArtworkBatchResult:
     results: list[ArtworkResult] = field(default_factory=list)
 
     def summary(self) -> str:
-        return (
-            f"Artwork fetch complete.\n"
-            f"Updated: {self.updated}\n"
-            f"Skipped: {self.skipped}\n"
-            f"Failed: {self.failed}"
-        )
+        lines = [
+            "Artwork fetch complete.",
+            f"Updated: {self.updated}",
+            f"Skipped: {self.skipped}",
+            f"Failed: {self.failed}",
+        ]
+        api_errors = [result for result in self.results if result.status == "api_error"]
+        if api_errors:
+            sample = api_errors[0].message or "SteamGridDB request failed"
+            lines.append("")
+            lines.append(f"API error: {sample[:220]}")
+            lines.append("Full URLs and response bodies:")
+            lines.append("addon_data/plugin.program.ziro.games/sgdb.log")
+        return "\n".join(lines)
 
 
 ProgressCallback = Callable[[int, str], bool]
@@ -117,44 +125,46 @@ def enrich_game(
     if verify_key and not validate_api_key(api_key):
         return ArtworkResult(game_id, game["title"], "bad_api_key", "SteamGridDB API key is invalid")
 
-    sgdb_game_id = game.get("sgdb_game_id")
-    match = None
-    if not sgdb_game_id:
-        match = search_game(game["title"], api_key)
-        if not match:
-            return ArtworkResult(game_id, game["title"], "no_match", f"No SteamGridDB match for '{game['title']}'")
-        sgdb_game_id = int(match["id"])
-    else:
-        sgdb_game_id = int(sgdb_game_id)
+    try:
+        sgdb_game_id = game.get("sgdb_game_id")
+        if not sgdb_game_id:
+            match = search_game(game["title"], api_key)
+            if not match:
+                return ArtworkResult(game_id, game["title"], "no_match", f"No SteamGridDB match for '{game['title']}'")
+            sgdb_game_id = int(match["id"])
+        else:
+            sgdb_game_id = int(sgdb_game_id)
 
-    updates: dict = {
-        "sgdb_game_id": sgdb_game_id,
-        "metadata_updated_at": datetime.now().isoformat(timespec="seconds"),
-    }
+        updates: dict = {
+            "sgdb_game_id": sgdb_game_id,
+            "metadata_updated_at": datetime.now().isoformat(timespec="seconds"),
+        }
 
-    grid = fetch_grid(sgdb_game_id, api_key)
-    if not grid or not grid.get("url"):
-        return ArtworkResult(
-            game_id,
-            game["title"],
-            "no_art",
-            f"No grid artwork on SteamGridDB for '{game['title']}'",
-            sgdb_game_id=sgdb_game_id,
-        )
+        grid = fetch_grid(sgdb_game_id, api_key)
+        if not grid or not grid.get("url"):
+            return ArtworkResult(
+                game_id,
+                game["title"],
+                "no_art",
+                f"No grid artwork on SteamGridDB for '{game['title']}'",
+                sgdb_game_id=sgdb_game_id,
+            )
 
-    updates["cover_path"] = _save_image(grid["url"], _artwork_path(game_id, "poster", grid["url"]))
+        updates["cover_path"] = _save_image(grid["url"], _artwork_path(game_id, "poster", grid["url"]))
 
-    if _fetch_fanart():
-        hero = fetch_hero(sgdb_game_id, api_key)
-        if hero and hero.get("url"):
-            updates["fanart_path"] = _save_image(hero["url"], _artwork_path(game_id, "fanart", hero["url"]))
+        if _fetch_fanart():
+            hero = fetch_hero(sgdb_game_id, api_key)
+            if hero and hero.get("url"):
+                updates["fanart_path"] = _save_image(hero["url"], _artwork_path(game_id, "fanart", hero["url"]))
 
-    if _fetch_logos():
-        logo = fetch_logo(sgdb_game_id, api_key)
-        if logo and logo.get("url"):
-            updates["logo_path"] = _save_image(logo["url"], _artwork_path(game_id, "logo", logo["url"]))
+        if _fetch_logos():
+            logo = fetch_logo(sgdb_game_id, api_key)
+            if logo and logo.get("url"):
+                updates["logo_path"] = _save_image(logo["url"], _artwork_path(game_id, "logo", logo["url"]))
 
-    db.update_game_artwork(game_id, updates)
+        db.update_game_artwork(game_id, updates)
+    except Exception as exc:
+        return ArtworkResult(game_id, game["title"], "api_error", str(exc))
     if _debug():
         xbmc.log(
             f"[Ziro Games SGDB] enriched game_id={game_id} title={game['title']} sgdb_id={sgdb_game_id}",

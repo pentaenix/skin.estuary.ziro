@@ -10,6 +10,8 @@ from urllib.request import Request, urlopen
 
 import xbmc
 
+from .sgdb_log import log_error, log_http_error, log_info
+
 USER_AGENT = "ZiroGames/0.2 Kodi plugin.program.ziro.games"
 DEFAULT_TIMEOUT = 25
 
@@ -23,8 +25,9 @@ def normalize_api_key(api_key: str) -> str:
 
 def get_json(url: str, api_key: str, params: dict[str, Any] | None = None, retries: int = 3) -> dict[str, Any]:
     api_key = normalize_api_key(api_key)
+    request_url = url
     if params:
-        url = f"{url}?{urlencode(params)}"
+        request_url = f"{url}?{urlencode(params)}"
     headers = {
         "Authorization": f"Bearer {api_key}",
         "User-Agent": USER_AGENT,
@@ -33,11 +36,14 @@ def get_json(url: str, api_key: str, params: dict[str, Any] | None = None, retri
     last_error: Exception | None = None
     for attempt in range(retries):
         try:
-            request = Request(url, headers=headers)
+            log_info(f"GET {request_url}")
+            request = Request(request_url, headers=headers)
             with urlopen(request, timeout=DEFAULT_TIMEOUT) as response:
                 payload = json.loads(response.read().decode("utf-8"))
             if not payload.get("success", True):
-                raise RuntimeError(payload.get("errors") or payload.get("message") or "SteamGridDB request failed")
+                detail = str(payload.get("errors") or payload.get("message") or "SteamGridDB request failed")
+                log_error(f"success=false url={request_url} detail={detail}")
+                raise RuntimeError(f"SteamGridDB error: {detail}")
             return payload
         except HTTPError as exc:
             body = ""
@@ -45,17 +51,17 @@ def get_json(url: str, api_key: str, params: dict[str, Any] | None = None, retri
                 body = exc.read().decode("utf-8", errors="replace")
             except Exception:
                 body = ""
-            message = _http_error_message(exc.code, url, body)
-            xbmc.log(f"[Ziro Games SGDB] {message}", xbmc.LOGERROR)
+            message = log_http_error(exc.code, request_url, body)
             last_error = RuntimeError(message)
             if exc.code == 429 and attempt < retries - 1:
                 wait = 2 + attempt * 3
-                xbmc.log(f"[Ziro Games SGDB] rate limited, sleeping {wait}s", xbmc.LOGWARNING)
+                log_error(f"rate limited, sleeping {wait}s")
                 time.sleep(wait)
                 continue
             raise last_error from exc
         except URLError as exc:
             last_error = exc
+            log_error(f"network error url={request_url}: {exc}")
             if attempt < retries - 1:
                 time.sleep(1)
                 continue
@@ -65,19 +71,8 @@ def get_json(url: str, api_key: str, params: dict[str, Any] | None = None, retri
     raise RuntimeError("SteamGridDB request failed")
 
 
-def _http_error_message(status: int, url: str, body: str) -> str:
-    detail = body.strip()
-    if detail:
-        try:
-            parsed = json.loads(detail)
-            if isinstance(parsed, dict):
-                detail = str(parsed.get("errors") or parsed.get("message") or detail)
-        except json.JSONDecodeError:
-            detail = re.sub(r"\s+", " ", detail)[:240]
-    return f"SteamGridDB HTTP {status} for {url}" + (f": {detail}" if detail else "")
-
-
 def download_bytes(url: str) -> bytes:
+    log_info(f"DOWNLOAD {url}")
     request = Request(url, headers={"User-Agent": USER_AGENT})
     with urlopen(request, timeout=DEFAULT_TIMEOUT) as response:
         return response.read()
