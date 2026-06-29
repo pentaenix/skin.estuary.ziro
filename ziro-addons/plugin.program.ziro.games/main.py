@@ -120,6 +120,51 @@ def show_scan_result(result) -> None:
     xbmcgui.Dialog().ok("Ziro Games — Scan found 0 games", summary)
 
 
+def offer_artwork_fetch(router: Router) -> None:
+    api_key = (ADDON.getSetting("steamgriddb_api_key") or "").strip()
+    if not api_key:
+        return
+    if not ADDON.getSettingBool("metadata_fetch_on_scan"):
+        return
+    if not xbmcgui.Dialog().yesno(
+        "Ziro Games",
+        "Scan finished. Fetch missing box art from SteamGridDB now?\n\n"
+        "Large libraries can take a while.",
+    ):
+        return
+    run_artwork_fetch(router)
+
+
+def run_artwork_fetch(router: Router) -> None:
+    progress = xbmcgui.DialogProgress()
+    progress.create("Ziro Games", "Fetching artwork from SteamGridDB...")
+
+    def update(percent: int, label: str) -> bool:
+        if progress.iscanceled():
+            return False
+        progress.update(percent, label[:80])
+        return True
+
+    try:
+        result = router.fetch_missing_artwork(progress=update)
+    finally:
+        progress.close()
+
+    if result.updated:
+        xbmcgui.Dialog().notification("Ziro Games", result.summary(), xbmcgui.NOTIFICATION_INFO, 4000)
+    else:
+        xbmcgui.Dialog().ok("Ziro Games — Artwork", result.summary())
+    xbmc.executebuiltin("Container.Refresh")
+
+
+def show_artwork_refresh(game_id: int, router: Router) -> None:
+    result = router.refresh_artwork(game_id)
+    if result.status == "ok":
+        xbmcgui.Dialog().notification("Ziro Games", f"Artwork updated for {result.title}", xbmcgui.NOTIFICATION_INFO, 2500)
+    else:
+        xbmcgui.Dialog().notification("Ziro Games", result.message or result.status, xbmcgui.NOTIFICATION_ERROR, 4000)
+
+
 def main() -> None:
     params = dict(parse_qsl(sys.argv[2][1:])) if len(sys.argv) > 2 else {}
     path = params.get("path", "/home")
@@ -135,6 +180,7 @@ def main() -> None:
             add_directory("Genres", "/genres")
             add_directory("Sources", "/sources")
             add_action("Scan / Refresh Library", "/scan")
+            add_action("Fetch Missing Artwork (SteamGridDB)", "/scrape")
             add_action("Settings", "/settings")
             xbmcplugin.setContent(HANDLE, "files")
             xbmcplugin.endOfDirectory(HANDLE)
@@ -182,7 +228,10 @@ def main() -> None:
                     2500,
                 )
                 if xbmcgui.Dialog().yesno("Ziro Games", "Source added. Scan now?"):
-                    show_scan_result(router.scan_sources())
+                    scan_result = router.scan_sources()
+                    show_scan_result(scan_result)
+                    if scan_result.imported:
+                        offer_artwork_fetch(router)
                 xbmc.executebuiltin("Container.Refresh")
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/sources/remove":
@@ -203,11 +252,19 @@ def main() -> None:
             xbmcgui.Dialog().notification("Ziro Games", "Favorite updated", xbmcgui.NOTIFICATION_INFO, 2000)
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/refresh":
-            xbmcgui.Dialog().notification("Ziro Games", "Metadata refresh is scaffolded for the next pass", xbmcgui.NOTIFICATION_INFO, 2500)
+            game_id = int(params["game_id"])
+            show_artwork_refresh(game_id, router)
+            xbmc.executebuiltin("Container.Refresh")
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/scan":
-            show_scan_result(router.scan_sources())
+            scan_result = router.scan_sources()
+            show_scan_result(scan_result)
+            if scan_result.imported:
+                offer_artwork_fetch(router)
             xbmc.executebuiltin("Container.Refresh")
+            xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
+        elif path == "/scrape":
+            run_artwork_fetch(router)
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/settings":
             ADDON.openSettings()

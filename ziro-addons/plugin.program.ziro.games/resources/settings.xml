@@ -21,11 +21,14 @@
     <setting id="emulator_ps4" type="file" label="PS4 emulator executable" default=""/>
   </category>
   <category id="metadata" label="Metadata">
-    <setting id="screenscraper_user" type="string" label="ScreenScraper username" default=""/>
-    <setting id="screenscraper_password" type="string" label="ScreenScraper password" default="" option="hidden"/>
-    <setting id="igdb_client_id" type="string" label="IGDB client id" default=""/>
-    <setting id="igdb_client_secret" type="string" label="IGDB client secret" default="" option="hidden"/>
     <setting id="steamgriddb_api_key" type="string" label="SteamGridDB API key" default="" option="hidden"/>
+    <setting id="metadata_fetch_fanart" type="boolean" label="Download hero fanart from SteamGridDB" default="true"/>
+    <setting id="metadata_fetch_logos" type="boolean" label="Download logos from SteamGridDB" default="true"/>
+    <setting id="metadata_fetch_on_scan" type="boolean" label="Offer artwork fetch after scan" default="true"/>
+    <setting id="screenscraper_user" type="string" label="ScreenScraper username (optional fallback)" default=""/>
+    <setting id="screenscraper_password" type="string" label="ScreenScraper password" default="" option="hidden"/>
+    <setting id="igdb_client_id" type="string" label="IGDB client id (optional fallback)" default=""/>
+    <setting id="igdb_client_secret" type="string" label="IGDB client secret" default="" option="hidden"/>
   </category>
   <category id="development" label="Development">
     <setting id="dev_mock_library" type="boolean" label="Show mock games when database is empty" default="true"/>

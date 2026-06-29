@@ -7,7 +7,7 @@ from typing import Iterable
 from .paths import db_path
 from .platforms import all_platform_rows
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS schema_info (
@@ -84,6 +84,9 @@ MIGRATIONS = [
     "ALTER TABLE sources ADD COLUMN label TEXT",
     "ALTER TABLE sources ADD COLUMN date_added TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP",
     "ALTER TABLE games ADD COLUMN source_id INTEGER",
+    "ALTER TABLE games ADD COLUMN sgdb_game_id INTEGER",
+    "ALTER TABLE games ADD COLUMN manual_metadata_locked INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE games ADD COLUMN metadata_updated_at TEXT",
 ]
 
 DEFAULT_PLATFORMS = all_platform_rows()
@@ -226,3 +229,30 @@ class GameDatabase:
 
     def clear_games_for_source(self, source_id: int) -> None:
         self.execute("UPDATE games SET hidden=1 WHERE source_id=?", (source_id,))
+
+    def get_game(self, game_id: int) -> dict | None:
+        return self.one("SELECT * FROM games WHERE id=? AND hidden=0", (game_id,))
+
+    def list_games_without_artwork(self, limit: int | None = None) -> list[dict]:
+        query = """
+            SELECT * FROM games
+            WHERE hidden=0
+              AND manual_metadata_locked=0
+              AND (cover_path IS NULL OR cover_path='')
+            ORDER BY sort_title
+        """
+        if limit:
+            query += f" LIMIT {int(limit)}"
+        return self.rows(query)
+
+    def update_game_artwork(self, game_id: int, fields: dict) -> None:
+        allowed = {
+            "cover_path", "fanart_path", "logo_path", "screenshot_path",
+            "sgdb_game_id", "metadata_updated_at", "description",
+        }
+        updates = {key: value for key, value in fields.items() if key in allowed}
+        if not updates:
+            return
+        columns = ", ".join(f"{column}=?" for column in updates)
+        values = list(updates.values()) + [game_id]
+        self.execute(f"UPDATE games SET {columns} WHERE id=?", values)

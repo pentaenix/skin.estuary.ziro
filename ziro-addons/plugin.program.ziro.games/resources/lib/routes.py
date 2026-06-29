@@ -3,6 +3,7 @@ from __future__ import annotations
 import xbmcaddon
 
 from .db import GameDatabase
+from .metadata import ArtworkBatchResult, enrich_game, enrich_missing_artwork
 from .mock import MOCK_GAMES
 from .platforms import get_platform, platform_ids
 from .scanner import ScanResult, scan, source_for_platform
@@ -45,7 +46,17 @@ class Router:
         return self._with_mock([g for g in MOCK_GAMES if g.get("favorite")] if not rows and ADDON.getSettingBool("dev_mock_library") else rows)
 
     def platforms(self) -> list[dict]:
-        return self.db.rows("SELECT * FROM platforms ORDER BY sort_order, name")
+        return self.db.rows(
+            """
+            SELECT p.*
+            FROM platforms p
+            WHERE EXISTS (
+              SELECT 1 FROM games g
+              WHERE g.platform_id = p.id AND g.hidden = 0
+            )
+            ORDER BY p.sort_order, p.name
+            """
+        )
 
     def by_platform(self, platform_id: str) -> list[dict]:
         rows = self.db.rows(GAME_SELECT + " AND g.platform_id=?" + GROUP_ORDER + " ORDER BY g.sort_title", (platform_id,))
@@ -83,3 +94,9 @@ class Router:
 
     def scan_sources(self) -> ScanResult:
         return scan(self.db)
+
+    def refresh_artwork(self, game_id: int):
+        return enrich_game(self.db, game_id, force=True)
+
+    def fetch_missing_artwork(self, progress=None, limit: int | None = None) -> ArtworkBatchResult:
+        return enrich_missing_artwork(self.db, progress=progress, limit=limit)
