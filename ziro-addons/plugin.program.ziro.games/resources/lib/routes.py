@@ -5,7 +5,7 @@ import xbmcaddon
 from .db import GameDatabase
 from .mock import MOCK_GAMES
 from .platforms import get_platform, platform_ids
-from .scanner import scan, source_for_platform
+from .scanner import ScanResult, scan, source_for_platform
 
 ADDON = xbmcaddon.Addon("plugin.program.ziro.games")
 
@@ -81,5 +81,5 @@ class Router:
             return
         self.db.execute("UPDATE games SET favorite = CASE favorite WHEN 1 THEN 0 ELSE 1 END WHERE id=?", (game_id,))
 
-    def scan_sources(self) -> int:
+    def scan_sources(self) -> ScanResult:
         return scan(self.db)

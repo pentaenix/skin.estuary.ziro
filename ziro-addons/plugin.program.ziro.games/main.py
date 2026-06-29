@@ -111,6 +111,15 @@ def pick_platform_id() -> str | None:
     return choices[index]["id"]
 
 
+def show_scan_result(result) -> None:
+    summary = result.summary()
+    if result.imported:
+        xbmcgui.Dialog().notification("Ziro Games", summary, xbmcgui.NOTIFICATION_INFO, 3000)
+        return
+    xbmc.log(f"[Ziro Games Scanner] {summary}", xbmc.LOGWARNING)
+    xbmcgui.Dialog().ok("Ziro Games — Scan found 0 games", summary)
+
+
 def main() -> None:
     params = dict(parse_qsl(sys.argv[2][1:])) if len(sys.argv) > 2 else {}
     path = params.get("path", "/home")
@@ -173,8 +182,7 @@ def main() -> None:
                     2500,
                 )
                 if xbmcgui.Dialog().yesno("Ziro Games", "Source added. Scan now?"):
-                    count = router.scan_sources()
-                    xbmcgui.Dialog().notification("Ziro Games", f"Scan complete: {count} games", xbmcgui.NOTIFICATION_INFO, 3000)
+                    show_scan_result(router.scan_sources())
                 xbmc.executebuiltin("Container.Refresh")
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/sources/remove":
@@ -198,8 +206,7 @@ def main() -> None:
             xbmcgui.Dialog().notification("Ziro Games", "Metadata refresh is scaffolded for the next pass", xbmcgui.NOTIFICATION_INFO, 2500)
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/scan":
-            count = router.scan_sources()
-            xbmcgui.Dialog().notification("Ziro Games", f"Scan complete: {count} games", xbmcgui.NOTIFICATION_INFO, 3000)
+            show_scan_result(router.scan_sources())
             xbmc.executebuiltin("Container.Refresh")
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/settings":
