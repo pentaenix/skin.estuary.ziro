@@ -111,6 +111,11 @@ def pick_platform_id() -> str | None:
     return choices[index]["id"]
 
 
+def open_addon_settings() -> None:
+    addon_id = ADDON.getAddonInfo("id")
+    xbmc.executebuiltin(f"Addon.OpenSettings({addon_id})")
+
+
 def show_scan_result(result) -> None:
     summary = result.summary()
     if result.imported:
@@ -267,7 +272,7 @@ def main() -> None:
             run_artwork_fetch(router)
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/settings":
-            ADDON.openSettings()
+            open_addon_settings()
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         else:
             raise ValueError(f"Unknown route: {path}")

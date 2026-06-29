@@ -1,37 +1,290 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <settings version="1">
-  <category id="sources" label="Sources">
-    <setting id="source_gamecube" type="folder" label="Legacy/default GameCube folder" default=""/>
-    <setting id="source_wii" type="folder" label="Legacy/default Wii folder" default=""/>
-    <setting id="source_gba" type="folder" label="Legacy/default Game Boy Advance folder" default=""/>
-  </category>
-  <category id="emulators" label="Emulators">
-    <setting id="emulator_dolphin" type="file" label="Dolphin executable" default="C:\Emulation\Emulators\Dolphin\Dolphin.exe"/>
-    <setting id="emulator_mgba" type="file" label="mGBA executable" default="C:\Emulation\Emulators\mGBA\mGBA.exe"/>
-    <setting id="emulator_retroarch" type="file" label="RetroArch executable" default="C:\Emulation\Emulators\RetroArch\retroarch.exe"/>
-    <setting id="emulator_pcsx2" type="file" label="PCSX2 executable" default=""/>
-    <setting id="emulator_rpcs3" type="file" label="RPCS3 executable" default=""/>
-    <setting id="emulator_ppsspp" type="file" label="PPSSPP executable" default=""/>
-    <setting id="emulator_citra" type="file" label="Citra executable" default=""/>
-    <setting id="emulator_cemu" type="file" label="Cemu executable" default=""/>
-    <setting id="emulator_yuzu" type="file" label="yuzu executable" default=""/>
-    <setting id="emulator_xenia" type="file" label="Xenia executable" default=""/>
-    <setting id="emulator_xemu" type="file" label="xemu executable" default=""/>
-    <setting id="emulator_vita3k" type="file" label="Vita3K executable" default=""/>
-    <setting id="emulator_ps4" type="file" label="PS4 emulator executable" default=""/>
-  </category>
-  <category id="metadata" label="Metadata">
-    <setting id="steamgriddb_api_key" type="string" label="SteamGridDB API key" default="" option="hidden"/>
-    <setting id="metadata_fetch_fanart" type="boolean" label="Download hero fanart from SteamGridDB" default="true"/>
-    <setting id="metadata_fetch_logos" type="boolean" label="Download logos from SteamGridDB" default="true"/>
-    <setting id="metadata_fetch_on_scan" type="boolean" label="Offer artwork fetch after scan" default="true"/>
-    <setting id="screenscraper_user" type="string" label="ScreenScraper username (optional fallback)" default=""/>
-    <setting id="screenscraper_password" type="string" label="ScreenScraper password" default="" option="hidden"/>
-    <setting id="igdb_client_id" type="string" label="IGDB client id (optional fallback)" default=""/>
-    <setting id="igdb_client_secret" type="string" label="IGDB client secret" default="" option="hidden"/>
-  </category>
-  <category id="development" label="Development">
-    <setting id="dev_mock_library" type="boolean" label="Show mock games when database is empty" default="true"/>
-    <setting id="debug_logging" type="boolean" label="Debug logging" default="true"/>
-  </category>
+  <section id="plugin.program.ziro.games">
+    <category id="sources" label="Sources" help="Legacy default ROM folders. Prefer Sources in the Ziro Games menu.">
+      <group id="1" label="Legacy folders">
+        <setting id="source_gamecube" type="path" label="Legacy/default GameCube folder" help="">
+          <level>0</level>
+          <default/>
+          <constraints>
+            <writable>false</writable>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="button" format="path">
+            <heading>Legacy/default GameCube folder</heading>
+          </control>
+        </setting>
+        <setting id="source_wii" type="path" label="Legacy/default Wii folder" help="">
+          <level>0</level>
+          <default/>
+          <constraints>
+            <writable>false</writable>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="button" format="path">
+            <heading>Legacy/default Wii folder</heading>
+          </control>
+        </setting>
+        <setting id="source_gba" type="path" label="Legacy/default Game Boy Advance folder" help="">
+          <level>0</level>
+          <default/>
+          <constraints>
+            <writable>false</writable>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="button" format="path">
+            <heading>Legacy/default Game Boy Advance folder</heading>
+          </control>
+        </setting>
+      </group>
+    </category>
+    <category id="emulators" label="Emulators" help="Paths to emulator executables used when launching games.">
+      <group id="1" label="Installed emulators">
+        <setting id="emulator_dolphin" type="path" label="Dolphin executable" help="">
+          <level>0</level>
+          <default>C:/Emulation/Emulators/Dolphin/Dolphin.exe</default>
+          <constraints>
+            <writable>false</writable>
+            <masking>executable</masking>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="button" format="file">
+            <heading>Dolphin executable</heading>
+          </control>
+        </setting>
+        <setting id="emulator_mgba" type="path" label="mGBA executable" help="">
+          <level>0</level>
+          <default>C:/Emulation/Emulators/mGBA/mGBA.exe</default>
+          <constraints>
+            <writable>false</writable>
+            <masking>executable</masking>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="button" format="file">
+            <heading>mGBA executable</heading>
+          </control>
+        </setting>
+        <setting id="emulator_retroarch" type="path" label="RetroArch executable" help="">
+          <level>0</level>
+          <default>C:/Emulation/Emulators/RetroArch/retroarch.exe</default>
+          <constraints>
+            <writable>false</writable>
+            <masking>executable</masking>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="button" format="file">
+            <heading>RetroArch executable</heading>
+          </control>
+        </setting>
+        <setting id="emulator_pcsx2" type="path" label="PCSX2 executable" help="">
+          <level>0</level>
+          <default/>
+          <constraints>
+            <writable>false</writable>
+            <masking>executable</masking>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="button" format="file">
+            <heading>PCSX2 executable</heading>
+          </control>
+        </setting>
+        <setting id="emulator_rpcs3" type="path" label="RPCS3 executable" help="">
+          <level>0</level>
+          <default/>
+          <constraints>
+            <writable>false</writable>
+            <masking>executable</masking>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="button" format="file">
+            <heading>RPCS3 executable</heading>
+          </control>
+        </setting>
+        <setting id="emulator_ppsspp" type="path" label="PPSSPP executable" help="">
+          <level>0</level>
+          <default/>
+          <constraints>
+            <writable>false</writable>
+            <masking>executable</masking>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="button" format="file">
+            <heading>PPSSPP executable</heading>
+          </control>
+        </setting>
+        <setting id="emulator_citra" type="path" label="Citra executable" help="">
+          <level>0</level>
+          <default/>
+          <constraints>
+            <writable>false</writable>
+            <masking>executable</masking>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="button" format="file">
+            <heading>Citra executable</heading>
+          </control>
+        </setting>
+        <setting id="emulator_cemu" type="path" label="Cemu executable" help="">
+          <level>0</level>
+          <default/>
+          <constraints>
+            <writable>false</writable>
+            <masking>executable</masking>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="button" format="file">
+            <heading>Cemu executable</heading>
+          </control>
+        </setting>
+        <setting id="emulator_yuzu" type="path" label="yuzu executable" help="">
+          <level>0</level>
+          <default/>
+          <constraints>
+            <writable>false</writable>
+            <masking>executable</masking>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="button" format="file">
+            <heading>yuzu executable</heading>
+          </control>
+        </setting>
+        <setting id="emulator_xenia" type="path" label="Xenia executable" help="">
+          <level>0</level>
+          <default/>
+          <constraints>
+            <writable>false</writable>
+            <masking>executable</masking>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="button" format="file">
+            <heading>Xenia executable</heading>
+          </control>
+        </setting>
+        <setting id="emulator_xemu" type="path" label="xemu executable" help="">
+          <level>0</level>
+          <default/>
+          <constraints>
+            <writable>false</writable>
+            <masking>executable</masking>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="button" format="file">
+            <heading>xemu executable</heading>
+          </control>
+        </setting>
+        <setting id="emulator_vita3k" type="path" label="Vita3K executable" help="">
+          <level>0</level>
+          <default/>
+          <constraints>
+            <writable>false</writable>
+            <masking>executable</masking>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="button" format="file">
+            <heading>Vita3K executable</heading>
+          </control>
+        </setting>
+        <setting id="emulator_ps4" type="path" label="PS4 emulator executable" help="">
+          <level>0</level>
+          <default/>
+          <constraints>
+            <writable>false</writable>
+            <masking>executable</masking>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="button" format="file">
+            <heading>PS4 emulator executable</heading>
+          </control>
+        </setting>
+      </group>
+    </category>
+    <category id="metadata" label="Metadata" help="Artwork and metadata providers.">
+      <group id="1" label="SteamGridDB">
+        <setting id="steamgriddb_api_key" type="string" label="SteamGridDB API key" help="Create a free key at steamgriddb.com profile preferences.">
+          <level>0</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="edit" format="string">
+            <heading>SteamGridDB API key</heading>
+            <hidden>true</hidden>
+          </control>
+        </setting>
+        <setting id="metadata_fetch_fanart" type="boolean" label="Download hero fanart from SteamGridDB" help="">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="metadata_fetch_logos" type="boolean" label="Download logos from SteamGridDB" help="">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="metadata_fetch_on_scan" type="boolean" label="Offer artwork fetch after scan" help="">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+      </group>
+      <group id="2" label="Optional fallbacks">
+        <setting id="screenscraper_user" type="string" label="ScreenScraper username (optional fallback)" help="">
+          <level>2</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="edit" format="string">
+            <heading>ScreenScraper username</heading>
+          </control>
+        </setting>
+        <setting id="screenscraper_password" type="string" label="ScreenScraper password" help="">
+          <level>2</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="edit" format="string">
+            <heading>ScreenScraper password</heading>
+            <hidden>true</hidden>
+          </control>
+        </setting>
+        <setting id="igdb_client_id" type="string" label="IGDB client id (optional fallback)" help="">
+          <level>2</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="edit" format="string">
+            <heading>IGDB client id</heading>
+          </control>
+        </setting>
+        <setting id="igdb_client_secret" type="string" label="IGDB client secret" help="">
+          <level>2</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="edit" format="string">
+            <heading>IGDB client secret</heading>
+            <hidden>true</hidden>
+          </control>
+        </setting>
+      </group>
+    </category>
+    <category id="development" label="Development" help="">
+      <group id="1" label="Developer options">
+        <setting id="dev_mock_library" type="boolean" label="Show mock games when database is empty" help="">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="debug_logging" type="boolean" label="Debug logging" help="">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+      </group>
+    </category>
+  </section>
 </settings>
