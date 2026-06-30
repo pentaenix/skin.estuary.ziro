@@ -80,16 +80,28 @@ CREATE TABLE IF NOT EXISTS game_genres (
 """
 
 MIGRATIONS = [
-    "ALTER TABLE sources ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1",
-    "ALTER TABLE sources ADD COLUMN label TEXT",
-    "ALTER TABLE sources ADD COLUMN date_added TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP",
-    "ALTER TABLE games ADD COLUMN source_id INTEGER",
-    "ALTER TABLE games ADD COLUMN sgdb_game_id INTEGER",
-    "ALTER TABLE games ADD COLUMN manual_metadata_locked INTEGER NOT NULL DEFAULT 0",
-    "ALTER TABLE games ADD COLUMN metadata_updated_at TEXT",
-    "ALTER TABLE games ADD COLUMN ss_game_id INTEGER",
-    "ALTER TABLE games ADD COLUMN video_path TEXT",
+    ("sources", "enabled", "INTEGER NOT NULL DEFAULT 1"),
+    ("sources", "label", "TEXT"),
+    ("sources", "date_added", "TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP"),
+    ("games", "source_id", "INTEGER"),
+    ("games", "sgdb_game_id", "INTEGER"),
+    ("games", "manual_metadata_locked", "INTEGER NOT NULL DEFAULT 0"),
+    ("games", "metadata_updated_at", "TEXT"),
+    ("games", "ss_game_id", "INTEGER"),
+    ("games", "video_path", "TEXT"),
 ]
+
+
+def _table_columns(conn: sqlite3.Connection, table: str) -> set[str]:
+    return {str(row[1]) for row in conn.execute(f"PRAGMA table_info({table})")}
+
+
+def _apply_migrations(conn: sqlite3.Connection) -> None:
+    for table, column, definition in MIGRATIONS:
+        if column in _table_columns(conn, table):
+            continue
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
 
 DEFAULT_PLATFORMS = all_platform_rows()
 
@@ -117,12 +129,8 @@ class GameDatabase:
     def ensure(self) -> None:
         with self.connect() as conn:
             conn.executescript(SCHEMA)
-            for sql in MIGRATIONS:
-                try:
-                    conn.execute(sql)
-                except sqlite3.OperationalError:
-                    # Column already exists on updated databases.
-                    pass
+            _apply_migrations(conn)
+            conn.commit()
             conn.execute("INSERT OR REPLACE INTO schema_info(key, value) VALUES('schema_version', ?)", (str(SCHEMA_VERSION),))
             conn.executemany(
                 "INSERT OR IGNORE INTO platforms(id, name, short_name, manufacturer, sort_order) VALUES(?,?,?,?,?)",

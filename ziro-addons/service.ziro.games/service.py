@@ -4,12 +4,23 @@ import json
 import os
 import platform
 import subprocess
+import sys
 from pathlib import Path
 
 import xbmc
 import xbmcvfs
 
-SESSION_PATH = Path(xbmcvfs.translatePath("special://profile/addon_data/plugin.program.ziro.games/session.json"))
+PLUGIN_ID = "plugin.program.ziro.games"
+SESSION_PATH = Path(xbmcvfs.translatePath(f"special://profile/addon_data/{PLUGIN_ID}/session.json"))
+
+
+def _ensure_plugin_path() -> str:
+    root = xbmcvfs.translatePath(f"special://addons/{PLUGIN_ID}")
+    if not root or not xbmcvfs.exists(root):
+        raise FileNotFoundError(f"{PLUGIN_ID} is not installed")
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    return root
 
 
 def pid_alive(pid: int) -> bool:
@@ -43,22 +54,26 @@ def focus_kodi() -> None:
         xbmc.executebuiltin("ActivateWindow(Home)")
 
 
+def refresh_home_state() -> None:
+    if not xbmc.getCondVisibility(f"System.HasAddon({PLUGIN_ID})"):
+        return
+    _ensure_plugin_path()
+    import importlib
+
+    db_module = importlib.import_module("resources.lib.db")
+    home_module = importlib.import_module("resources.lib.home_state")
+    home_module.refresh_home_properties(db_module.GameDatabase())
+
+
 def main() -> None:
     monitor = xbmc.Monitor()
     xbmc.log("[Ziro Games Service] started", xbmc.LOGINFO)
     try:
-        import sys
-
-        plugin_root = xbmcvfs.translatePath("special://addons/plugin.program.ziro.games")
-        if plugin_root and plugin_root not in sys.path:
-            sys.path.insert(0, plugin_root)
-        from resources.lib.db import GameDatabase
-        from resources.lib.home_state import refresh_home_platform_properties
-
-        refresh_home_platform_properties(GameDatabase())
+        refresh_home_state()
     except Exception as exc:
         xbmc.log(f"[Ziro Games Service] home refresh failed: {exc}", xbmc.LOGWARNING)
-        xbmc.executebuiltin("RunPlugin(plugin://plugin.program.ziro.games/?path=/sync_home)")
+        if xbmc.getCondVisibility(f"System.HasAddon({PLUGIN_ID})"):
+            xbmc.executebuiltin(f"RunPlugin(plugin://{PLUGIN_ID}/?path=/sync_home)")
     last_pid = None
     while not monitor.abortRequested():
         if SESSION_PATH.exists():

@@ -1,3 +1,6 @@
+[B]2.4.2[/B]
+• Fix Games DB migration crash (duplicate column enabled) and service import on startup
+
 [B]2.4.1[/B]
 • Games: Skraper / local metadata provider (gamelist.xml + media folders)
 
