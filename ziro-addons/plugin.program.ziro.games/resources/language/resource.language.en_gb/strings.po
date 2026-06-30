@@ -200,9 +200,37 @@ msgid "ScreenScraper developer password"
 msgstr "ScreenScraper developer password"
 
 msgctxt "#30063"
-msgid "SteamGridDB API key (unused)"
-msgstr "SteamGridDB API key (unused)"
+msgid "SteamGridDB API key"
+msgstr "SteamGridDB API key"
 
 msgctxt "#30064"
-msgid "Legacy setting. Artwork now comes from ScreenScraper."
-msgstr "Legacy setting. Artwork now comes from ScreenScraper."
+msgid "Create a free key at steamgriddb.com profile preferences."
+msgstr "Create a free key at steamgriddb.com profile preferences."
+
+msgctxt "#30065"
+msgid "Game artwork provider"
+msgstr "Game artwork provider"
+
+msgctxt "#30066"
+msgid "Choose ScreenScraper or SteamGridDB for game box art, like movie scrapers."
+msgstr "Choose ScreenScraper or SteamGridDB for game box art, like movie scrapers."
+
+msgctxt "#30067"
+msgid "Show picker when multiple matches are found"
+msgstr "Show picker when multiple matches are found"
+
+msgctxt "#30068"
+msgid "Platform icon provider"
+msgstr "Platform icon provider"
+
+msgctxt "#30069"
+msgid "SteamGridDB lets you search Nintendo Wii and pick console artwork. Home badges use text when set to badge."
+msgstr "SteamGridDB lets you search Nintendo Wii and pick console artwork. Home badges use text when set to badge."
+
+msgctxt "#30070"
+msgid "SteamGridDB"
+msgstr "SteamGridDB"
+
+msgctxt "#30071"
+msgid "Text badges only"
+msgstr "Text badges only"

@@ -40,6 +40,22 @@ def search_game(title: str, api_key: str) -> dict | None:
     return None
 
 
+def search_autocomplete_all(query: str, api_key: str, *, limit: int = 25) -> list[dict]:
+    api_key = normalize_api_key(api_key)
+    if not api_key or not (query or "").strip():
+        return []
+    encoded = quote(query.strip(), safe="")
+    try:
+        payload = get_json(f"{API_BASE}/search/autocomplete/{encoded}", api_key)
+    except Exception as exc:
+        log_warning(f"autocomplete failed query={query}: {exc}")
+        return []
+    results = payload.get("data") or []
+    if not isinstance(results, list):
+        return []
+    return [item for item in results[:limit] if isinstance(item, dict)]
+
+
 def _pick_asset(assets: list[dict]) -> dict | None:
     if not assets:
         return None
@@ -96,7 +112,6 @@ def fetch_hero(sgdb_game_id: int, api_key: str) -> dict | None:
 
 
 def fetch_logo(sgdb_game_id: int, api_key: str) -> dict | None:
-    # Logo styles: official, white, black, custom only (not "alternate").
     attempts = [
         {
             "types": "static",
@@ -112,3 +127,16 @@ def fetch_logo(sgdb_game_id: int, api_key: str) -> dict | None:
         if picked:
             return picked
     return None
+
+
+def fetch_icon(sgdb_game_id: int, api_key: str) -> dict | None:
+    attempts = [
+        {"types": "static", "mimes": "image/png,image/jpeg,image/webp"},
+        None,
+    ]
+    for params in attempts:
+        assets = _assets(f"{API_BASE}/icons/game/{sgdb_game_id}", api_key, params)
+        picked = _pick_asset(assets)
+        if picked:
+            return picked
+    return fetch_grid(sgdb_game_id, api_key)

@@ -1,3 +1,6 @@
+[B]2.3.4[/B]
+• Games: artwork provider picker, SGDB console icons, hide empty platforms and junk titles
+
 [B]2.3.3[/B]
 • Games: restore categories banner, ScreenScraper box art, square vs case home rows
 

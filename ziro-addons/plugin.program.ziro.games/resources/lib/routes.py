@@ -5,7 +5,7 @@ import xbmcaddon
 from .db import GameDatabase
 from .metadata import ArtworkBatchResult, enrich_game, enrich_missing_artwork
 from .mock import MOCK_GAMES
-from .paths_filter import is_library_rom_path
+from .paths_filter import is_library_rom_path, is_valid_game_title
 from .platforms import get_platform, platform_ids
 from .scanner import ScanResult, scan, source_for_platform
 
@@ -19,11 +19,15 @@ LEFT JOIN platforms p ON p.id = g.platform_id
 LEFT JOIN game_genres gg ON gg.game_id = g.id
 LEFT JOIN genres ge ON ge.id = gg.genre_id
 WHERE g.hidden=0
+  AND LENGTH(TRIM(g.title)) > 0
   AND g.rom_path NOT LIKE '%ziro-addons%'
   AND g.rom_path NOT LIKE '%skin.estuary.ziro%'
   AND g.rom_path NOT LIKE '%plugin.program.ziro.games%'
   AND g.rom_path NOT LIKE '%/dist/%'
   AND g.rom_path NOT LIKE '%\\dist\\%'
+  AND g.title NOT LIKE '%.zip'
+  AND g.title NOT LIKE '%plugin.program%'
+  AND g.title NOT LIKE '%script.ziro%'
 """
 GROUP_ORDER = " GROUP BY g.id "
 
@@ -45,6 +49,8 @@ class Router:
             if not is_library_rom_path(row.get("rom_path", "")):
                 continue
             if not (row.get("title") or "").strip():
+                continue
+            if not is_valid_game_title(row.get("title", "")):
                 continue
             filtered.append(row)
         return filtered
@@ -75,12 +81,16 @@ class Router:
             SELECT p.*, COUNT(g.id) AS game_count
             FROM platforms p
             INNER JOIN games g ON g.platform_id = p.id AND g.hidden = 0
+              AND LENGTH(TRIM(g.title)) > 0
               AND g.rom_path NOT LIKE '%ziro-addons%'
               AND g.rom_path NOT LIKE '%skin.estuary.ziro%'
               AND g.rom_path NOT LIKE '%plugin.program.ziro.games%'
               AND g.rom_path NOT LIKE '%/dist/%'
               AND g.rom_path NOT LIKE '%\\dist\\%'
+              AND g.title NOT LIKE '%.zip'
+              AND g.title NOT LIKE '%plugin.program%'
             GROUP BY p.id
+            HAVING COUNT(g.id) > 0
             ORDER BY p.sort_order, p.name
             """
         )
@@ -100,6 +110,7 @@ class Router:
             GAME_SELECT + " AND EXISTS (SELECT 1 FROM game_genres gg2 WHERE gg2.game_id=g.id AND gg2.genre_id=?)" + GROUP_ORDER + " ORDER BY g.sort_title",
             (genre_id,),
         )
+        rows = self._filter_rows(rows)
         if not rows and ADDON.getSettingBool("dev_mock_library"):
             return [g for g in MOCK_GAMES if genre_id.lower() in g.get("genres", "").lower()]
         return rows
@@ -124,7 +135,7 @@ class Router:
         return scan(self.db)
 
     def refresh_artwork(self, game_id: int):
-        return enrich_game(self.db, game_id, force=True)
+        return enrich_game(self.db, game_id, force=True, force_picker=True)
 
     def fetch_missing_artwork(self, progress=None, limit: int | None = None) -> ArtworkBatchResult:
         return enrich_missing_artwork(self.db, progress=progress, limit=limit)

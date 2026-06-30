@@ -72,3 +72,20 @@ def is_allowed_source_folder(path: str) -> bool:
         return False
     norm = _normalize(path)
     return not any(fragment.lower() in norm for fragment in BLOCKED_SOURCE_FRAGMENTS)
+
+
+JUNK_TITLE_RE = re.compile(
+    r"(plugin\.program|script\.ziro|service\.ziro|skin\.estuary|ziro-addons|\.zip$|\.rar$|\.7z$|addon\.xml)",
+    re.IGNORECASE,
+)
+
+
+def is_valid_game_title(title: str) -> bool:
+    text = (title or "").strip()
+    if len(text) < 2:
+        return False
+    if JUNK_TITLE_RE.search(text):
+        return False
+    if text.lower() in {"readme", "changelog", "license", "settings", "main", "default"}:
+        return False
+    return True

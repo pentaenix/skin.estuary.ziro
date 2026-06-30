@@ -252,6 +252,34 @@ def _clean_title(title: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def _response_games(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    response = payload.get("response") or {}
+    jeux = response.get("jeux")
+    games: list[dict[str, Any]] = []
+    if isinstance(jeux, list):
+        games.extend(item for item in jeux if isinstance(item, dict))
+    elif isinstance(jeux, dict):
+        games.extend(item for item in jeux.values() if isinstance(item, dict))
+    if games:
+        return games
+    jeu = response.get("jeu")
+    return [jeu] if isinstance(jeu, dict) else []
+
+
+def search_games(platform_id: str, title: str, *, limit: int = 30) -> list[dict[str, Any]]:
+    system_id = screenscraper_system_id(platform_id)
+    if not system_id:
+        return []
+    query = _clean_title(title)
+    if not query:
+        return []
+    payload = _request(
+        "jeuRecherche.php",
+        {"systemeid": str(system_id), "recherche": query},
+    )
+    return _response_games(payload)[:limit]
+
+
 def lookup_game(
     *,
     platform_id: str,

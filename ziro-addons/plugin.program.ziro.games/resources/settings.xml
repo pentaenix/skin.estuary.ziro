@@ -200,6 +200,49 @@
     </category>
     <category id="metadata" label="30030" help="30031">
       <group id="1" label="30032">
+        <setting id="game_artwork_provider" type="string" label="30065" help="30066">
+          <level>0</level>
+          <default>screenscraper</default>
+          <constraints>
+            <options>
+              <option label="30032">screenscraper</option>
+              <option label="30070">steamgriddb</option>
+            </options>
+          </constraints>
+          <control type="list" format="string">
+            <heading>30065</heading>
+          </control>
+        </setting>
+        <setting id="platform_art_provider" type="string" label="30068" help="30069">
+          <level>0</level>
+          <default>steamgriddb</default>
+          <constraints>
+            <options>
+              <option label="30070">steamgriddb</option>
+              <option label="30032">screenscraper</option>
+              <option label="30071">badge</option>
+            </options>
+          </constraints>
+          <control type="list" format="string">
+            <heading>30068</heading>
+          </control>
+        </setting>
+        <setting id="metadata_show_picker" type="boolean" label="30067" help="">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="steamgriddb_api_key" type="string" label="30063" help="30064">
+          <level>0</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="edit" format="string">
+            <heading>30063</heading>
+            <hidden>true</hidden>
+          </control>
+        </setting>
         <setting id="screenscraper_user" type="string" label="30033" help="30034">
           <level>0</level>
           <default/>
@@ -259,17 +302,6 @@
         </setting>
       </group>
       <group id="2" label="30038">
-        <setting id="steamgriddb_api_key" type="string" label="30063" help="30064">
-          <level>2</level>
-          <default/>
-          <constraints>
-            <allowempty>true</allowempty>
-          </constraints>
-          <control type="edit" format="string">
-            <heading>30063</heading>
-            <hidden>true</hidden>
-          </control>
-        </setting>
         <setting id="igdb_client_id" type="string" label="30041" help="">
           <level>2</level>
           <default/>

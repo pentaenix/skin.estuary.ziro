@@ -11,11 +11,13 @@ import xbmcplugin
 from resources.lib.db import GameDatabase
 from resources.lib.game_info import show_game_info
 from resources.lib.home_state import refresh_home_platform_properties
-from resources.lib.metadata.platform_art import get_platform_art_path
+from resources.lib.metadata.platform_art import choose_platform_art, get_platform_art_path
 from resources.lib.paths_filter import is_allowed_source_folder
 from resources.lib.platforms import get_platform, platform_choices
 from resources.lib.routes import Router
 from resources.lib.scan_jobs import scan_in_background
+
+from resources.lib.metadata.providers import game_artwork_provider
 
 ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
@@ -63,6 +65,12 @@ def add_platform_directory(platform: dict, path: str, label2: str = "") -> None:
     item.setProperty("IsPlayable", "false")
     item.setArt({k: v for k, v in art.items() if v})
     item.setInfo("video", {"title": platform["name"], "plot": label2})
+    item.addContextMenuItems([
+        (
+            "Choose console artwork (SteamGridDB)",
+            f"RunPlugin({plugin_url('/platforms/art/pick', platform_id=platform_id)})",
+        ),
+    ])
     xbmcplugin.addDirectoryItem(HANDLE, plugin_url(path), item, True)
 
 
@@ -152,6 +160,8 @@ def render_library_menu(router: Router) -> None:
     add_library_entry("Favorites", "/favorites")
     for platform in router.platforms():
         count = int(platform.get("game_count") or 0)
+        if count <= 0:
+            continue
         badge = (platform.get("short_name") or platform["id"]).upper()
         add_library_entry(
             badge,
@@ -248,15 +258,23 @@ def confirm_remove_source(router: Router, source_id: int) -> None:
 
 
 def offer_artwork_fetch(router: Router) -> None:
+    from resources.lib.metadata.providers import PROVIDER_STEAMGRIDDB
     from resources.lib.metadata.screenscraper import credentials_configured
+    from resources.lib.metadata.steamgriddb import validate_api_key
+    from resources.lib.metadata.providers import steamgriddb_api_key
 
-    if not credentials_configured():
+    provider = game_artwork_provider()
+    if provider == PROVIDER_STEAMGRIDDB:
+        if not steamgriddb_api_key() or not validate_api_key(steamgriddb_api_key()):
+            return
+    elif not credentials_configured():
         return
     if not ADDON.getSettingBool("metadata_fetch_on_scan"):
         return
+    label = "SteamGridDB" if provider == PROVIDER_STEAMGRIDDB else "ScreenScraper"
     if not xbmcgui.Dialog().yesno(
         "Ziro Games",
-        "Scan finished. Fetch missing box art from ScreenScraper now?\n\n"
+        f"Scan finished. Fetch missing box art from {label} now?\n\n"
         "Large libraries can take a while.",
     ):
         return
@@ -264,8 +282,12 @@ def offer_artwork_fetch(router: Router) -> None:
 
 
 def run_artwork_fetch(router: Router) -> None:
+    from resources.lib.metadata.providers import PROVIDER_STEAMGRIDDB
+
+    provider = game_artwork_provider()
+    label = "SteamGridDB" if provider == PROVIDER_STEAMGRIDDB else "ScreenScraper"
     progress = xbmcgui.DialogProgress()
-    progress.create("Ziro Games", "Fetching artwork from ScreenScraper...")
+    progress.create("Ziro Games", f"Fetching artwork from {label}...")
 
     def update(percent: int, label: str) -> bool:
         if progress.iscanceled():
@@ -313,7 +335,8 @@ def main() -> None:
             add_directory("Genres", "/genres")
             add_directory("Sources", "/sources")
             add_action("Scan / Refresh Library", "/scan")
-            add_action("Fetch Missing Artwork (ScreenScraper)", "/scrape")
+            add_action("Fetch Missing Artwork", "/scrape")
+            add_action("Configure Platform Icons", "/platforms/icons")
             add_action("Settings", "/settings")
             xbmcplugin.setContent(HANDLE, "files")
             xbmcplugin.endOfDirectory(HANDLE)
@@ -338,6 +361,20 @@ def main() -> None:
                 )
             xbmcplugin.setContent(HANDLE, "games")
             xbmcplugin.endOfDirectory(HANDLE)
+        elif path == "/platforms/icons":
+            for platform in router.platforms():
+                add_action(
+                    f"{platform['name']} — choose icon",
+                    f"/platforms/art/pick?platform_id={platform['id']}",
+                )
+            xbmcplugin.setContent(HANDLE, "files")
+            xbmcplugin.endOfDirectory(HANDLE)
+        elif path == "/platforms/art/pick":
+            platform_id = params.get("platform_id") or ""
+            if platform_id:
+                choose_platform_art(platform_id)
+            xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
+            xbmc.executebuiltin("Container.Refresh")
         elif path.startswith("/platform/"):
             platform_id = path.rsplit("/", 1)[-1]
             render_game_list(router.by_platform(platform_id), "No games for this platform")

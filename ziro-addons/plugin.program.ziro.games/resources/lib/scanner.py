@@ -10,7 +10,7 @@ import xbmcaddon
 import xbmcvfs
 
 from .db import GameDatabase
-from .paths_filter import is_library_rom_path
+from .paths_filter import is_library_rom_path, is_valid_game_title
 from .platforms import LEGACY_SOURCE_SETTINGS, extensions_for, get_platform, iter_profile_defs, source_dict
 
 ADDON = xbmcaddon.Addon("plugin.program.ziro.games")
@@ -283,7 +283,7 @@ def purge_junk_games(db: GameDatabase) -> int:
     hidden = 0
     for row in rows:
         title = (row.get("title") or "").strip()
-        if not is_library_rom_path(row.get("rom_path", "")) or not title:
+        if not is_library_rom_path(row.get("rom_path", "")) or not title or not is_valid_game_title(title):
             db.execute("UPDATE games SET hidden=1 WHERE id=?", (row["id"],))
             hidden += 1
     if hidden:
