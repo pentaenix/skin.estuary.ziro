@@ -172,8 +172,10 @@ def show_artwork_refresh(game_id: int, router: Router) -> None:
 
 
 def main() -> None:
-    params = dict(parse_qsl(sys.argv[2][1:])) if len(sys.argv) > 2 else {}
+    params = dict(parse_qsl(sys.argv[2][1:])) if len(sys.argv) > 2 and sys.argv[2].startswith("?") else {}
     path = params.get("path", "/home")
+    if not path.startswith("/"):
+        path = f"/{path}"
     db = GameDatabase()
     router = Router(db)
 
@@ -199,6 +201,7 @@ def main() -> None:
         elif path == "/platforms":
             for platform in router.platforms():
                 add_directory(platform["name"], f"/platform/{platform['id']}")
+            xbmcplugin.setContent(HANDLE, "games")
             xbmcplugin.endOfDirectory(HANDLE)
         elif path.startswith("/platform/"):
             platform_id = path.rsplit("/", 1)[-1]
