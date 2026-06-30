@@ -49,15 +49,16 @@ def main() -> None:
     try:
         import sys
 
-        import xbmcvfs
-
-        sys.path.insert(0, xbmcvfs.translatePath("special://addons/plugin.program.ziro.games"))
+        plugin_root = xbmcvfs.translatePath("special://addons/plugin.program.ziro.games")
+        if plugin_root and plugin_root not in sys.path:
+            sys.path.insert(0, plugin_root)
         from resources.lib.db import GameDatabase
         from resources.lib.home_state import refresh_home_platform_properties
 
         refresh_home_platform_properties(GameDatabase())
     except Exception as exc:
         xbmc.log(f"[Ziro Games Service] home refresh failed: {exc}", xbmc.LOGWARNING)
+        xbmc.executebuiltin("RunPlugin(plugin://plugin.program.ziro.games/?path=/sync_home)")
     last_pid = None
     while not monitor.abortRequested():
         if SESSION_PATH.exists():

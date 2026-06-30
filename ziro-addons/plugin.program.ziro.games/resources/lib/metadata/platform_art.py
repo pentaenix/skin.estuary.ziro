@@ -9,8 +9,6 @@ from ..paths import userdata_dir
 from .http_client import download_bytes
 from .screenscraper import credentials_configured, fetch_system_logo, validate_credentials
 
-ADDON = xbmcaddon.Addon("plugin.program.ziro.games")
-
 
 def platform_art_dir() -> Path:
     path = userdata_dir() / "platform_art"
