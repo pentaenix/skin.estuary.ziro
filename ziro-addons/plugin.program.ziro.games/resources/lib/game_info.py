@@ -47,6 +47,10 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
             self.close()
             xbmc.executebuiltin(f"RunScript(script.ziro.games.launcher,game_id={game_id})")
         elif control_id == 11:
+            video_path = self.game.get("video_path") or ""
+            if video_path and xbmcvfs.exists(video_path):
+                xbmc.Player().play(video_path)
+                return
             title = self.game.get("title") or ""
             if xbmc.getCondVisibility("System.HasAddon(script.extendedinfo)"):
                 xbmc.executebuiltin(
@@ -71,6 +75,14 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
             self.setProperty("ZiroGame.Favorite", "1" if self.game["favorite"] else "0")
         elif control_id == 6:
             xbmc.executebuiltin(f"RunPlugin(plugin://plugin.program.ziro.games/?path=/refresh&game_id={game_id})")
+        elif control_id == 10:
+            xbmc.executebuiltin(f"RunPlugin(plugin://plugin.program.ziro.games/?path=/choose_art&game_id={game_id})")
+            refreshed = GameDatabase().get_game(game_id)
+            if refreshed:
+                self.game = refreshed
+                self.setProperty("ZiroGame.Poster", refreshed.get("cover_path") or "")
+                self.setProperty("ZiroGame.Fanart", refreshed.get("fanart_path") or "")
+                self.setProperty("ZiroGame.Logo", refreshed.get("logo_path") or "")
 
 
 def show_game_info(game_id: int) -> None:

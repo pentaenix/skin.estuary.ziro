@@ -88,6 +88,7 @@ MIGRATIONS = [
     "ALTER TABLE games ADD COLUMN manual_metadata_locked INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE games ADD COLUMN metadata_updated_at TEXT",
     "ALTER TABLE games ADD COLUMN ss_game_id INTEGER",
+    "ALTER TABLE games ADD COLUMN video_path TEXT",
 ]
 
 DEFAULT_PLATFORMS = all_platform_rows()
@@ -248,10 +249,36 @@ class GameDatabase:
             query += f" LIMIT {int(limit)}"
         return self.rows(query)
 
+    def list_games_for_artwork_refresh(self, limit: int | None = None) -> list[dict]:
+        query = """
+            SELECT * FROM games
+            WHERE hidden=0
+              AND manual_metadata_locked=0
+            ORDER BY sort_title
+        """
+        if limit:
+            query += f" LIMIT {int(limit)}"
+        return self.rows(query)
+
+    def set_game_genres(self, game_id: int, genre_ids: Iterable[str]) -> None:
+        unique = sorted({genre_id for genre_id in genre_ids if genre_id})
+        with self.connect() as conn:
+            conn.execute("DELETE FROM game_genres WHERE game_id=?", (game_id,))
+            conn.executemany(
+                "INSERT OR IGNORE INTO game_genres(game_id, genre_id) VALUES(?,?)",
+                [(game_id, genre_id) for genre_id in unique],
+            )
+
+    def clear_play_state_for_hidden_games(self) -> int:
+        return self.execute(
+            "UPDATE games SET last_played=NULL, play_count=0 WHERE hidden=1 AND last_played IS NOT NULL"
+        )
+
     def update_game_artwork(self, game_id: int, fields: dict) -> None:
         allowed = {
-            "cover_path", "fanart_path", "logo_path", "screenshot_path",
+            "cover_path", "fanart_path", "logo_path", "screenshot_path", "video_path",
             "sgdb_game_id", "ss_game_id", "metadata_updated_at", "description",
+            "developer", "publisher", "release_year",
         }
         updates = {key: value for key, value in fields.items() if key in allowed}
         if not updates:

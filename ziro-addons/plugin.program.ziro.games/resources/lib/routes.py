@@ -3,7 +3,7 @@ from __future__ import annotations
 import xbmcaddon
 
 from .db import GameDatabase
-from .metadata import ArtworkBatchResult, enrich_game, enrich_missing_artwork
+from .metadata import ArtworkBatchResult, enrich_all_artwork, enrich_game, enrich_missing_artwork
 from .mock import MOCK_GAMES
 from .paths_filter import is_library_rom_path, is_valid_game_title
 from .platforms import get_platform, platform_ids
@@ -58,7 +58,11 @@ class Router:
     def continue_playing(self) -> list[dict]:
         rows = self.db.rows(GAME_SELECT + " AND g.last_played IS NOT NULL" + GROUP_ORDER + " ORDER BY g.last_played DESC LIMIT 25")
         rows = self._filter_rows(rows)
-        return self._with_mock([g for g in MOCK_GAMES if g.get("last_played")] if not rows and ADDON.getSettingBool("dev_mock_library") else rows)
+        if rows:
+            return rows
+        if ADDON.getSettingBool("dev_mock_library"):
+            return [g for g in MOCK_GAMES if g.get("last_played")]
+        return []
 
     def recently_added(self, limit: int = 50) -> list[dict]:
         rows = self.db.rows(GAME_SELECT + GROUP_ORDER + " ORDER BY g.date_added DESC LIMIT ?", (limit,))
@@ -103,7 +107,17 @@ class Router:
         return rows
 
     def genres(self) -> list[dict]:
-        return self.db.rows("SELECT * FROM genres ORDER BY name")
+        return self.db.rows(
+            """
+            SELECT g.*, COUNT(DISTINCT gg.game_id) AS game_count
+            FROM genres g
+            INNER JOIN game_genres gg ON gg.genre_id = g.id
+            INNER JOIN games games ON games.id = gg.game_id AND games.hidden = 0
+            GROUP BY g.id
+            HAVING game_count > 0
+            ORDER BY g.name
+            """
+        )
 
     def by_genre(self, genre_id: str) -> list[dict]:
         rows = self.db.rows(
@@ -139,3 +153,6 @@ class Router:
 
     def fetch_missing_artwork(self, progress=None, limit: int | None = None) -> ArtworkBatchResult:
         return enrich_missing_artwork(self.db, progress=progress, limit=limit)
+
+    def refresh_all_artwork(self, progress=None, limit: int | None = None) -> ArtworkBatchResult:
+        return enrich_all_artwork(self.db, progress=progress, limit=limit)

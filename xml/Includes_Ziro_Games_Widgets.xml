@@ -167,4 +167,44 @@
 			</include>
 		</definition>
 	</include>
+	<include name="ZiroGamesGenreWidgets">
+		<definition>
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Genre.rpg),1)">
+				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/genre/rpg"/>
+				<param name="widget_header" value="RPG"/>
+				<param name="widget_target" value="programs"/>
+				<param name="list_id" value="17800"/>
+			</include>
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Genre.platformer),1)">
+				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/genre/platformer"/>
+				<param name="widget_header" value="Platformer"/>
+				<param name="widget_target" value="programs"/>
+				<param name="list_id" value="17810"/>
+			</include>
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Genre.adventure),1)">
+				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/genre/adventure"/>
+				<param name="widget_header" value="Adventure"/>
+				<param name="widget_target" value="programs"/>
+				<param name="list_id" value="17820"/>
+			</include>
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Genre.racing),1)">
+				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/genre/racing"/>
+				<param name="widget_header" value="Racing"/>
+				<param name="widget_target" value="programs"/>
+				<param name="list_id" value="17830"/>
+			</include>
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Genre.fighting),1)">
+				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/genre/fighting"/>
+				<param name="widget_header" value="Fighting"/>
+				<param name="widget_target" value="programs"/>
+				<param name="list_id" value="17840"/>
+			</include>
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Genre.coop),1)">
+				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/genre/coop"/>
+				<param name="widget_header" value="Co-op"/>
+				<param name="widget_target" value="programs"/>
+				<param name="list_id" value="17850"/>
+			</include>
+		</definition>
+	</include>
 </includes>

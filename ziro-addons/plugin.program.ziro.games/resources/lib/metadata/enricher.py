@@ -29,6 +29,7 @@ from .screenscraper import (
     search_games,
     validate_credentials,
 )
+from .genre_sync import map_genre_names_to_ids
 from .sgdb_enricher import enrich_game_sgdb
 from .sgdb_log import log_warning
 from .ss_log import log_warning as ss_log_warning
@@ -98,8 +99,8 @@ def _extension_from_url(url: str, fallback: str = ".png") -> str:
     return fallback
 
 
-def _artwork_path(game_id: int, kind: str, url: str) -> Path:
-    return artwork_dir() / str(game_id) / f"{kind}{_extension_from_url(url)}"
+def _artwork_path(game_id: int, kind: str, url: str, *, fallback: str = ".png") -> Path:
+    return artwork_dir() / str(game_id) / f"{kind}{_extension_from_url(url, fallback)}"
 
 
 def _save_image(url: str, dest: Path) -> str:
@@ -157,6 +158,26 @@ def _pick_ss_game(game: dict, *, force_picker: bool = False) -> dict | None:
     return results[index]
 
 
+def _apply_metadata(db: GameDatabase, game_id: int, meta: dict) -> None:
+    updates: dict = {}
+    if meta.get("description"):
+        updates["description"] = meta["description"]
+    if meta.get("developer"):
+        updates["developer"] = meta["developer"]
+    if meta.get("publisher"):
+        updates["publisher"] = meta["publisher"]
+    if meta.get("release_year"):
+        updates["release_year"] = int(meta["release_year"])
+    if updates:
+        db.update_game_artwork(game_id, updates)
+    genre_names = meta.get("genre_names") or []
+    if isinstance(genre_names, str):
+        genre_names = [part.strip() for part in genre_names.split(",") if part.strip()]
+    genre_ids = map_genre_names_to_ids(genre_names)
+    if genre_ids:
+        db.set_game_genres(game_id, genre_ids)
+
+
 def _enrich_screenscraper(
     db: GameDatabase,
     game_id: int,
@@ -202,16 +223,20 @@ def _enrich_screenscraper(
             "metadata_updated_at": datetime.now().isoformat(timespec="seconds"),
             "cover_path": _save_image(art["cover"], _artwork_path(game_id, "cover", art["cover"])),
         }
-        if meta.get("description"):
-            updates["description"] = meta["description"]
+        _apply_metadata(db, game_id, meta)
         if ADDON.getSettingBool("metadata_fetch_fanart") and art.get("fanart"):
             updates["fanart_path"] = _save_image(art["fanart"], _artwork_path(game_id, "fanart", art["fanart"]))
         if ADDON.getSettingBool("metadata_fetch_logos") and art.get("logo"):
             updates["logo_path"] = _save_image(art["logo"], _artwork_path(game_id, "logo", art["logo"]))
-        if art.get("screenshot"):
+        if ADDON.getSettingBool("metadata_fetch_screenshots") and art.get("screenshot"):
             updates["screenshot_path"] = _save_image(
                 art["screenshot"],
                 _artwork_path(game_id, "screenshot", art["screenshot"]),
+            )
+        if ADDON.getSettingBool("metadata_fetch_videos") and art.get("video"):
+            updates["video_path"] = _save_image(
+                art["video"],
+                _artwork_path(game_id, "video", art["video"], fallback=".mp4"),
             )
         db.update_game_artwork(game_id, updates)
         return ArtworkResult(
@@ -319,5 +344,69 @@ def enrich_missing_artwork(
             batch.failed += 1
             log_fn(f"failed title={result.title} status={result.status} msg={result.message or result.status}")
         time.sleep(REQUEST_DELAY_SEC)
+
+    return batch
+
+
+def enrich_all_artwork(
+    db: GameDatabase,
+    progress: ProgressCallback | None = None,
+    limit: int | None = None,
+) -> ArtworkBatchResult:
+    batch = ArtworkBatchResult()
+    provider = game_artwork_provider()
+    if provider == PROVIDER_STEAMGRIDDB:
+        if not steamgriddb_api_key():
+            batch.failed = 1
+            batch.results.append(ArtworkResult(0, "", "no_credentials", "SteamGridDB API key is not set"))
+            return batch
+        if not validate_api_key(steamgriddb_api_key()):
+            batch.failed = 1
+            batch.results.append(ArtworkResult(0, "", "bad_credentials", "SteamGridDB API key is invalid"))
+            return batch
+    else:
+        if not credentials_configured():
+            batch.failed = 1
+            batch.results.append(
+                ArtworkResult(
+                    0,
+                    "",
+                    "no_credentials",
+                    "Set ScreenScraper username, password, developer ID, and developer password",
+                )
+            )
+            return batch
+        if not validate_credentials():
+            batch.failed = 1
+            batch.results.append(ArtworkResult(0, "", "bad_credentials", "ScreenScraper credentials are invalid"))
+            return batch
+
+    games = db.list_games_for_artwork_refresh(limit=limit)
+    total = len(games)
+    if not total:
+        return batch
+
+    log_fn = log_warning if provider == PROVIDER_STEAMGRIDDB else ss_log_warning
+    for index, game in enumerate(games, start=1):
+        if progress and not progress(int(index * 100 / total), game["title"]):
+            break
+        batch.processed += 1
+        result = enrich_game(db, int(game["id"]), force=True, verify_key=False)
+        batch.results.append(result)
+        if result.status == "ok":
+            batch.updated += 1
+        elif result.status in {"cached", "locked"}:
+            batch.skipped += 1
+        else:
+            batch.failed += 1
+            log_fn(f"failed title={result.title} status={result.status} msg={result.message or result.status}")
+        time.sleep(REQUEST_DELAY_SEC)
+
+    try:
+        from ..home_state import refresh_home_properties
+
+        refresh_home_properties(db)
+    except Exception:
+        pass
 
     return batch

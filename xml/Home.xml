@@ -757,36 +757,37 @@
 					<control type="grouplist" id="17001">
 						<include>WidgetGroupListCommon</include>
 						<pagecontrol>17010</pagecontrol>
-						<include content="ZiroGamesWidgetListCategories" condition="System.HasAddon(plugin.program.ziro.games) + !Skin.HasSetting(home_no_categories_widget)">
+						<include content="WidgetListCategories" condition="System.HasAddon(plugin.program.ziro.games) + !Skin.HasSetting(home_no_categories_widget)">
 							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/library"/>
-							<param name="widget_header" value="$LOCALIZE[31148]"/>
+							<param name="widget_header" value="Games Library"/>
 							<param name="widget_target" value="programs"/>
 							<param name="list_id" value="17290"/>
 						</include>
-						<include content="ZiroGamesWidgetListGameArt" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">
+						<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">
 							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/continue"/>
 							<param name="widget_header" value="Continue Playing"/>
 							<param name="widget_target" value="programs"/>
 							<param name="list_id" value="17300"/>
 						</include>
-						<include content="ZiroGamesWidgetListGameArt" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">
+						<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">
 							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/recent"/>
 							<param name="widget_header" value="Recently Added"/>
 							<param name="widget_target" value="programs"/>
 							<param name="list_id" value="17310"/>
 						</include>
-						<include content="ZiroGamesWidgetListGameArt" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">
+						<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">
 							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/favorites"/>
 							<param name="widget_header" value="Favorites"/>
 							<param name="widget_target" value="programs"/>
 							<param name="list_id" value="17320"/>
 						</include>
 						<include condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">ZiroGamesPlatformWidgets</include>
+						<include condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">ZiroGamesGenreWidgets</include>
 					</control>
 					<include content="ImageWidget" condition="!System.HasAddon(plugin.program.ziro.games)">
 						<param name="text_label" value="$LOCALIZE[31162]" />
 						<param name="button_label" value="Open Ziro Games" />
-						<param name="button_onclick" value="ActivateWindow(Programs,plugin://plugin.program.ziro.games/?path=/home,return)"/>
+						<param name="button_onclick" value="ActivateWindow(Programs,plugin://plugin.program.ziro.games/?path=/library,return)"/>
 						<param name="button_id" value="17100"/>
 						<param name="visible" value="true"/>
 						<param name="button2_onclick" value="Skin.SetBool(HomeMenuNoGamesButton)"/>
@@ -967,7 +968,7 @@
 						<item>
 							<label>$LOCALIZE[15016]</label>
 							<property name="menu_id">$NUMBER[17000]</property>
-							<onclick>ActivateWindow(Programs,plugin://plugin.program.ziro.games/?path=/home,return)</onclick>
+							<onclick>ActivateWindow(Programs,plugin://plugin.program.ziro.games/?path=/library,return)</onclick>
 							<thumb>icons/sidemenu/games.png</thumb>
 							<property name="id">games</property>
 							<visible>!Skin.HasSetting(HomeMenuNoGamesButton)</visible>

@@ -10,7 +10,7 @@ import xbmcplugin
 
 from resources.lib.db import GameDatabase
 from resources.lib.game_info import show_game_info
-from resources.lib.home_state import refresh_home_platform_properties
+from resources.lib.home_state import refresh_home_platform_properties, refresh_home_properties
 from resources.lib.metadata.platform_art import choose_platform_art, get_platform_art_path
 from resources.lib.paths_filter import is_allowed_source_folder
 from resources.lib.platforms import get_platform, platform_choices
@@ -150,28 +150,22 @@ def add_game(game: dict) -> None:
         ("Game info", f"RunPlugin({plugin_url('/info', game_id=str(game['id']))})"),
         ("Toggle favorite", f"RunPlugin({plugin_url('/favorite', game_id=str(game['id']))})"),
         ("Refresh metadata", f"RunPlugin({plugin_url('/refresh', game_id=str(game['id']))})"),
+        ("Choose artwork", f"RunPlugin({plugin_url('/choose_art', game_id=str(game['id']))})"),
     ])
     xbmcplugin.addDirectoryItem(HANDLE, _game_item_url(int(game["id"])), item, False)
 
 
 def render_library_menu(router: Router) -> None:
-    add_library_entry("Continue Playing", "/continue")
-    add_library_entry("Recently Added", "/recent")
-    add_library_entry("Favorites", "/favorites")
-    for platform in router.platforms():
-        count = int(platform.get("game_count") or 0)
-        if count <= 0:
-            continue
-        badge = (platform.get("short_name") or platform["id"]).upper()
-        add_library_entry(
-            badge,
-            f"/platform/{platform['id']}",
-            f"{platform['name']} · {count} games",
-            badge=badge,
-        )
-    add_library_entry("Genres", "/genres")
-    add_library_entry("Sources", "/sources")
-    add_library_entry("All Games", "/all")
+    add_library_entry("Continue Playing", "/continue", "Games you have launched recently")
+    add_library_entry("Recently Added", "/recent", "Newest games in your library")
+    add_library_entry("Favorites", "/favorites", "Games you marked as favorites")
+    add_library_entry("Platforms", "/platforms", "Browse by console")
+    add_library_entry("Genres", "/genres", "Browse by genre")
+    add_library_entry("All Games", "/all", "Full game list")
+    add_action("Scan / Refresh Library", "/scan")
+    add_action("Refresh All Artwork", "/refresh_artwork")
+    add_library_entry("Sources", "/sources", "ROM folders and platforms")
+    add_action("Settings", "/settings")
     xbmcplugin.setContent(HANDLE, "games")
     xbmcplugin.endOfDirectory(HANDLE)
 
@@ -281,31 +275,35 @@ def offer_artwork_fetch(router: Router) -> None:
     run_artwork_fetch(router)
 
 
-def run_artwork_fetch(router: Router) -> None:
+def run_artwork_fetch(router: Router, *, refresh_all: bool = False) -> None:
     from resources.lib.metadata.providers import PROVIDER_STEAMGRIDDB
 
     provider = game_artwork_provider()
     label = "SteamGridDB" if provider == PROVIDER_STEAMGRIDDB else "ScreenScraper"
+    heading = "Refresh all artwork" if refresh_all else "Fetch missing artwork"
     progress = xbmcgui.DialogProgress()
-    progress.create("Ziro Games", f"Fetching artwork from {label}...")
+    progress.create("Ziro Games", f"{heading} from {label}...")
 
-    def update(percent: int, label: str) -> bool:
+    def update(percent: int, item_label: str) -> bool:
         if progress.iscanceled():
             return False
-        progress.update(percent, label[:80])
+        progress.update(percent, item_label[:80])
         return True
 
     try:
-        result = router.fetch_missing_artwork(progress=update)
+        if refresh_all:
+            result = router.refresh_all_artwork(progress=update)
+        else:
+            result = router.fetch_missing_artwork(progress=update)
     finally:
         progress.close()
 
     summary = result.summary()
     if result.updated and not any(item.status == "api_error" for item in result.results):
-        xbmcgui.Dialog().notification("Ziro Games", summary, xbmcgui.NOTIFICATION_INFO, 4000)
+        xbmcgui.Dialog().notification("Ziro Games", summary.splitlines()[0], xbmcgui.NOTIFICATION_INFO, 4000)
     else:
         xbmcgui.Dialog().ok("Ziro Games — Artwork", summary)
-    refresh_home_platform_properties()
+    refresh_home_properties()
     xbmc.executebuiltin("Container.Refresh")
 
 
@@ -327,21 +325,8 @@ def main() -> None:
     refresh_home_platform_properties(db)
 
     try:
-        if path == "/home":
-            add_directory("Continue Playing", "/continue")
-            add_directory("Recently Added", "/recent")
-            add_directory("Favorites", "/favorites")
-            add_directory("Platforms", "/platforms")
-            add_directory("Genres", "/genres")
-            add_directory("Sources", "/sources")
-            add_action("Scan / Refresh Library", "/scan")
-            add_action("Fetch Missing Artwork", "/scrape")
-            add_action("Configure Platform Icons", "/platforms/icons")
-            add_action("Settings", "/settings")
-            xbmcplugin.setContent(HANDLE, "files")
-            xbmcplugin.endOfDirectory(HANDLE)
-        elif path == "/library":
-            refresh_home_platform_properties(db)
+        if path in {"/home", "/library"}:
+            refresh_home_properties(db)
             render_library_menu(router)
         elif path == "/all":
             render_game_list(router.all_games(), "No games yet")
@@ -440,7 +425,13 @@ def main() -> None:
             from resources.lib.scanner import purge_junk_games
 
             purge_junk_games(db)
-            refresh_home_platform_properties(db)
+            db.clear_play_state_for_hidden_games()
+            refresh_home_properties(db)
+            xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
+        elif path == "/choose_art":
+            from resources.lib.metadata.art_picker import choose_game_art
+
+            choose_game_art(int(params["game_id"]))
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/favorite":
             router.toggle_favorite(int(params["game_id"]))
@@ -458,7 +449,33 @@ def main() -> None:
             offer_artwork_fetch(router)
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/scrape":
-            run_artwork_fetch(router)
+            run_artwork_fetch(router, refresh_all=False)
+            xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
+        elif path == "/refresh_artwork":
+            from resources.lib.metadata.providers import PROVIDER_STEAMGRIDDB, steamgriddb_api_key
+            from resources.lib.metadata.screenscraper import credentials_configured
+            from resources.lib.metadata.steamgriddb import validate_api_key
+
+            provider = game_artwork_provider()
+            if provider == PROVIDER_STEAMGRIDDB:
+                if not steamgriddb_api_key() or not validate_api_key(steamgriddb_api_key()):
+                    xbmcgui.Dialog().ok("Ziro Games", "Set a valid SteamGridDB API key in settings first.")
+                    xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
+                    return
+            elif not credentials_configured():
+                xbmcgui.Dialog().ok("Ziro Games", "Set ScreenScraper credentials in settings first.")
+                xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
+                return
+            label = "SteamGridDB" if provider == PROVIDER_STEAMGRIDDB else "ScreenScraper"
+            if not xbmcgui.Dialog().yesno(
+                "Ziro Games",
+                f"Refresh artwork for every game in your library from {label}?\n\n"
+                "Each game uses its platform when matching on ScreenScraper.\n"
+                "Large libraries can take a while.",
+            ):
+                xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
+                return
+            run_artwork_fetch(router, refresh_all=True)
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/settings":
             open_addon_settings()

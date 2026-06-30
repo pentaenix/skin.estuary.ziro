@@ -234,3 +234,19 @@ msgstr "SteamGridDB"
 msgctxt "#30071"
 msgid "Text badges only"
 msgstr "Text badges only"
+
+msgctxt "#30072"
+msgid "Download screenshots"
+msgstr "Download screenshots"
+
+msgctxt "#30073"
+msgid "Save gameplay screenshots from ScreenScraper when available."
+msgstr "Save gameplay screenshots from ScreenScraper when available."
+
+msgctxt "#30074"
+msgid "Download preview videos"
+msgstr "Download preview videos"
+
+msgctxt "#30075"
+msgid "Save short preview videos from ScreenScraper. Trailer button plays them when present."
+msgstr "Save short preview videos from ScreenScraper. Trailer button plays them when present."

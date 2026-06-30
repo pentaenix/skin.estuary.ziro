@@ -321,5 +321,4 @@ echo.
 echo Kodi log:
 echo %KODI_DATA%\kodi.log
 echo.
-pause
 exit /b 0

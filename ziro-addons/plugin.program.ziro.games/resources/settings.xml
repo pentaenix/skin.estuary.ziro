@@ -295,6 +295,16 @@
           <default>true</default>
           <control type="toggle"/>
         </setting>
+        <setting id="metadata_fetch_screenshots" type="boolean" label="30072" help="30073">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="metadata_fetch_videos" type="boolean" label="30074" help="30075">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
         <setting id="metadata_fetch_on_scan" type="boolean" label="30037" help="">
           <level>0</level>
           <default>true</default>
@@ -329,7 +339,7 @@
       <group id="1" label="30056">
         <setting id="game_click_action" type="string" label="30057" help="30058">
           <level>0</level>
-          <default>info</default>
+          <default>play</default>
           <constraints>
             <options>
               <option label="30059">info</option>
@@ -346,12 +356,12 @@
       <group id="1" label="30051">
         <setting id="dev_mock_library" type="boolean" label="30052" help="">
           <level>0</level>
-          <default>true</default>
+          <default>false</default>
           <control type="toggle"/>
         </setting>
         <setting id="debug_logging" type="boolean" label="30053" help="">
           <level>0</level>
-          <default>true</default>
+          <default>false</default>
           <control type="toggle"/>
         </setting>
       </group>

@@ -330,7 +330,28 @@ def extract_art_urls(jeu: dict[str, Any]) -> dict[str, str]:
         "fanart": _pick_media(jeu, "fanart"),
         "logo": _pick_media(jeu, "wheel", "wheel-hd", "marquee"),
         "screenshot": _pick_media(jeu, "ss", "screenshot"),
+        "video": _pick_media(jeu, "video", "media_video"),
     }
+
+
+def list_media_urls(jeu: dict[str, Any], *needles: str) -> list[tuple[str, str]]:
+    entries = _iter_media_entries(jeu.get("medias"))
+    needles_lower = tuple(needle.lower() for needle in needles)
+    matches = [
+        entry for entry in entries
+        if any(needle in _media_type(entry) for needle in needles_lower)
+    ]
+    options: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for entry in matches:
+        url = _media_url(entry)
+        if not url or url in seen:
+            continue
+        seen.add(url)
+        media_type = _media_type(entry) or "image"
+        region = _normalize_region(str(entry.get("region") or "")) or "world"
+        options.append((f"{region.upper()} · {media_type}", url))
+    return options
 
 
 def extract_metadata(jeu: dict[str, Any]) -> dict[str, Any]:
@@ -375,6 +396,7 @@ def extract_metadata(jeu: dict[str, Any]) -> dict[str, Any]:
         "developer": str(jeu.get("developpeur") or "").strip(),
         "publisher": str(jeu.get("editeur") or "").strip(),
         "genres": ", ".join(genres),
+        "genre_names": genres,
     }
 
 

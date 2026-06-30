@@ -134,6 +134,11 @@
 						<param name="label" value="$LOCALIZE[31090]" />
 					</include>
 					<include content="InfoDialogButton">
+						<param name="id" value="10" />
+						<param name="icon" value="icons/infodialogs/choose_image.png" />
+						<param name="label" value="$LOCALIZE[13511]" />
+					</include>
+					<include content="InfoDialogButton">
 						<param name="id" value="102" />
 						<param name="icon" value="icons/infodialogs/image.png" />
 						<param name="label" value="$LOCALIZE[31028]" />
