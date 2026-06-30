@@ -5,6 +5,7 @@ import xbmcaddon
 from .db import GameDatabase
 from .metadata import ArtworkBatchResult, enrich_game, enrich_missing_artwork
 from .mock import MOCK_GAMES
+from .paths_filter import is_library_rom_path
 from .platforms import get_platform, platform_ids
 from .scanner import ScanResult, scan, source_for_platform
 
@@ -18,6 +19,11 @@ LEFT JOIN platforms p ON p.id = g.platform_id
 LEFT JOIN game_genres gg ON gg.game_id = g.id
 LEFT JOIN genres ge ON ge.id = gg.genre_id
 WHERE g.hidden=0
+  AND g.rom_path NOT LIKE '%ziro-addons%'
+  AND g.rom_path NOT LIKE '%skin.estuary.ziro%'
+  AND g.rom_path NOT LIKE '%plugin.program.ziro.games%'
+  AND g.rom_path NOT LIKE '%/dist/%'
+  AND g.rom_path NOT LIKE '%\\dist\\%'
 """
 GROUP_ORDER = " GROUP BY g.id "
 
@@ -33,20 +39,27 @@ class Router:
             return MOCK_GAMES
         return []
 
+    def _filter_rows(self, rows: list[dict]) -> list[dict]:
+        return [row for row in rows if is_library_rom_path(row.get("rom_path", ""))]
+
     def continue_playing(self) -> list[dict]:
         rows = self.db.rows(GAME_SELECT + " AND g.last_played IS NOT NULL" + GROUP_ORDER + " ORDER BY g.last_played DESC LIMIT 25")
+        rows = self._filter_rows(rows)
         return self._with_mock([g for g in MOCK_GAMES if g.get("last_played")] if not rows and ADDON.getSettingBool("dev_mock_library") else rows)
 
     def recently_added(self, limit: int = 50) -> list[dict]:
         rows = self.db.rows(GAME_SELECT + GROUP_ORDER + " ORDER BY g.date_added DESC LIMIT ?", (limit,))
+        rows = self._filter_rows(rows)
         return self._with_mock(rows)
 
     def all_games(self, limit: int = 5000) -> list[dict]:
         rows = self.db.rows(GAME_SELECT + GROUP_ORDER + " ORDER BY g.sort_title ASC LIMIT ?", (limit,))
+        rows = self._filter_rows(rows)
         return self._with_mock(rows)
 
     def favorites(self) -> list[dict]:
         rows = self.db.rows(GAME_SELECT + " AND g.favorite=1" + GROUP_ORDER + " ORDER BY g.sort_title ASC LIMIT 50")
+        rows = self._filter_rows(rows)
         return self._with_mock([g for g in MOCK_GAMES if g.get("favorite")] if not rows and ADDON.getSettingBool("dev_mock_library") else rows)
 
     def platforms(self) -> list[dict]:
@@ -55,6 +68,11 @@ class Router:
             SELECT p.*, COUNT(g.id) AS game_count
             FROM platforms p
             INNER JOIN games g ON g.platform_id = p.id AND g.hidden = 0
+              AND g.rom_path NOT LIKE '%ziro-addons%'
+              AND g.rom_path NOT LIKE '%skin.estuary.ziro%'
+              AND g.rom_path NOT LIKE '%plugin.program.ziro.games%'
+              AND g.rom_path NOT LIKE '%/dist/%'
+              AND g.rom_path NOT LIKE '%\\dist\\%'
             GROUP BY p.id
             ORDER BY p.sort_order, p.name
             """
@@ -62,6 +80,7 @@ class Router:
 
     def by_platform(self, platform_id: str) -> list[dict]:
         rows = self.db.rows(GAME_SELECT + " AND g.platform_id=?" + GROUP_ORDER + " ORDER BY g.sort_title", (platform_id,))
+        rows = self._filter_rows(rows)
         if not rows and ADDON.getSettingBool("dev_mock_library"):
             return [g for g in MOCK_GAMES if g["platform_id"] == platform_id]
         return rows
@@ -86,8 +105,8 @@ class Router:
             raise ValueError(f"Unsupported platform: {platform_id}")
         return self.db.ensure_source(source_for_platform(platform_id, folder_path))
 
-    def remove_source(self, source_id: int) -> None:
-        self.db.delete_source(source_id)
+    def remove_source(self, source_id: int, *, purge_games: bool = False) -> None:
+        self.db.delete_source(source_id, purge_games=purge_games)
 
     def toggle_favorite(self, game_id: int) -> None:
         if game_id < 0:

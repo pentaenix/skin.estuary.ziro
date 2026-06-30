@@ -10,6 +10,7 @@ import xbmcaddon
 import xbmcvfs
 
 from .db import GameDatabase
+from .paths_filter import is_library_rom_path
 from .platforms import LEGACY_SOURCE_SETTINGS, extensions_for, get_platform, iter_profile_defs, source_dict
 
 ADDON = xbmcaddon.Addon("plugin.program.ziro.games")
@@ -277,8 +278,21 @@ def finalize_source_result(result: SourceScanResult, extensions: list[str]) -> N
     result.message = f"{result.platform_name}: files matched but none were imported."
 
 
+def purge_junk_games(db: GameDatabase) -> int:
+    rows = db.rows("SELECT id, rom_path FROM games WHERE hidden=0")
+    hidden = 0
+    for row in rows:
+        if not is_library_rom_path(row["rom_path"]):
+            db.execute("UPDATE games SET hidden=1 WHERE id=?", (row["id"],))
+            hidden += 1
+    if hidden:
+        xbmc.log(f"[Ziro Games Scanner] hid {hidden} junk library entries", xbmc.LOGINFO)
+    return hidden
+
+
 def scan(db: GameDatabase) -> ScanResult:
     configure_defaults(db)
+    purge_junk_games(db)
     outcome = ScanResult()
     sources = db.list_sources(enabled_only=True)
     if not sources:
@@ -327,12 +341,15 @@ def scan(db: GameDatabase) -> ScanResult:
         )
 
         for rom in iter_games(folder, extensions, bool(source.get("recursive", 1)), result):
+            rom_path = str(rom)
+            if not is_library_rom_path(rom_path):
+                continue
             title = clean_title(rom)
             db.upsert_game({
                 "title": title,
                 "sort_title": sort_title(title),
                 "platform_id": platform_id,
-                "rom_path": str(rom),
+                "rom_path": rom_path,
                 "emulator_profile_id": source.get("emulator_profile_id") or platform.profile_id,
                 "source_id": source.get("id"),
                 "description": f"Imported from {folder}",

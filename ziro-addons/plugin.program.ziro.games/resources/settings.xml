@@ -272,6 +272,23 @@
         </setting>
       </group>
     </category>
+    <category id="behavior" label="30054" help="30055">
+      <group id="1" label="30056">
+        <setting id="game_click_action" type="string" label="30057" help="30058">
+          <level>0</level>
+          <default>info</default>
+          <constraints>
+            <options>
+              <option label="30059">info</option>
+              <option label="30060">play</option>
+            </options>
+          </constraints>
+          <control type="list" format="string">
+            <heading>30057</heading>
+          </control>
+        </setting>
+      </group>
+    </category>
     <category id="development" label="30050" help="">
       <group id="1" label="30051">
         <setting id="dev_mock_library" type="boolean" label="30052" help="">

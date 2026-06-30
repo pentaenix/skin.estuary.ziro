@@ -3,163 +3,163 @@
 <includes>
 	<include name="ZiroGamesPlatformWidgets">
 		<definition>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.nes),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.nes),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/nes"/>
 				<param name="widget_header" value="Nintendo Entertainment System"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17510"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.snes),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.snes),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/snes"/>
 				<param name="widget_header" value="Super Nintendo"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17520"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.n64),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.n64),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/n64"/>
 				<param name="widget_header" value="Nintendo 64"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17530"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.gb),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.gb),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/gb"/>
 				<param name="widget_header" value="Game Boy"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17540"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.gbc),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.gbc),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/gbc"/>
 				<param name="widget_header" value="Game Boy Color"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17550"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.gba),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.gba),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/gba"/>
 				<param name="widget_header" value="Game Boy Advance"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17560"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.nds),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.nds),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/nds"/>
 				<param name="widget_header" value="Nintendo DS"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17570"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.3ds),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.3ds),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/3ds"/>
 				<param name="widget_header" value="Nintendo 3DS"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17580"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.gamecube),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.gamecube),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/gamecube"/>
 				<param name="widget_header" value="Nintendo GameCube"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17590"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.wii),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.wii),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/wii"/>
 				<param name="widget_header" value="Nintendo Wii"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17600"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.wiiu),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.wiiu),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/wiiu"/>
 				<param name="widget_header" value="Nintendo Wii U"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17610"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.switch),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.switch),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/switch"/>
 				<param name="widget_header" value="Nintendo Switch"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17620"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.sms),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.sms),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/sms"/>
 				<param name="widget_header" value="Sega Master System"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17630"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.genesis),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.genesis),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/genesis"/>
 				<param name="widget_header" value="Sega Genesis / Mega Drive"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17640"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.segacd),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.segacd),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/segacd"/>
 				<param name="widget_header" value="Sega CD"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17650"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.saturn),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.saturn),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/saturn"/>
 				<param name="widget_header" value="Sega Saturn"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17660"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.dreamcast),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.dreamcast),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/dreamcast"/>
 				<param name="widget_header" value="Sega Dreamcast"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17670"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.ps1),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.ps1),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/ps1"/>
 				<param name="widget_header" value="PlayStation"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17680"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.ps2),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.ps2),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/ps2"/>
 				<param name="widget_header" value="PlayStation 2"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17690"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.ps3),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.ps3),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/ps3"/>
 				<param name="widget_header" value="PlayStation 3"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17700"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.psp),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.psp),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/psp"/>
 				<param name="widget_header" value="PlayStation Portable"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17710"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.psvita),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.psvita),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/psvita"/>
 				<param name="widget_header" value="PlayStation Vita"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17720"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.ps4),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.ps4),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/ps4"/>
 				<param name="widget_header" value="PlayStation 4"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17730"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.xbox),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.xbox),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/xbox"/>
 				<param name="widget_header" value="Xbox"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17740"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.xbox360),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.xbox360),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/xbox360"/>
 				<param name="widget_header" value="Xbox 360"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17750"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.xboxone),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.xboxone),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/xboxone"/>
 				<param name="widget_header" value="Xbox One"/>
 				<param name="widget_target" value="programs"/>
 				<param name="list_id" value="17760"/>
 			</include>
-			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.xboxseries),1)">
+			<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + String.IsEqual(Window(Home).Property(ZiroGames.Platform.xboxseries),1)">
 				<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platform/xboxseries"/>
 				<param name="widget_header" value="Xbox Series X|S"/>
 				<param name="widget_target" value="programs"/>

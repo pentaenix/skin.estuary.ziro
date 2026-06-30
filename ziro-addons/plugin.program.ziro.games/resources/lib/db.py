@@ -221,11 +221,13 @@ class GameDatabase:
             """
         )
 
-    def delete_source(self, source_id: int) -> None:
+    def delete_source(self, source_id: int, *, purge_games: bool = False) -> None:
         with self.connect() as conn:
             conn.execute("DELETE FROM sources WHERE id=?", (source_id,))
-            # Hide, do not delete, games imported from removed sources. This preserves play history/favorites.
-            conn.execute("UPDATE games SET hidden=1 WHERE source_id=?", (source_id,))
+            if purge_games:
+                conn.execute("UPDATE games SET hidden=1 WHERE source_id=?", (source_id,))
+            else:
+                conn.execute("UPDATE games SET source_id=NULL WHERE source_id=?", (source_id,))
 
     def clear_games_for_source(self, source_id: int) -> None:
         self.execute("UPDATE games SET hidden=1 WHERE source_id=?", (source_id,))

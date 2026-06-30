@@ -1,3 +1,6 @@
+[B]2.3.1[/B]
+• Games home loads immediately; category icons match Movies style; empty platforms stay hidden
+
 [B]2.3.0[/B]
 • Games home: categories banner, game info dialog, hide empty platform rows
 

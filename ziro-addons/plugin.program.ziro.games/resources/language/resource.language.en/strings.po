@@ -162,3 +162,31 @@ msgstr "Show mock games when database is empty"
 msgctxt "#30053"
 msgid "Debug logging"
 msgstr "Debug logging"
+
+msgctxt "#30054"
+msgid "Behavior"
+msgstr "Behavior"
+
+msgctxt "#30055"
+msgid "How games respond when selected from lists and home rows."
+msgstr "How games respond when selected from lists and home rows."
+
+msgctxt "#30056"
+msgid "Game selection"
+msgstr "Game selection"
+
+msgctxt "#30057"
+msgid "Default game action"
+msgstr "Default game action"
+
+msgctxt "#30058"
+msgid "Open the game info screen, or launch the emulator immediately."
+msgstr "Open the game info screen, or launch the emulator immediately."
+
+msgctxt "#30059"
+msgid "Show game info"
+msgstr "Show game info"
+
+msgctxt "#30060"
+msgid "Play game"
+msgstr "Play game"

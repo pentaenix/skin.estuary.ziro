@@ -11,12 +11,24 @@ import xbmcplugin
 from resources.lib.db import GameDatabase
 from resources.lib.game_info import show_game_info
 from resources.lib.home_state import refresh_home_platform_properties
+from resources.lib.paths_filter import is_allowed_source_folder
 from resources.lib.platforms import get_platform, platform_choices
 from resources.lib.routes import Router
+from resources.lib.scan_jobs import scan_in_background
 
 ADDON = xbmcaddon.Addon()
 HANDLE = int(sys.argv[1])
 BASE_URL = sys.argv[0]
+
+LIBRARY_ICONS: dict[str, str] = {
+    "/continue": "DefaultInProgressShows.png",
+    "/recent": "DefaultRecentlyAddedEpisodes.png",
+    "/favorites": "DefaultFavourites.png",
+    "/genres": "DefaultGenres.png",
+    "/sources": "DefaultFolder.png",
+    "/all": "DefaultMovies.png",
+}
+PLATFORM_LIBRARY_ICON = "DefaultMovies.png"
 
 
 def plugin_url(path: str, **query: str) -> str:
@@ -54,17 +66,29 @@ def add_source_item(source: dict) -> None:
     xbmcplugin.addDirectoryItem(HANDLE, plugin_url("/sources"), item, False)
 
 
-def add_library_entry(label: str, path: str, label2: str = "") -> None:
+def add_library_entry(label: str, path: str, label2: str = "", *, icon: str | None = None) -> None:
     item = xbmcgui.ListItem(label=label, label2=label2)
     item.setProperty("IsPlayable", "false")
-    item.setArt({"icon": "DefaultGames.png", "thumb": "DefaultGames.png"})
-    item.setInfo("game", {"title": label, "plot": label2})
+    icon_path = icon or LIBRARY_ICONS.get(path, "DefaultFolder.png")
+    item.setArt({"icon": icon_path, "thumb": icon_path})
+    item.setInfo("video", {"title": label, "plot": label2, "genre": label2})
     xbmcplugin.addDirectoryItem(HANDLE, plugin_url(path), item, True)
 
 
+def _play_on_click() -> bool:
+    return (ADDON.getSetting("game_click_action") or "info").strip().lower() == "play"
+
+
+def _game_item_url(game_id: int) -> str:
+    if _play_on_click():
+        return plugin_url("/launch", game_id=str(game_id))
+    return plugin_url("/info", game_id=str(game_id))
+
+
 def add_game(game: dict) -> None:
+    play_on_click = _play_on_click()
     item = xbmcgui.ListItem(label=game["title"])
-    item.setProperty("IsPlayable", "true")
+    item.setProperty("IsPlayable", "true" if play_on_click else "false")
     item.setProperty("ziro_game_id", str(game["id"]))
     art = {
         "thumb": game.get("cover_path") or "DefaultProgram.png",
@@ -93,7 +117,7 @@ def add_game(game: dict) -> None:
         ("Toggle favorite", f"RunPlugin({plugin_url('/favorite', game_id=str(game['id']))})"),
         ("Refresh metadata", f"RunPlugin({plugin_url('/refresh', game_id=str(game['id']))})"),
     ])
-    xbmcplugin.addDirectoryItem(HANDLE, plugin_url("/launch", game_id=str(game["id"])), item, False)
+    xbmcplugin.addDirectoryItem(HANDLE, _game_item_url(int(game["id"])), item, False)
 
 
 def render_library_menu(router: Router) -> None:
@@ -106,6 +130,7 @@ def render_library_menu(router: Router) -> None:
             platform["name"],
             f"/platform/{platform['id']}",
             f"{count} games",
+            icon=PLATFORM_LIBRARY_ICON,
         )
     add_library_entry("Genres", "/genres")
     add_library_entry("Sources", "/sources")
@@ -153,11 +178,46 @@ def open_addon_settings() -> None:
 
 def show_scan_result(result) -> None:
     summary = result.summary()
+    headline = summary.splitlines()[0]
     if result.imported:
-        xbmcgui.Dialog().notification("Ziro Games", summary, xbmcgui.NOTIFICATION_INFO, 3000)
+        xbmcgui.Dialog().notification("Ziro Games", headline, xbmcgui.NOTIFICATION_INFO, 4000)
         return
     xbmc.log(f"[Ziro Games Scanner] {summary}", xbmc.LOGWARNING)
-    xbmcgui.Dialog().ok("Ziro Games — Scan found 0 games", summary)
+    xbmcgui.Dialog().notification("Ziro Games", headline, xbmcgui.NOTIFICATION_WARNING, 5000)
+
+
+def confirm_remove_source(router: Router, source_id: int) -> None:
+    source = router.db.one(
+        """
+        SELECT s.*, p.name AS platform_name
+        FROM sources s
+        LEFT JOIN platforms p ON p.id = s.platform_id
+        WHERE s.id=?
+        """,
+        (source_id,),
+    )
+    if not source:
+        xbmcgui.Dialog().notification("Ziro Games", "Source not found", xbmcgui.NOTIFICATION_ERROR, 3000)
+        return
+    label = source.get("platform_name") or source["platform_id"]
+    folder = source.get("folder_path") or ""
+    if not xbmcgui.Dialog().yesno(
+        "Ziro Games — Remove source",
+        f"Remove this {label} source?\n\n{folder}",
+    ):
+        return
+    purge = xbmcgui.Dialog().yesno(
+        "Ziro Games — Library cleanup",
+        "Also remove games imported from this source folder?\n\n"
+        "Yes = hide those games from your library\n"
+        "No = keep the games, only remove the source folder",
+    )
+    router.remove_source(source_id, purge_games=purge)
+    refresh_home_platform_properties(router.db)
+    xbmcgui.Dialog().notification("Ziro Games", "Source removed", xbmcgui.NOTIFICATION_INFO, 2500)
+    xbmc.executebuiltin(
+        f"ActivateWindow(Programs,plugin://plugin.program.ziro.games/?path=/sources,return)"
+    )
 
 
 def offer_artwork_fetch(router: Router) -> None:
@@ -270,6 +330,14 @@ def main() -> None:
                 raise ValueError(f"Unsupported platform: {platform_id}")
             selected = browse_for_source(platform.name)
             if selected:
+                if not is_allowed_source_folder(selected):
+                    xbmcgui.Dialog().ok(
+                        "Ziro Games",
+                        "That folder cannot be used as a game source.\n\n"
+                        "Choose your ROM folder, not Kodi addons, dist, or skin files.",
+                    )
+                    xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
+                    return
                 router.add_source(platform_id, selected)
                 xbmcgui.Dialog().notification(
                     "Ziro Games",
@@ -278,18 +346,12 @@ def main() -> None:
                     2500,
                 )
                 if xbmcgui.Dialog().yesno("Ziro Games", "Source added. Scan now?"):
-                    scan_result = router.scan_sources()
-                    show_scan_result(scan_result)
-                    if scan_result.imported:
-                        offer_artwork_fetch(router)
+                    scan_in_background(offer_artwork=True)
                 xbmc.executebuiltin("Container.Refresh")
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/sources/remove":
             source_id = int(params["source_id"])
-            if xbmcgui.Dialog().yesno("Ziro Games", "Remove this source?", "Games imported from it will be hidden, not deleted from disk."):
-                router.remove_source(source_id)
-                xbmcgui.Dialog().notification("Ziro Games", "Source removed", xbmcgui.NOTIFICATION_INFO, 2500)
-                xbmc.executebuiltin("Container.Refresh")
+            confirm_remove_source(router, source_id)
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/launch":
             game_id = params.get("game_id")
@@ -304,6 +366,9 @@ def main() -> None:
             show_game_info(int(game_id))
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/sync_home":
+            from resources.lib.scanner import purge_junk_games
+
+            purge_junk_games(db)
             refresh_home_platform_properties(db)
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/favorite":
@@ -316,11 +381,10 @@ def main() -> None:
             xbmc.executebuiltin("Container.Refresh")
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/scan":
-            scan_result = router.scan_sources()
-            show_scan_result(scan_result)
-            if scan_result.imported:
-                offer_artwork_fetch(router)
-            xbmc.executebuiltin("Container.Refresh")
+            scan_in_background(offer_artwork=ADDON.getSettingBool("metadata_fetch_on_scan"))
+            xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
+        elif path == "/offer_artwork":
+            offer_artwork_fetch(router)
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/scrape":
             run_artwork_fetch(router)
