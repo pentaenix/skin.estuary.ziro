@@ -192,19 +192,21 @@ Do not commit generated zips unless explicitly asked.
 
 ### Windows TV PC deployment
 
-After pulling on Windows:
+On the Windows Kodi PC, run from the repo root:
 
 ```bat
 dev_deploy_to_kodi.bat
 ```
 
-This validates, packages, copies the skin and companion add-ons directly to:
+The script **pulls the current branch from origin first** (`git pull --ff-only`), then validates, packages, copies the skin and companion add-ons to Kodi, and restarts Kodi. No separate `git pull` step is needed before testing.
 
 ```text
 C:\Users\Mateo\AppData\Roaming\Kodi\addons
 ```
 
-and restarts Kodi.
+### Agent / dev workflow
+
+After finishing a change on any machine, **commit and push to the current branch** so the Windows deploy script can pick it up on the next run.
 
 ## Immediate next task for Codex
 

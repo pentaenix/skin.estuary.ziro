@@ -279,10 +279,11 @@ def finalize_source_result(result: SourceScanResult, extensions: list[str]) -> N
 
 
 def purge_junk_games(db: GameDatabase) -> int:
-    rows = db.rows("SELECT id, rom_path FROM games WHERE hidden=0")
+    rows = db.rows("SELECT id, rom_path, title FROM games WHERE hidden=0")
     hidden = 0
     for row in rows:
-        if not is_library_rom_path(row["rom_path"]):
+        title = (row.get("title") or "").strip()
+        if not is_library_rom_path(row.get("rom_path", "")) or not title:
             db.execute("UPDATE games SET hidden=1 WHERE id=?", (row["id"],))
             hidden += 1
     if hidden:

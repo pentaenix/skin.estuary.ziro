@@ -3,6 +3,7 @@
 	<include file="Defaults.xml" />
 	<include file="Includes_Home.xml" />
 	<include file="Includes_Ziro_Games_Widgets.xml" />
+	<include file="Includes_Ziro_Games_Home.xml" />
 	<include file="Includes_Animations.xml" />
 	<include file="Includes_MediaMenu.xml" />
 	<include file="Includes_Buttons.xml" />

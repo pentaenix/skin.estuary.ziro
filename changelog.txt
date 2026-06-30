@@ -1,3 +1,6 @@
+[B]2.3.2[/B]
+• Games home: platform text badges (GBA, WII), platform rows visible again, empty-state fix
+
 [B]2.3.1[/B]
 • Games home loads immediately; category icons match Movies style; empty platforms stay hidden
 

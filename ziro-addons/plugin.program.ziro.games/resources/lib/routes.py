@@ -40,7 +40,14 @@ class Router:
         return []
 
     def _filter_rows(self, rows: list[dict]) -> list[dict]:
-        return [row for row in rows if is_library_rom_path(row.get("rom_path", ""))]
+        filtered: list[dict] = []
+        for row in rows:
+            if not is_library_rom_path(row.get("rom_path", "")):
+                continue
+            if not (row.get("title") or "").strip():
+                continue
+            filtered.append(row)
+        return filtered
 
     def continue_playing(self) -> list[dict]:
         rows = self.db.rows(GAME_SELECT + " AND g.last_played IS NOT NULL" + GROUP_ORDER + " ORDER BY g.last_played DESC LIMIT 25")

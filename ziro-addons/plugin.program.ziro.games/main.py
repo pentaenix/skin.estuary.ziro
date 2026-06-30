@@ -11,6 +11,7 @@ import xbmcplugin
 from resources.lib.db import GameDatabase
 from resources.lib.game_info import show_game_info
 from resources.lib.home_state import refresh_home_platform_properties
+from resources.lib.metadata.platform_art import get_platform_art_path
 from resources.lib.paths_filter import is_allowed_source_folder
 from resources.lib.platforms import get_platform, platform_choices
 from resources.lib.routes import Router
@@ -28,7 +29,41 @@ LIBRARY_ICONS: dict[str, str] = {
     "/sources": "DefaultFolder.png",
     "/all": "DefaultMovies.png",
 }
-PLATFORM_LIBRARY_ICON = "DefaultMovies.png"
+
+
+def add_library_entry(
+    label: str,
+    path: str,
+    label2: str = "",
+    *,
+    icon: str | None = None,
+    badge: str = "",
+) -> None:
+    item = xbmcgui.ListItem(label=label, label2=label2)
+    item.setProperty("IsPlayable", "false")
+    if badge:
+        item.setProperty("ziro_platform_badge", badge)
+    icon_path = icon or LIBRARY_ICONS.get(path, "DefaultFolder.png")
+    if badge:
+        icon_path = "DefaultFolder.png"
+    item.setArt({"icon": icon_path, "thumb": icon_path})
+    item.setInfo("video", {"title": label, "plot": label2, "genre": label2})
+    xbmcplugin.addDirectoryItem(HANDLE, plugin_url(path), item, True)
+
+
+def add_platform_directory(platform: dict, path: str, label2: str = "") -> None:
+    platform_id = platform["id"]
+    art_path = get_platform_art_path(platform_id, allow_fetch=True)
+    art = {
+        "icon": art_path or "DefaultGames.png",
+        "thumb": art_path or "DefaultGames.png",
+        "poster": art_path or "",
+    }
+    item = xbmcgui.ListItem(label=platform["name"], label2=label2)
+    item.setProperty("IsPlayable", "false")
+    item.setArt({k: v for k, v in art.items() if v})
+    item.setInfo("video", {"title": platform["name"], "plot": label2})
+    xbmcplugin.addDirectoryItem(HANDLE, plugin_url(path), item, True)
 
 
 def plugin_url(path: str, **query: str) -> str:
@@ -64,15 +99,6 @@ def add_source_item(source: dict) -> None:
         ("Remove source", f"RunPlugin({plugin_url('/sources/remove', source_id=str(source['id']))})"),
     ])
     xbmcplugin.addDirectoryItem(HANDLE, plugin_url("/sources"), item, False)
-
-
-def add_library_entry(label: str, path: str, label2: str = "", *, icon: str | None = None) -> None:
-    item = xbmcgui.ListItem(label=label, label2=label2)
-    item.setProperty("IsPlayable", "false")
-    icon_path = icon or LIBRARY_ICONS.get(path, "DefaultFolder.png")
-    item.setArt({"icon": icon_path, "thumb": icon_path})
-    item.setInfo("video", {"title": label, "plot": label2, "genre": label2})
-    xbmcplugin.addDirectoryItem(HANDLE, plugin_url(path), item, True)
 
 
 def _play_on_click() -> bool:
@@ -126,11 +152,12 @@ def render_library_menu(router: Router) -> None:
     add_library_entry("Favorites", "/favorites")
     for platform in router.platforms():
         count = int(platform.get("game_count") or 0)
+        badge = (platform.get("short_name") or platform["id"]).upper()
         add_library_entry(
-            platform["name"],
+            badge,
             f"/platform/{platform['id']}",
-            f"{count} games",
-            icon=PLATFORM_LIBRARY_ICON,
+            f"{platform['name']} · {count} games",
+            badge=badge,
         )
     add_library_entry("Genres", "/genres")
     add_library_entry("Sources", "/sources")
@@ -301,7 +328,12 @@ def main() -> None:
             render_game_list(router.favorites(), "No favorite games")
         elif path == "/platforms":
             for platform in router.platforms():
-                add_directory(platform["name"], f"/platform/{platform['id']}")
+                count = int(platform.get("game_count") or 0)
+                add_platform_directory(
+                    platform,
+                    f"/platform/{platform['id']}",
+                    f"{count} games",
+                )
             xbmcplugin.setContent(HANDLE, "games")
             xbmcplugin.endOfDirectory(HANDLE)
         elif path.startswith("/platform/"):

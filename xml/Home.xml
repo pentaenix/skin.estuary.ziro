@@ -757,7 +757,7 @@
 					<control type="grouplist" id="17001">
 						<include>WidgetGroupListCommon</include>
 						<pagecontrol>17010</pagecontrol>
-						<include content="WidgetListCategories" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + !Skin.HasSetting(home_no_categories_widget)">
+						<include content="ZiroGamesWidgetListCategories" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + !Skin.HasSetting(home_no_categories_widget)">
 							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/library"/>
 							<param name="widget_header" value="$LOCALIZE[31148]"/>
 							<param name="widget_target" value="programs"/>
@@ -796,7 +796,7 @@
 						<param name="button_label" value="Add Game Source" />
 						<param name="button_onclick" value="ActivateWindow(Programs,plugin://plugin.program.ziro.games/?path=/sources/add,return)"/>
 						<param name="button_id" value="17110"/>
-						<param name="visible" value="!String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),1)"/>
+						<param name="visible" value="String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)"/>
 						<param name="button2_label" value="Scan Library"/>
 						<param name="button2_onclick" value="RunPlugin(plugin://plugin.program.ziro.games/?path=/scan)"/>
 					</include>

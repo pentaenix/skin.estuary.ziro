@@ -3,6 +3,7 @@ from __future__ import annotations
 import xbmc
 import xbmcaddon
 import xbmcgui
+import xbmcvfs
 
 from .db import GameDatabase
 
@@ -11,8 +12,15 @@ DIALOG_XML = "Custom_1110_DialogZiroGameInfo.xml"
 
 
 class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
-    def __init__(self, game: dict, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        xml_name: str,
+        script_path: str,
+        default_skin: str,
+        default_res: str,
+        game: dict,
+    ) -> None:
+        super().__init__(str(xml_name), str(script_path), str(default_skin), str(default_res))
         self.game = game
 
     def onInit(self) -> None:
@@ -51,7 +59,7 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
         elif control_id == 102:
             fanart = self.game.get("fanart_path") or self.game.get("cover_path") or ""
             if fanart:
-                self.setProperty("infobackground", fanart, "home")
+                xbmcgui.Window(10000).setProperty("infobackground", fanart)
                 xbmc.executebuiltin("ActivateWindow(1104)")
         elif control_id == 7:
             db = GameDatabase()
@@ -73,10 +81,13 @@ def show_game_info(game_id: int) -> None:
         return
     try:
         skin = xbmcaddon.Addon(SKIN_ID)
-        skin_path = skin.getAddonInfo("path")
+        skin_path = xbmc.translatePath(skin.getAddonInfo("path"))
     except Exception:
         xbmcgui.Dialog().ok("Ziro Games", "Estuary Ziro skin is required for the game info screen.")
         return
-    dialog = ZiroGameInfoDialog(game, DIALOG_XML, skin_path, "xml")
+    if not xbmcvfs.exists(skin_path):
+        xbmcgui.Dialog().ok("Ziro Games", "Estuary Ziro skin path is not available.")
+        return
+    dialog = ZiroGameInfoDialog(str(DIALOG_XML), skin_path, "xml", "1080i", game)
     dialog.doModal()
     del dialog

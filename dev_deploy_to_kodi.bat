@@ -24,6 +24,44 @@ echo Repo: %REPO%
 echo.
 
 REM ------------------------------------------------------------
+REM Sync repo from remote (pull latest before deploy)
+REM ------------------------------------------------------------
+
+echo === Syncing repo from remote ===
+
+where git >nul 2>nul
+if errorlevel 1 (
+  echo WARN: git not found; skipping remote sync.
+  echo Install Git for Windows to auto-pull before deploy.
+  echo.
+) else (
+  pushd "%REPO%"
+  if exist ".git" (
+    for /f "delims=" %%B in ('git rev-parse --abbrev-ref HEAD 2^>nul') do set "GIT_BRANCH=%%B"
+    if "%GIT_BRANCH%"=="" (
+      echo WARN: Could not detect current branch.
+      git pull --ff-only
+    ) else (
+      echo Pulling origin/%GIT_BRANCH% ...
+      git pull --ff-only origin %GIT_BRANCH%
+    )
+    if errorlevel 1 (
+      echo.
+      echo ERROR: git pull failed.
+      echo Fix local changes or merge conflicts, then run this script again.
+      popd
+      pause
+      exit /b 1
+    )
+    echo Repo synced with remote.
+  ) else (
+    echo WARN: Not a git repository; skipping remote sync.
+  )
+  popd
+  echo.
+)
+
+REM ------------------------------------------------------------
 REM Basic repo checks
 REM ------------------------------------------------------------
 
