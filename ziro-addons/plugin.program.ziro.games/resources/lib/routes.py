@@ -37,8 +37,12 @@ class Router:
         rows = self.db.rows(GAME_SELECT + " AND g.last_played IS NOT NULL" + GROUP_ORDER + " ORDER BY g.last_played DESC LIMIT 25")
         return self._with_mock([g for g in MOCK_GAMES if g.get("last_played")] if not rows and ADDON.getSettingBool("dev_mock_library") else rows)
 
-    def recently_added(self) -> list[dict]:
-        rows = self.db.rows(GAME_SELECT + GROUP_ORDER + " ORDER BY g.date_added DESC LIMIT 50")
+    def recently_added(self, limit: int = 50) -> list[dict]:
+        rows = self.db.rows(GAME_SELECT + GROUP_ORDER + " ORDER BY g.date_added DESC LIMIT ?", (limit,))
+        return self._with_mock(rows)
+
+    def all_games(self, limit: int = 5000) -> list[dict]:
+        rows = self.db.rows(GAME_SELECT + GROUP_ORDER + " ORDER BY g.sort_title ASC LIMIT ?", (limit,))
         return self._with_mock(rows)
 
     def favorites(self) -> list[dict]:
@@ -48,12 +52,10 @@ class Router:
     def platforms(self) -> list[dict]:
         return self.db.rows(
             """
-            SELECT p.*
+            SELECT p.*, COUNT(g.id) AS game_count
             FROM platforms p
-            WHERE EXISTS (
-              SELECT 1 FROM games g
-              WHERE g.platform_id = p.id AND g.hidden = 0
-            )
+            INNER JOIN games g ON g.platform_id = p.id AND g.hidden = 0
+            GROUP BY p.id
             ORDER BY p.sort_order, p.name
             """
         )

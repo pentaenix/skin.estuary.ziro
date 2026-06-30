@@ -9,6 +9,8 @@ import xbmcgui
 import xbmcplugin
 
 from resources.lib.db import GameDatabase
+from resources.lib.game_info import show_game_info
+from resources.lib.home_state import refresh_home_platform_properties
 from resources.lib.platforms import get_platform, platform_choices
 from resources.lib.routes import Router
 
@@ -52,9 +54,18 @@ def add_source_item(source: dict) -> None:
     xbmcplugin.addDirectoryItem(HANDLE, plugin_url("/sources"), item, False)
 
 
+def add_library_entry(label: str, path: str, label2: str = "") -> None:
+    item = xbmcgui.ListItem(label=label, label2=label2)
+    item.setProperty("IsPlayable", "false")
+    item.setArt({"icon": "DefaultGames.png", "thumb": "DefaultGames.png"})
+    item.setInfo("game", {"title": label, "plot": label2})
+    xbmcplugin.addDirectoryItem(HANDLE, plugin_url(path), item, True)
+
+
 def add_game(game: dict) -> None:
     item = xbmcgui.ListItem(label=game["title"])
     item.setProperty("IsPlayable", "true")
+    item.setProperty("ziro_game_id", str(game["id"]))
     art = {
         "thumb": game.get("cover_path") or "DefaultProgram.png",
         "poster": game.get("cover_path") or "DefaultProgram.png",
@@ -67,16 +78,40 @@ def add_game(game: dict) -> None:
         "plot": game.get("description", ""),
         "year": int(game["release_year"]) if game.get("release_year") else 0,
         "genre": game.get("genres", ""),
+        "platform": game.get("platform") or game.get("platform_id", ""),
+        "developer": game.get("developer") or "",
+        "publisher": game.get("publisher") or "",
+        "playcount": int(game.get("play_count") or 0),
     }
     try:
         item.setInfo("game", info)
     except Exception:
         item.setInfo("video", info)
     item.addContextMenuItems([
+        ("Play", f"RunScript(script.ziro.games.launcher,game_id={game['id']})"),
+        ("Game info", f"RunPlugin({plugin_url('/info', game_id=str(game['id']))})"),
         ("Toggle favorite", f"RunPlugin({plugin_url('/favorite', game_id=str(game['id']))})"),
         ("Refresh metadata", f"RunPlugin({plugin_url('/refresh', game_id=str(game['id']))})"),
     ])
     xbmcplugin.addDirectoryItem(HANDLE, plugin_url("/launch", game_id=str(game["id"])), item, False)
+
+
+def render_library_menu(router: Router) -> None:
+    add_library_entry("Continue Playing", "/continue")
+    add_library_entry("Recently Added", "/recent")
+    add_library_entry("Favorites", "/favorites")
+    for platform in router.platforms():
+        count = int(platform.get("game_count") or 0)
+        add_library_entry(
+            platform["name"],
+            f"/platform/{platform['id']}",
+            f"{count} games",
+        )
+    add_library_entry("Genres", "/genres")
+    add_library_entry("Sources", "/sources")
+    add_library_entry("All Games", "/all")
+    xbmcplugin.setContent(HANDLE, "games")
+    xbmcplugin.endOfDirectory(HANDLE)
 
 
 def render_message(label: str, message: str) -> None:
@@ -160,6 +195,7 @@ def run_artwork_fetch(router: Router) -> None:
         xbmcgui.Dialog().notification("Ziro Games", summary, xbmcgui.NOTIFICATION_INFO, 4000)
     else:
         xbmcgui.Dialog().ok("Ziro Games — Artwork", summary)
+    refresh_home_platform_properties()
     xbmc.executebuiltin("Container.Refresh")
 
 
@@ -178,6 +214,7 @@ def main() -> None:
         path = f"/{path}"
     db = GameDatabase()
     router = Router(db)
+    refresh_home_platform_properties(db)
 
     try:
         if path == "/home":
@@ -192,6 +229,10 @@ def main() -> None:
             add_action("Settings", "/settings")
             xbmcplugin.setContent(HANDLE, "files")
             xbmcplugin.endOfDirectory(HANDLE)
+        elif path == "/library":
+            render_library_menu(router)
+        elif path == "/all":
+            render_game_list(router.all_games(), "No games yet")
         elif path == "/continue":
             render_game_list(router.continue_playing(), "Nothing in Continue Playing")
         elif path == "/recent":
@@ -255,6 +296,15 @@ def main() -> None:
             if not game_id:
                 raise ValueError("Missing game_id")
             xbmc.executebuiltin(f"RunScript(script.ziro.games.launcher,game_id={game_id})")
+            xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
+        elif path == "/info":
+            game_id = params.get("game_id")
+            if not game_id:
+                raise ValueError("Missing game_id")
+            show_game_info(int(game_id))
+            xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
+        elif path == "/sync_home":
+            refresh_home_platform_properties(db)
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/favorite":
             router.toggle_favorite(int(params["game_id"]))

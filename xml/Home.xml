@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <window>
 	<defaultcontrol>9000</defaultcontrol>
+	<oninfo condition="String.IsEqual(Container(9000).ListItem.Property(id),games) + !String.IsEmpty(ListItem.Property(ziro_game_id))">RunPlugin(plugin://plugin.program.ziro.games/?path=/info&amp;game_id=$INFO[ListItem.Property(ziro_game_id)])</oninfo>
 	<backgroundcolor>background</backgroundcolor>
 	<controls>
 		<control type="button" id="20000">
@@ -755,31 +756,31 @@
 					<control type="grouplist" id="17001">
 						<include>WidgetGroupListCommon</include>
 						<pagecontrol>17010</pagecontrol>
-						<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games)">
+						<include content="WidgetListCategories" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),1) + !Skin.HasSetting(home_no_categories_widget)">
+							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/library"/>
+							<param name="widget_header" value="$LOCALIZE[31148]"/>
+							<param name="widget_target" value="programs"/>
+							<param name="list_id" value="17290"/>
+						</include>
+						<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),1)">
 							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/continue"/>
 							<param name="widget_header" value="Continue Playing"/>
 							<param name="widget_target" value="programs"/>
 							<param name="list_id" value="17300"/>
 						</include>
-						<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games)">
+						<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),1)">
 							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/recent"/>
 							<param name="widget_header" value="Recently Added"/>
 							<param name="widget_target" value="programs"/>
 							<param name="list_id" value="17310"/>
 						</include>
-						<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games)">
+						<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),1)">
 							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/favorites"/>
 							<param name="widget_header" value="Favorites"/>
 							<param name="widget_target" value="programs"/>
 							<param name="list_id" value="17320"/>
 						</include>
-						<include content="WidgetListCategories" condition="System.HasAddon(plugin.program.ziro.games)">
-							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/platforms"/>
-							<param name="widget_header" value="Platforms"/>
-							<param name="widget_target" value="programs"/>
-							<param name="list_id" value="17330"/>
-						</include>
-						<include condition="System.HasAddon(plugin.program.ziro.games)">ZiroGamesPlatformWidgets</include>
+						<include condition="System.HasAddon(plugin.program.ziro.games) + String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),1)">ZiroGamesPlatformWidgets</include>
 					</control>
 					<include content="ImageWidget" condition="!System.HasAddon(plugin.program.ziro.games)">
 						<param name="text_label" value="$LOCALIZE[31162]" />
@@ -794,7 +795,7 @@
 						<param name="button_label" value="Add Game Source" />
 						<param name="button_onclick" value="ActivateWindow(Programs,plugin://plugin.program.ziro.games/?path=/sources/add,return)"/>
 						<param name="button_id" value="17110"/>
-						<param name="visible" value="!Integer.IsGreater(Container(17001).NumItems,0)"/>
+						<param name="visible" value="!String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),1)"/>
 						<param name="button2_label" value="Scan Library"/>
 						<param name="button2_onclick" value="RunPlugin(plugin://plugin.program.ziro.games/?path=/scan)"/>
 					</include>

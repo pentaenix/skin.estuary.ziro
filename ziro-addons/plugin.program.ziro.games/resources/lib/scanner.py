@@ -348,4 +348,11 @@ def scan(db: GameDatabase) -> ScanResult:
             xbmc.LOGINFO,
         )
 
+    try:
+        from .home_state import refresh_home_platform_properties
+
+        refresh_home_platform_properties(db)
+    except Exception as exc:
+        xbmc.log(f"[Ziro Games Scanner] home refresh failed: {exc}", xbmc.LOGWARNING)
+
     return outcome

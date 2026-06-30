@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="plugin.program.ziro.games" name="Ziro Games" version="0.2.5" provider-name="Ziro">
+<addon id="plugin.program.ziro.games" name="Ziro Games" version="0.2.6" provider-name="Ziro">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
   </requires>

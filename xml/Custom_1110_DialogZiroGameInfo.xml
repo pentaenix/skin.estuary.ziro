@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window>
+	<defaultcontrol always="true">8</defaultcontrol>
+	<onload>SetProperty(infobackground,$INFO[Window.Property(ZiroGame.Fanart)],home)</onload>
+	<onunload>ClearProperty(infobackground,home)</onunload>
+	<controls>
+		<control type="group">
+			<centertop>50%</centertop>
+			<height>1080</height>
+			<centerleft>50%</centerleft>
+			<width>1920</width>
+			<control type="group">
+				<top>150</top>
+				<left>66</left>
+				<include>OpenClose_Left</include>
+				<control type="image">
+					<top>-16</top>
+					<left>-16</left>
+					<width>566</width>
+					<height>841</height>
+					<texture>colors/black.png</texture>
+					<bordertexture border="21">overlays/shadow.png</bordertexture>
+					<bordersize>20</bordersize>
+				</control>
+				<control type="image">
+					<depth>DepthContentPopout</depth>
+					<left>4</left>
+					<top>4</top>
+					<width>526</width>
+					<height>801</height>
+					<aspectratio>scale</aspectratio>
+					<texture fallback="DefaultGames.png">$INFO[Window.Property(ZiroGame.Poster)]</texture>
+				</control>
+				<control type="image">
+					<left>20</left>
+					<top>20</top>
+					<width>320</width>
+					<height>120</height>
+					<aspectratio>keep</aspectratio>
+					<texture>$INFO[Window.Property(ZiroGame.Logo)]</texture>
+					<visible>!String.IsEmpty(Window.Property(ZiroGame.Logo))</visible>
+				</control>
+			</control>
+			<control type="group">
+				<include>OpenClose_Right</include>
+				<left>620</left>
+				<top>124</top>
+				<control type="group" id="140">
+					<top>344</top>
+					<control type="button" id="139">
+						<width>1245</width>
+						<height>418</height>
+						<textoffsetx>40</textoffsetx>
+						<textoffsety>20</textoffsety>
+						<aligny>bottom</aligny>
+						<label></label>
+						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Header,$INFO[Window.Property(ZiroGame.Title)],home)</onclick>
+						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Text,$INFO[Window.Property(ZiroGame.Plot)],home)</onclick>
+						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">ActivateWindow(1102)</onclick>
+						<texturenofocus border="21">dialogs/dialog-bg.png</texturenofocus>
+					</control>
+					<control type="textbox">
+						<left>40</left>
+						<top>25</top>
+						<width>1165</width>
+						<height>363</height>
+						<label fallback="19055">$INFO[Window.Property(ZiroGame.Plot)]</label>
+						<autoscroll delay="10000" time="5000" repeat="10000">Skin.HasSetting(AutoScroll)</autoscroll>
+					</control>
+				</control>
+				<control type="grouplist" id="4000">
+					<orientation>vertical</orientation>
+					<left>730</left>
+					<top>488</top>
+					<height>355</height>
+					<itemgap>-8</itemgap>
+					<ondown>9000</ondown>
+					<onup>140</onup>
+					<include content="InfoDialogMetadata">
+						<param name="control_id" value="147" />
+						<param name="label" value="[COLOR button_focus]Platform: [/COLOR]$INFO[Window.Property(ZiroGame.Platform)]" />
+						<param name="visible" value="!String.IsEmpty(Window.Property(ZiroGame.Platform))" />
+					</include>
+					<include content="InfoDialogMetadata">
+						<param name="control_id" value="148" />
+						<param name="label" value="[COLOR button_focus]$LOCALIZE[563]: [/COLOR]$INFO[Window.Property(ZiroGame.Rating)]" />
+						<param name="visible" value="!String.IsEmpty(Window.Property(ZiroGame.Rating))" />
+					</include>
+					<include content="InfoDialogMetadata">
+						<param name="control_id" value="149" />
+						<param name="label" value="[COLOR button_focus]$LOCALIZE[515]: [/COLOR]$INFO[Window.Property(ZiroGame.Genre)]" />
+						<param name="visible" value="!String.IsEmpty(Window.Property(ZiroGame.Genre))" />
+					</include>
+					<include content="InfoDialogMetadata">
+						<param name="control_id" value="150" />
+						<param name="label" value="[COLOR button_focus]$LOCALIZE[38018]: [/COLOR]$INFO[Window.Property(ZiroGame.Developer)]" />
+						<param name="visible" value="!String.IsEmpty(Window.Property(ZiroGame.Developer))" />
+					</include>
+					<include content="InfoDialogMetadata">
+						<param name="control_id" value="151" />
+						<param name="label" value="[COLOR button_focus]$LOCALIZE[38019]: [/COLOR]$INFO[Window.Property(ZiroGame.Publisher)]" />
+						<param name="visible" value="!String.IsEmpty(Window.Property(ZiroGame.Publisher))" />
+					</include>
+					<include content="InfoDialogMetadata">
+						<param name="control_id" value="152" />
+						<param name="label" value="[COLOR button_focus]$LOCALIZE[20416]: [/COLOR]$INFO[Window.Property(ZiroGame.Year)]" />
+						<param name="visible" value="!String.IsEmpty(Window.Property(ZiroGame.Year))" />
+					</include>
+					<include content="InfoDialogMetadata">
+						<param name="control_id" value="153" />
+						<param name="label" value="[COLOR button_focus]$LOCALIZE[161]: [/COLOR]$INFO[Window.Property(ZiroGame.PlayCount)]" />
+						<param name="visible" value="!String.IsEmpty(Window.Property(ZiroGame.PlayCount))" />
+					</include>
+				</control>
+				<control type="grouplist" id="9000">
+					<left>0</left>
+					<top>864</top>
+					<width>1246</width>
+					<height>400</height>
+					<onleft>9000</onleft>
+					<onright>9000</onright>
+					<onup>140</onup>
+					<itemgap>-16</itemgap>
+					<align>center</align>
+					<orientation>horizontal</orientation>
+					<include content="InfoDialogButton">
+						<param name="id" value="8" />
+						<param name="icon" value="icons/infodialogs/play.png" />
+						<param name="label" value="$LOCALIZE[208]" />
+					</include>
+					<include content="InfoDialogButton">
+						<param name="id" value="11" />
+						<param name="icon" value="icons/infodialogs/trailer_search.png" />
+						<param name="label" value="$LOCALIZE[31090]" />
+					</include>
+					<include content="InfoDialogButton">
+						<param name="id" value="102" />
+						<param name="icon" value="icons/infodialogs/image.png" />
+						<param name="label" value="$LOCALIZE[31028]" />
+						<param name="visible" value="!String.IsEmpty(Window.Property(ZiroGame.Fanart))" />
+					</include>
+					<include content="InfoDialogButton">
+						<param name="id" value="7" />
+						<param name="icon" value="icons/sidemenu/favourites.png" />
+						<param name="label" value="$LOCALIZE[1036]" />
+					</include>
+					<include content="InfoDialogButton">
+						<param name="id" value="6" />
+						<param name="icon" value="icons/infodialogs/update.png" />
+						<param name="label" value="$LOCALIZE[184]" />
+					</include>
+				</control>
+			</control>
+			<include content="InfoDialogTopBarInfo">
+				<param name="main_label" value="$INFO[Window.Property(ZiroGame.Title)]" />
+				<param name="sub_label" value="$INFO[Window.Property(ZiroGame.Platform)]" />
+			</include>
+		</control>
+	</controls>
+</window>

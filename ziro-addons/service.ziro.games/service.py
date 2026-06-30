@@ -46,6 +46,18 @@ def focus_kodi() -> None:
 def main() -> None:
     monitor = xbmc.Monitor()
     xbmc.log("[Ziro Games Service] started", xbmc.LOGINFO)
+    try:
+        import sys
+
+        import xbmcvfs
+
+        sys.path.insert(0, xbmcvfs.translatePath("special://addons/plugin.program.ziro.games"))
+        from resources.lib.db import GameDatabase
+        from resources.lib.home_state import refresh_home_platform_properties
+
+        refresh_home_platform_properties(GameDatabase())
+    except Exception as exc:
+        xbmc.log(f"[Ziro Games Service] home refresh failed: {exc}", xbmc.LOGWARNING)
     last_pid = None
     while not monitor.abortRequested():
         if SESSION_PATH.exists():

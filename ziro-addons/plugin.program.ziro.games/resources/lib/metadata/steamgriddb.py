@@ -5,6 +5,7 @@ from urllib.parse import quote
 
 from .http_client import get_json, normalize_api_key
 from .matcher import pick_best_match
+from .search_titles import search_candidates
 from .sgdb_log import log_warning
 
 API_BASE = "https://www.steamgriddb.com/api/v2"
@@ -22,16 +23,21 @@ def validate_api_key(api_key: str) -> bool:
         return False
 
 
-def search_game(title: str, api_key: str) -> dict | None:
-    query = title.strip()
-    if not query:
-        return None
+def _autocomplete(query: str, api_key: str, original_title: str) -> dict | None:
     encoded = quote(query, safe="")
     payload = get_json(f"{API_BASE}/search/autocomplete/{encoded}", api_key)
     results = payload.get("data") or []
     if not isinstance(results, list):
         return None
-    return pick_best_match(title, results)
+    return pick_best_match(original_title, results, min_score=0.52)
+
+
+def search_game(title: str, api_key: str) -> dict | None:
+    for candidate in search_candidates(title):
+        match = _autocomplete(candidate, api_key, title)
+        if match:
+            return match
+    return None
 
 
 def _pick_asset(assets: list[dict]) -> dict | None:

@@ -44,13 +44,19 @@ class ArtworkBatchResult:
             f"Skipped: {self.skipped}",
             f"Failed: {self.failed}",
         ]
-        api_errors = [result for result in self.results if result.status == "api_error"]
-        if api_errors:
-            sample = api_errors[0].message or "SteamGridDB request failed"
+        failures = [result for result in self.results if result.status not in {"ok", "cached", "locked"}]
+        if failures:
             lines.append("")
-            lines.append(f"API error: {sample[:220]}")
-            lines.append("Full URLs and response bodies:")
-            lines.append("addon_data/plugin.program.ziro.games/sgdb.log")
+            lines.append("Failed titles:")
+            for result in failures[:20]:
+                title = result.title or f"Game #{result.game_id}"
+                detail = result.message or result.status
+                lines.append(f"• {title}: {detail}")
+            if len(failures) > 20:
+                lines.append(f"…and {len(failures) - 20} more (see sgdb.log)")
+            if any(result.status == "api_error" for result in failures):
+                lines.append("")
+                lines.append("Full API URLs and bodies: addon_data/plugin.program.ziro.games/sgdb.log")
         return "\n".join(lines)
 
 
@@ -164,7 +170,7 @@ def enrich_game(
 
         db.update_game_artwork(game_id, updates)
     except Exception as exc:
-        return ArtworkResult(game_id, game["title"], "api_error", str(exc))
+        return ArtworkResult(game_id, game["title"], "api_error", f"{game['title']}: {exc}")
     if _debug():
         xbmc.log(
             f"[Ziro Games SGDB] enriched game_id={game_id} title={game['title']} sgdb_id={sgdb_game_id}",
@@ -209,16 +215,11 @@ def enrich_missing_artwork(
         else:
             batch.failed += 1
             message = result.message or result.status
-            if result.status not in {"no_match", "no_art"}:
-                xbmc.log(
-                    f"[Ziro Games SGDB] failed game_id={game['id']} title={game['title']} status={result.status} msg={message}",
-                    xbmc.LOGWARNING,
-                )
-            elif _debug():
-                xbmc.log(
-                    f"[Ziro Games SGDB] failed game_id={game['id']} title={game['title']} status={result.status} msg={result.message}",
-                    xbmc.LOGINFO,
-                )
+            title = result.title or game.get("title") or f"Game #{game.get('id')}"
+            xbmc.log(
+                f"[Ziro Games SGDB] failed title={title} status={result.status} msg={message}",
+                xbmc.LOGWARNING if result.status not in {"no_match", "no_art"} else xbmc.LOGINFO,
+            )
         time.sleep(REQUEST_DELAY_SEC)
 
     return batch
