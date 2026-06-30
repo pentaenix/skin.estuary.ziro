@@ -12,6 +12,8 @@ import xbmcvfs
 from .db import GameDatabase
 from .paths_filter import is_library_rom_path, is_valid_game_title
 from .platforms import LEGACY_SOURCE_SETTINGS, extensions_for, get_platform, iter_profile_defs, source_dict
+from .metadata.providers import PROVIDER_SKRAPER, game_artwork_provider
+from .metadata.local_metadata import clear_gamelist_cache, import_metadata_for_game
 
 ADDON = xbmcaddon.Addon("plugin.program.ziro.games")
 
@@ -293,6 +295,7 @@ def purge_junk_games(db: GameDatabase) -> int:
 
 def scan(db: GameDatabase) -> ScanResult:
     configure_defaults(db)
+    clear_gamelist_cache()
     purge_junk_games(db)
     outcome = ScanResult()
     sources = db.list_sources(enabled_only=True)
@@ -355,6 +358,10 @@ def scan(db: GameDatabase) -> ScanResult:
                 "source_id": source.get("id"),
                 "description": f"Imported from {folder}",
             })
+            if game_artwork_provider() == PROVIDER_SKRAPER:
+                row = db.one("SELECT id FROM games WHERE rom_path=?", (rom_path,))
+                if row:
+                    import_metadata_for_game(db, int(row["id"]), source_folder=folder)
             result.imported += 1
 
         finalize_source_result(result, extensions)

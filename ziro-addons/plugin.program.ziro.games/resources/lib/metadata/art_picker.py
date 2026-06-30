@@ -7,8 +7,9 @@ import xbmcvfs
 from ..db import GameDatabase
 from ..paths import artwork_dir
 from .enricher import _artwork_path, _save_image
-from .providers import PROVIDER_SCREENSCRAPER, game_artwork_provider
+from .providers import PROVIDER_SCREENSCRAPER, PROVIDER_SKRAPER, game_artwork_provider
 from .screenscraper import list_media_urls, lookup_game
+from .local_metadata import list_local_art_options, lookup_local_metadata
 
 ART_TYPES: dict[str, tuple[str, str, tuple[str, ...]]] = {
     "cover": ("Cover / box art", "cover_path", ("box-2d", "boitiers_2d", "box2d")),
@@ -59,6 +60,13 @@ def choose_game_art(game_id: int) -> bool:
                 options.extend(list_media_urls(jeu, *needles))
         except Exception as exc:
             xbmc.log(f"[Ziro Games] art picker lookup failed: {exc}", xbmc.LOGWARNING)
+    elif game_artwork_provider() == PROVIDER_SKRAPER:
+        options.extend(list_local_art_options(game.get("rom_path") or "", art_key))
+        local_meta = lookup_local_metadata(game.get("rom_path") or "")
+        field_path = local_meta.get(field_name) or ""
+        if field_path and xbmcvfs.exists(field_path):
+            if not any(field_path == existing for _, existing in options):
+                options.insert(0, ("gamelist.xml", field_path))
 
     art_dir = artwork_dir() / str(game_id)
     if art_dir.exists():

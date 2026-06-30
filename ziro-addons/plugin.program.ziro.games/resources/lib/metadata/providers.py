@@ -6,6 +6,7 @@ ADDON = xbmcaddon.Addon("plugin.program.ziro.games")
 
 PROVIDER_SCREENSCRAPER = "screenscraper"
 PROVIDER_STEAMGRIDDB = "steamgriddb"
+PROVIDER_SKRAPER = "skraper"
 
 PLATFORM_ART_BADGE = "badge"
 PLATFORM_ART_SCREENSCRAPER = "screenscraper"
@@ -14,7 +15,7 @@ PLATFORM_ART_STEAMGRIDDB = "steamgriddb"
 
 def game_artwork_provider() -> str:
     value = (ADDON.getSetting("game_artwork_provider") or PROVIDER_SCREENSCRAPER).strip().lower()
-    if value in {PROVIDER_SCREENSCRAPER, PROVIDER_STEAMGRIDDB}:
+    if value in {PROVIDER_SCREENSCRAPER, PROVIDER_STEAMGRIDDB, PROVIDER_SKRAPER}:
         return value
     return PROVIDER_SCREENSCRAPER
 

@@ -252,34 +252,47 @@ def confirm_remove_source(router: Router, source_id: int) -> None:
 
 
 def offer_artwork_fetch(router: Router) -> None:
-    from resources.lib.metadata.providers import PROVIDER_STEAMGRIDDB
+    from resources.lib.metadata.providers import PROVIDER_SKRAPER, PROVIDER_STEAMGRIDDB, steamgriddb_api_key
     from resources.lib.metadata.screenscraper import credentials_configured
     from resources.lib.metadata.steamgriddb import validate_api_key
-    from resources.lib.metadata.providers import steamgriddb_api_key
 
     provider = game_artwork_provider()
-    if provider == PROVIDER_STEAMGRIDDB:
+    if provider == PROVIDER_SKRAPER:
+        label = "Skraper / local files"
+    elif provider == PROVIDER_STEAMGRIDDB:
         if not steamgriddb_api_key() or not validate_api_key(steamgriddb_api_key()):
             return
-    elif not credentials_configured():
-        return
+        label = "SteamGridDB"
+    else:
+        if not credentials_configured():
+            return
+        label = "ScreenScraper"
     if not ADDON.getSettingBool("metadata_fetch_on_scan"):
         return
-    label = "SteamGridDB" if provider == PROVIDER_STEAMGRIDDB else "ScreenScraper"
-    if not xbmcgui.Dialog().yesno(
-        "Ziro Games",
-        f"Scan finished. Fetch missing box art from {label} now?\n\n"
-        "Large libraries can take a while.",
-    ):
+    prompt = (
+        f"Scan finished. Import missing metadata from {label} now?\n\n"
+        "Uses gamelist.xml and media folders next to your ROMs."
+        if provider == PROVIDER_SKRAPER
+        else f"Scan finished. Fetch missing box art from {label} now?\n\nLarge libraries can take a while."
+    )
+    if not xbmcgui.Dialog().yesno("Ziro Games", prompt):
         return
     run_artwork_fetch(router)
 
 
-def run_artwork_fetch(router: Router, *, refresh_all: bool = False) -> None:
-    from resources.lib.metadata.providers import PROVIDER_STEAMGRIDDB
+def _provider_label(provider: str) -> str:
+    from resources.lib.metadata.providers import PROVIDER_SKRAPER, PROVIDER_STEAMGRIDDB
 
+    if provider == PROVIDER_STEAMGRIDDB:
+        return "SteamGridDB"
+    if provider == PROVIDER_SKRAPER:
+        return "Skraper / local files"
+    return "ScreenScraper"
+
+
+def run_artwork_fetch(router: Router, *, refresh_all: bool = False) -> None:
     provider = game_artwork_provider()
-    label = "SteamGridDB" if provider == PROVIDER_STEAMGRIDDB else "ScreenScraper"
+    label = _provider_label(provider)
     heading = "Refresh all artwork" if refresh_all else "Fetch missing artwork"
     progress = xbmcgui.DialogProgress()
     progress.create("Ziro Games", f"{heading} from {label}...")
@@ -452,27 +465,37 @@ def main() -> None:
             run_artwork_fetch(router, refresh_all=False)
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/refresh_artwork":
-            from resources.lib.metadata.providers import PROVIDER_STEAMGRIDDB, steamgriddb_api_key
+            from resources.lib.metadata.providers import PROVIDER_SKRAPER, PROVIDER_STEAMGRIDDB, steamgriddb_api_key
             from resources.lib.metadata.screenscraper import credentials_configured
             from resources.lib.metadata.steamgriddb import validate_api_key
 
             provider = game_artwork_provider()
-            if provider == PROVIDER_STEAMGRIDDB:
+            if provider == PROVIDER_SKRAPER:
+                label = "Skraper / local files"
+            elif provider == PROVIDER_STEAMGRIDDB:
                 if not steamgriddb_api_key() or not validate_api_key(steamgriddb_api_key()):
                     xbmcgui.Dialog().ok("Ziro Games", "Set a valid SteamGridDB API key in settings first.")
                     xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
                     return
+                label = "SteamGridDB"
             elif not credentials_configured():
                 xbmcgui.Dialog().ok("Ziro Games", "Set ScreenScraper credentials in settings first.")
                 xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
                 return
-            label = "SteamGridDB" if provider == PROVIDER_STEAMGRIDDB else "ScreenScraper"
-            if not xbmcgui.Dialog().yesno(
-                "Ziro Games",
-                f"Refresh artwork for every game in your library from {label}?\n\n"
-                "Each game uses its platform when matching on ScreenScraper.\n"
-                "Large libraries can take a while.",
-            ):
+            else:
+                label = "ScreenScraper"
+            if provider == PROVIDER_SKRAPER:
+                prompt = (
+                    "Re-import metadata for every game from gamelist.xml and local media folders?\n\n"
+                    "Run Skraper on your PC first, then point Ziro at those ROM folders."
+                )
+            else:
+                prompt = (
+                    f"Refresh artwork for every game in your library from {label}?\n\n"
+                    "Each game uses its platform when matching on ScreenScraper.\n"
+                    "Large libraries can take a while."
+                )
+            if not xbmcgui.Dialog().yesno("Ziro Games", prompt):
                 xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
                 return
             run_artwork_fetch(router, refresh_all=True)

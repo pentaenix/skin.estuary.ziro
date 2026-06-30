@@ -1,3 +1,6 @@
+[B]2.4.1[/B]
+• Games: Skraper / local metadata provider (gamelist.xml + media folders)
+
 [B]2.4.0[/B]
 • Games: Movies-style home rows, Games Library hub, Refresh All Artwork, Choose art, genre shelves
 

@@ -16,6 +16,7 @@ from ..paths import artwork_dir
 from .http_client import download_bytes
 from .providers import (
     PROVIDER_SCREENSCRAPER,
+    PROVIDER_SKRAPER,
     PROVIDER_STEAMGRIDDB,
     artwork_show_picker,
     game_artwork_provider,
@@ -30,6 +31,7 @@ from .screenscraper import (
     validate_credentials,
 )
 from .genre_sync import map_genre_names_to_ids
+from .local_metadata import import_metadata_for_game
 from .sgdb_enricher import enrich_game_sgdb
 from .sgdb_log import log_warning
 from .ss_log import log_warning as ss_log_warning
@@ -269,6 +271,23 @@ def _enrich_steamgriddb(
         return ArtworkResult(game_id, game["title"], "api_error", f"{game['title']}: {exc}")
 
 
+def _enrich_skraper(
+    db: GameDatabase,
+    game_id: int,
+    game: dict,
+    *,
+    force: bool = False,
+) -> ArtworkResult:
+    status, message = import_metadata_for_game(db, game_id, force=force)
+    if status == "ok":
+        return ArtworkResult(game_id, game["title"], "ok", message)
+    if status == "locked":
+        return ArtworkResult(game_id, game["title"], "locked", message)
+    if status == "no_match":
+        return ArtworkResult(game_id, game["title"], "no_match", message)
+    return ArtworkResult(game_id, game["title"], status, message)
+
+
 def enrich_game(
     db: GameDatabase,
     game_id: int,
@@ -288,6 +307,8 @@ def enrich_game(
     provider = game_artwork_provider()
     if provider == PROVIDER_STEAMGRIDDB:
         return _enrich_steamgriddb(db, game_id, game, force_picker=force_picker or force)
+    if provider == PROVIDER_SKRAPER:
+        return _enrich_skraper(db, game_id, game, force=force)
     return _enrich_screenscraper(db, game_id, game, force_picker=force_picker or force)
 
 
@@ -298,6 +319,24 @@ def enrich_missing_artwork(
 ) -> ArtworkBatchResult:
     batch = ArtworkBatchResult()
     provider = game_artwork_provider()
+    games = db.list_games_without_artwork(limit=limit)
+
+    if provider == PROVIDER_SKRAPER:
+        total = len(games)
+        for index, game in enumerate(games, start=1):
+            if progress and not progress(int(index * 100 / max(total, 1)), game["title"]):
+                break
+            batch.processed += 1
+            result = enrich_game(db, int(game["id"]), verify_key=False)
+            batch.results.append(result)
+            if result.status == "ok":
+                batch.updated += 1
+            elif result.status in {"cached", "locked"}:
+                batch.skipped += 1
+            else:
+                batch.failed += 1
+        return batch
+
     if provider == PROVIDER_STEAMGRIDDB:
         if not steamgriddb_api_key():
             batch.failed = 1
@@ -307,24 +346,22 @@ def enrich_missing_artwork(
             batch.failed = 1
             batch.results.append(ArtworkResult(0, "", "bad_credentials", "SteamGridDB API key is invalid"))
             return batch
-    else:
-        if not credentials_configured():
-            batch.failed = 1
-            batch.results.append(
-                ArtworkResult(
-                    0,
-                    "",
-                    "no_credentials",
-                    "Set ScreenScraper username, password, developer ID, and developer password",
-                )
+    elif not credentials_configured():
+        batch.failed = 1
+        batch.results.append(
+            ArtworkResult(
+                0,
+                "",
+                "no_credentials",
+                "Set ScreenScraper username, password, developer ID, and developer password",
             )
-            return batch
-        if not validate_credentials():
-            batch.failed = 1
-            batch.results.append(ArtworkResult(0, "", "bad_credentials", "ScreenScraper credentials are invalid"))
-            return batch
+        )
+        return batch
+    elif not validate_credentials():
+        batch.failed = 1
+        batch.results.append(ArtworkResult(0, "", "bad_credentials", "ScreenScraper credentials are invalid"))
+        return batch
 
-    games = db.list_games_without_artwork(limit=limit)
     total = len(games)
     if not total:
         return batch
@@ -355,6 +392,30 @@ def enrich_all_artwork(
 ) -> ArtworkBatchResult:
     batch = ArtworkBatchResult()
     provider = game_artwork_provider()
+    games = db.list_games_for_artwork_refresh(limit=limit)
+
+    if provider == PROVIDER_SKRAPER:
+        total = len(games)
+        for index, game in enumerate(games, start=1):
+            if progress and not progress(int(index * 100 / max(total, 1)), game["title"]):
+                break
+            batch.processed += 1
+            result = enrich_game(db, int(game["id"]), force=True, verify_key=False)
+            batch.results.append(result)
+            if result.status == "ok":
+                batch.updated += 1
+            elif result.status in {"cached", "locked"}:
+                batch.skipped += 1
+            else:
+                batch.failed += 1
+        try:
+            from ..home_state import refresh_home_properties
+
+            refresh_home_properties(db)
+        except Exception:
+            pass
+        return batch
+
     if provider == PROVIDER_STEAMGRIDDB:
         if not steamgriddb_api_key():
             batch.failed = 1
@@ -364,24 +425,22 @@ def enrich_all_artwork(
             batch.failed = 1
             batch.results.append(ArtworkResult(0, "", "bad_credentials", "SteamGridDB API key is invalid"))
             return batch
-    else:
-        if not credentials_configured():
-            batch.failed = 1
-            batch.results.append(
-                ArtworkResult(
-                    0,
-                    "",
-                    "no_credentials",
-                    "Set ScreenScraper username, password, developer ID, and developer password",
-                )
+    elif not credentials_configured():
+        batch.failed = 1
+        batch.results.append(
+            ArtworkResult(
+                0,
+                "",
+                "no_credentials",
+                "Set ScreenScraper username, password, developer ID, and developer password",
             )
-            return batch
-        if not validate_credentials():
-            batch.failed = 1
-            batch.results.append(ArtworkResult(0, "", "bad_credentials", "ScreenScraper credentials are invalid"))
-            return batch
+        )
+        return batch
+    elif not validate_credentials():
+        batch.failed = 1
+        batch.results.append(ArtworkResult(0, "", "bad_credentials", "ScreenScraper credentials are invalid"))
+        return batch
 
-    games = db.list_games_for_artwork_refresh(limit=limit)
     total = len(games)
     if not total:
         return batch

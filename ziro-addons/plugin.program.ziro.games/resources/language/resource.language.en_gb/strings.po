@@ -212,8 +212,8 @@ msgid "Game artwork provider"
 msgstr "Game artwork provider"
 
 msgctxt "#30066"
-msgid "Choose ScreenScraper or SteamGridDB for game box art, like movie scrapers."
-msgstr "Choose ScreenScraper or SteamGridDB for game box art, like movie scrapers."
+msgid "Choose ScreenScraper, SteamGridDB, or Skraper local files for game box art, like movie scrapers."
+msgstr "Choose ScreenScraper, SteamGridDB, or Skraper local files for game box art, like movie scrapers."
 
 msgctxt "#30067"
 msgid "Show picker when multiple matches are found"
@@ -250,3 +250,11 @@ msgstr "Download preview videos"
 msgctxt "#30075"
 msgid "Save short preview videos from ScreenScraper. Trailer button plays them when present."
 msgstr "Save short preview videos from ScreenScraper. Trailer button plays them when present."
+
+msgctxt "#30076"
+msgid "Skraper / local metadata"
+msgstr "Skraper / local metadata"
+
+msgctxt "#30077"
+msgid "Read gamelist.xml and media folders from Skraper or EmulationStation. No API keys required."
+msgstr "Read gamelist.xml and media folders from Skraper or EmulationStation. No API keys required."

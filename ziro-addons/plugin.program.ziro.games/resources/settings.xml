@@ -198,7 +198,7 @@
         </setting>
       </group>
     </category>
-    <category id="metadata" label="30030" help="30031">
+    <category id="metadata" label="30030" help="30077">
       <group id="1" label="30032">
         <setting id="game_artwork_provider" type="string" label="30065" help="30066">
           <level>0</level>
@@ -207,6 +207,7 @@
             <options>
               <option label="30032">screenscraper</option>
               <option label="30070">steamgriddb</option>
+              <option label="30076">skraper</option>
             </options>
           </constraints>
           <control type="list" format="string">
