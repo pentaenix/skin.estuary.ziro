@@ -9,15 +9,21 @@ from urllib.parse import urlparse
 
 import xbmc
 import xbmcaddon
-import xbmcvfs
 
 from ..db import GameDatabase
 from ..paths import artwork_dir
 from .http_client import download_bytes
-from .steamgriddb import fetch_grid, fetch_hero, fetch_logo, search_game, validate_api_key
+from .screenscraper import (
+    credentials_configured,
+    extract_art_urls,
+    extract_metadata,
+    lookup_game,
+    validate_credentials,
+)
+from .ss_log import log_warning
 
 ADDON = xbmcaddon.Addon("plugin.program.ziro.games")
-REQUEST_DELAY_SEC = 0.4
+REQUEST_DELAY_SEC = 0.55
 
 
 @dataclass
@@ -26,7 +32,7 @@ class ArtworkResult:
     title: str
     status: str
     message: str = ""
-    sgdb_game_id: int | None = None
+    ss_game_id: int | None = None
 
 
 @dataclass
@@ -53,20 +59,14 @@ class ArtworkBatchResult:
                 detail = result.message or result.status
                 lines.append(f"• {title}: {detail}")
             if len(failures) > 20:
-                lines.append(f"…and {len(failures) - 20} more (see sgdb.log)")
+                lines.append(f"…and {len(failures) - 20} more (see ss.log)")
             if any(result.status == "api_error" for result in failures):
                 lines.append("")
-                lines.append("Full API URLs and bodies: addon_data/plugin.program.ziro.games/sgdb.log")
+                lines.append("Full API URLs and bodies: addon_data/plugin.program.ziro.games/ss.log")
         return "\n".join(lines)
 
 
 ProgressCallback = Callable[[int, str], bool]
-
-
-def _api_key() -> str:
-    from .http_client import normalize_api_key
-
-    return normalize_api_key(ADDON.getSetting("steamgriddb_api_key") or "")
 
 
 def _fetch_fanart() -> bool:
@@ -93,6 +93,8 @@ def _artwork_path(game_id: int, kind: str, url: str) -> Path:
 
 
 def _path_exists(path: str | None) -> bool:
+    import xbmcvfs
+
     return bool(path) and xbmcvfs.exists(path)
 
 
@@ -105,19 +107,16 @@ def _save_image(url: str, dest: Path) -> str:
 def _needs_cover(game: dict) -> bool:
     if int(game.get("manual_metadata_locked") or 0):
         return False
-    cover = game.get("cover_path")
-    return not _path_exists(cover)
+    return not _path_exists(game.get("cover_path"))
 
 
 def enrich_game(
     db: GameDatabase,
     game_id: int,
-    api_key: str | None = None,
     *,
     force: bool = False,
     verify_key: bool = True,
 ) -> ArtworkResult:
-    api_key = api_key or _api_key()
     game = db.get_game(game_id)
     if not game:
         return ArtworkResult(game_id, "", "missing", "Game not found")
@@ -126,57 +125,83 @@ def enrich_game(
     if not force and not _needs_cover(game) and game.get("cover_path"):
         return ArtworkResult(game_id, game["title"], "cached", "Artwork already present")
 
-    if not api_key:
-        return ArtworkResult(game_id, game["title"], "no_api_key", "SteamGridDB API key is not set")
-    if verify_key and not validate_api_key(api_key):
-        return ArtworkResult(game_id, game["title"], "bad_api_key", "SteamGridDB API key is invalid")
+    if not credentials_configured():
+        return ArtworkResult(
+            game_id,
+            game["title"],
+            "no_credentials",
+            "Set ScreenScraper username, password, developer ID, and developer password in Ziro Games settings",
+        )
+    if verify_key and not validate_credentials():
+        return ArtworkResult(
+            game_id,
+            game["title"],
+            "bad_credentials",
+            "ScreenScraper credentials are invalid or incomplete",
+        )
 
     try:
-        sgdb_game_id = game.get("sgdb_game_id")
-        if not sgdb_game_id:
-            match = search_game(game["title"], api_key)
-            if not match:
-                return ArtworkResult(game_id, game["title"], "no_match", f"No SteamGridDB match for '{game['title']}'")
-            sgdb_game_id = int(match["id"])
-        else:
-            sgdb_game_id = int(sgdb_game_id)
+        jeu = lookup_game(
+            platform_id=game["platform_id"],
+            title=game["title"],
+            rom_path=game.get("rom_path") or "",
+            ss_game_id=int(game["ss_game_id"]) if game.get("ss_game_id") else None,
+        )
+        if not jeu:
+            return ArtworkResult(
+                game_id,
+                game["title"],
+                "no_match",
+                f"No ScreenScraper match for '{game['title']}'",
+            )
 
-        updates: dict = {
-            "sgdb_game_id": sgdb_game_id,
-            "metadata_updated_at": datetime.now().isoformat(timespec="seconds"),
-        }
-
-        grid = fetch_grid(sgdb_game_id, api_key)
-        if not grid or not grid.get("url"):
+        meta = extract_metadata(jeu)
+        art = extract_art_urls(jeu)
+        if not art.get("cover"):
             return ArtworkResult(
                 game_id,
                 game["title"],
                 "no_art",
-                f"No grid artwork on SteamGridDB for '{game['title']}'",
-                sgdb_game_id=sgdb_game_id,
+                f"No box art on ScreenScraper for '{game['title']}'",
+                ss_game_id=meta.get("ss_game_id"),
             )
 
-        updates["cover_path"] = _save_image(grid["url"], _artwork_path(game_id, "poster", grid["url"]))
+        updates: dict = {
+            "ss_game_id": meta.get("ss_game_id"),
+            "metadata_updated_at": datetime.now().isoformat(timespec="seconds"),
+            "cover_path": _save_image(art["cover"], _artwork_path(game_id, "cover", art["cover"])),
+        }
+        if meta.get("description"):
+            updates["description"] = meta["description"]
 
-        if _fetch_fanart():
-            hero = fetch_hero(sgdb_game_id, api_key)
-            if hero and hero.get("url"):
-                updates["fanart_path"] = _save_image(hero["url"], _artwork_path(game_id, "fanart", hero["url"]))
+        if _fetch_fanart() and art.get("fanart"):
+            updates["fanart_path"] = _save_image(art["fanart"], _artwork_path(game_id, "fanart", art["fanart"]))
 
-        if _fetch_logos():
-            logo = fetch_logo(sgdb_game_id, api_key)
-            if logo and logo.get("url"):
-                updates["logo_path"] = _save_image(logo["url"], _artwork_path(game_id, "logo", logo["url"]))
+        if _fetch_logos() and art.get("logo"):
+            updates["logo_path"] = _save_image(art["logo"], _artwork_path(game_id, "logo", art["logo"]))
+
+        if art.get("screenshot"):
+            updates["screenshot_path"] = _save_image(
+                art["screenshot"],
+                _artwork_path(game_id, "screenshot", art["screenshot"]),
+            )
 
         db.update_game_artwork(game_id, updates)
     except Exception as exc:
         return ArtworkResult(game_id, game["title"], "api_error", f"{game['title']}: {exc}")
+
     if _debug():
         xbmc.log(
-            f"[Ziro Games SGDB] enriched game_id={game_id} title={game['title']} sgdb_id={sgdb_game_id}",
+            f"[Ziro Games SS] enriched game_id={game_id} title={game['title']} ss_id={updates.get('ss_game_id')}",
             xbmc.LOGINFO,
         )
-    return ArtworkResult(game_id, game["title"], "ok", "Artwork updated", sgdb_game_id=sgdb_game_id)
+    return ArtworkResult(
+        game_id,
+        game["title"],
+        "ok",
+        "Artwork updated",
+        ss_game_id=updates.get("ss_game_id"),
+    )
 
 
 def enrich_missing_artwork(
@@ -184,20 +209,21 @@ def enrich_missing_artwork(
     progress: ProgressCallback | None = None,
     limit: int | None = None,
 ) -> ArtworkBatchResult:
-    api_key = _api_key()
-    if not api_key:
-        batch = ArtworkBatchResult()
+    batch = ArtworkBatchResult()
+    if not credentials_configured():
         batch.failed = 1
-        batch.results.append(ArtworkResult(0, "", "no_api_key", "SteamGridDB API key is not set"))
+        batch.results.append(
+            ArtworkResult(0, "", "no_credentials", "Set ScreenScraper username, password, developer ID, and developer password in Ziro Games settings")
+        )
         return batch
-    if not validate_api_key(api_key):
-        batch = ArtworkBatchResult()
+    if not validate_credentials():
         batch.failed = 1
-        batch.results.append(ArtworkResult(0, "", "bad_api_key", "SteamGridDB API key is invalid"))
+        batch.results.append(
+            ArtworkResult(0, "", "bad_credentials", "ScreenScraper credentials are invalid or incomplete")
+        )
         return batch
 
     games = db.list_games_without_artwork(limit=limit)
-    batch = ArtworkBatchResult()
     total = len(games)
     if not total:
         return batch
@@ -206,7 +232,7 @@ def enrich_missing_artwork(
         if progress and not progress(int(index * 100 / total), game["title"]):
             break
         batch.processed += 1
-        result = enrich_game(db, int(game["id"]), api_key=api_key, verify_key=False)
+        result = enrich_game(db, int(game["id"]), verify_key=False)
         batch.results.append(result)
         if result.status == "ok":
             batch.updated += 1
@@ -216,10 +242,7 @@ def enrich_missing_artwork(
             batch.failed += 1
             message = result.message or result.status
             title = result.title or game.get("title") or f"Game #{game.get('id')}"
-            xbmc.log(
-                f"[Ziro Games SGDB] failed title={title} status={result.status} msg={message}",
-                xbmc.LOGWARNING if result.status not in {"no_match", "no_art"} else xbmc.LOGINFO,
-            )
+            log_warning(f"failed title={title} status={result.status} msg={message}")
         time.sleep(REQUEST_DELAY_SEC)
 
     return batch

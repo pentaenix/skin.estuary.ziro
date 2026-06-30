@@ -1,3 +1,6 @@
+[B]2.3.3[/B]
+• Games: restore categories banner, ScreenScraper box art, square vs case home rows
+
 [B]2.3.2[/B]
 • Games home: platform text badges (GBA, WII), platform rows visible again, empty-state fix
 

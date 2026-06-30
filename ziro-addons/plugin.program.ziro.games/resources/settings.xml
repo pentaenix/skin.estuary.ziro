@@ -200,7 +200,7 @@
     </category>
     <category id="metadata" label="30030" help="30031">
       <group id="1" label="30032">
-        <setting id="steamgriddb_api_key" type="string" label="30033" help="30034">
+        <setting id="screenscraper_user" type="string" label="30033" help="30034">
           <level>0</level>
           <default/>
           <constraints>
@@ -208,6 +208,37 @@
           </constraints>
           <control type="edit" format="string">
             <heading>30033</heading>
+          </control>
+        </setting>
+        <setting id="screenscraper_password" type="string" label="30040" help="">
+          <level>0</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="edit" format="string">
+            <heading>30040</heading>
+            <hidden>true</hidden>
+          </control>
+        </setting>
+        <setting id="screenscraper_dev_id" type="string" label="30039" help="30061">
+          <level>0</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="edit" format="string">
+            <heading>30039</heading>
+          </control>
+        </setting>
+        <setting id="screenscraper_dev_password" type="string" label="30062" help="30061">
+          <level>0</level>
+          <default/>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="edit" format="string">
+            <heading>30062</heading>
             <hidden>true</hidden>
           </control>
         </setting>
@@ -228,24 +259,14 @@
         </setting>
       </group>
       <group id="2" label="30038">
-        <setting id="screenscraper_user" type="string" label="30039" help="">
+        <setting id="steamgriddb_api_key" type="string" label="30063" help="30064">
           <level>2</level>
           <default/>
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
           <control type="edit" format="string">
-            <heading>30039</heading>
-          </control>
-        </setting>
-        <setting id="screenscraper_password" type="string" label="30040" help="">
-          <level>2</level>
-          <default/>
-          <constraints>
-            <allowempty>true</allowempty>
-          </constraints>
-          <control type="edit" format="string">
-            <heading>30040</heading>
+            <heading>30063</heading>
             <hidden>true</hidden>
           </control>
         </setting>

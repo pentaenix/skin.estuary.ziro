@@ -248,14 +248,15 @@ def confirm_remove_source(router: Router, source_id: int) -> None:
 
 
 def offer_artwork_fetch(router: Router) -> None:
-    api_key = (ADDON.getSetting("steamgriddb_api_key") or "").strip()
-    if not api_key:
+    from resources.lib.metadata.screenscraper import credentials_configured
+
+    if not credentials_configured():
         return
     if not ADDON.getSettingBool("metadata_fetch_on_scan"):
         return
     if not xbmcgui.Dialog().yesno(
         "Ziro Games",
-        "Scan finished. Fetch missing box art from SteamGridDB now?\n\n"
+        "Scan finished. Fetch missing box art from ScreenScraper now?\n\n"
         "Large libraries can take a while.",
     ):
         return
@@ -264,7 +265,7 @@ def offer_artwork_fetch(router: Router) -> None:
 
 def run_artwork_fetch(router: Router) -> None:
     progress = xbmcgui.DialogProgress()
-    progress.create("Ziro Games", "Fetching artwork from SteamGridDB...")
+    progress.create("Ziro Games", "Fetching artwork from ScreenScraper...")
 
     def update(percent: int, label: str) -> bool:
         if progress.iscanceled():
@@ -312,11 +313,12 @@ def main() -> None:
             add_directory("Genres", "/genres")
             add_directory("Sources", "/sources")
             add_action("Scan / Refresh Library", "/scan")
-            add_action("Fetch Missing Artwork (SteamGridDB)", "/scrape")
+            add_action("Fetch Missing Artwork (ScreenScraper)", "/scrape")
             add_action("Settings", "/settings")
             xbmcplugin.setContent(HANDLE, "files")
             xbmcplugin.endOfDirectory(HANDLE)
         elif path == "/library":
+            refresh_home_platform_properties(db)
             render_library_menu(router)
         elif path == "/all":
             render_game_list(router.all_games(), "No games yet")

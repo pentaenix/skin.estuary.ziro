@@ -87,6 +87,7 @@ MIGRATIONS = [
     "ALTER TABLE games ADD COLUMN sgdb_game_id INTEGER",
     "ALTER TABLE games ADD COLUMN manual_metadata_locked INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE games ADD COLUMN metadata_updated_at TEXT",
+    "ALTER TABLE games ADD COLUMN ss_game_id INTEGER",
 ]
 
 DEFAULT_PLATFORMS = all_platform_rows()
@@ -250,7 +251,7 @@ class GameDatabase:
     def update_game_artwork(self, game_id: int, fields: dict) -> None:
         allowed = {
             "cover_path", "fanart_path", "logo_path", "screenshot_path",
-            "sgdb_game_id", "metadata_updated_at", "description",
+            "sgdb_game_id", "ss_game_id", "metadata_updated_at", "description",
         }
         updates = {key: value for key, value in fields.items() if key in allowed}
         if not updates:

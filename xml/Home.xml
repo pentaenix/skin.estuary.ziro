@@ -757,25 +757,25 @@
 					<control type="grouplist" id="17001">
 						<include>WidgetGroupListCommon</include>
 						<pagecontrol>17010</pagecontrol>
-						<include content="ZiroGamesWidgetListCategories" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0) + !Skin.HasSetting(home_no_categories_widget)">
+						<include content="ZiroGamesWidgetListCategories" condition="System.HasAddon(plugin.program.ziro.games) + !Skin.HasSetting(home_no_categories_widget)">
 							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/library"/>
 							<param name="widget_header" value="$LOCALIZE[31148]"/>
 							<param name="widget_target" value="programs"/>
 							<param name="list_id" value="17290"/>
 						</include>
-						<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">
+						<include content="ZiroGamesWidgetListGameArt" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">
 							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/continue"/>
 							<param name="widget_header" value="Continue Playing"/>
 							<param name="widget_target" value="programs"/>
 							<param name="list_id" value="17300"/>
 						</include>
-						<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">
+						<include content="ZiroGamesWidgetListGameArt" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">
 							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/recent"/>
 							<param name="widget_header" value="Recently Added"/>
 							<param name="widget_target" value="programs"/>
 							<param name="list_id" value="17310"/>
 						</include>
-						<include content="WidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">
+						<include content="ZiroGamesWidgetListGameArt" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">
 							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/favorites"/>
 							<param name="widget_header" value="Favorites"/>
 							<param name="widget_target" value="programs"/>
