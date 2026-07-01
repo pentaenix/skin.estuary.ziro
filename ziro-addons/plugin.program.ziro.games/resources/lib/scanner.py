@@ -366,7 +366,6 @@ def scan(db: GameDatabase) -> ScanResult:
                 "rom_path": rom_path,
                 "emulator_profile_id": source.get("emulator_profile_id") or platform.profile_id,
                 "source_id": source.get("id"),
-                "description": f"Imported from {folder}",
             })
             if game_artwork_provider() == PROVIDER_SKRAPER:
                 row = db.one("SELECT id FROM games WHERE rom_path=?", (rom_path,))

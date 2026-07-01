@@ -29,7 +29,7 @@
 						<top>4</top>
 						<width>526</width>
 						<height>801</height>
-						<aspectratio>scale</aspectratio>
+						<aspectratio align="center" aligny="center">keep</aspectratio>
 						<texture background="true"></texture>
 					</control>
 					<control type="image" id="201">

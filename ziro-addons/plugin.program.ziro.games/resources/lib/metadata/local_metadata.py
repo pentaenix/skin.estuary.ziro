@@ -13,7 +13,7 @@ import xbmcvfs
 from ..db import GameDatabase
 from ..art_paths import normalize_art_path, path_exists, usable_art_path
 from .genre_sync import map_genre_names_to_ids
-from ..text_utils import clean_display_text
+from ..text_utils import clean_display_text, resolve_game_description
 
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
 VIDEO_SUFFIXES = {".mp4", ".webm", ".m4v", ".avi", ".mkv", ".mov"}
@@ -685,7 +685,9 @@ def apply_local_metadata(db: GameDatabase, game_id: int, metadata: dict) -> dict
             updates[field] = usable
             continue
         if field == "description":
-            updates[field] = clean_display_text(str(value))
+            updates[field] = resolve_game_description(str(value))
+            if not updates[field]:
+                continue
             continue
         updates[field] = value
 

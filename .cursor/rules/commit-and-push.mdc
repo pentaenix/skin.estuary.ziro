@@ -1,0 +1,37 @@
+---
+description: After completing code changes in this repo, commit and push to origin.
+alwaysApply: true
+---
+
+# Commit and push after changes
+
+When you finish implementation work in this repository, **always commit and push** without waiting for the user to ask.
+
+## When to commit and push
+
+Do this at the end of a task when you changed tracked files (code, skin XML, addon versions, changelog, docs the user requested, etc.).
+
+Skip only when:
+- There are no file changes to commit
+- The user explicitly said not to commit or push in that message
+- The task was read-only (questions, review, no edits)
+
+## Workflow
+
+1. Run `git status`, `git diff`, and `git log -1` to see scope and message style
+2. Stage relevant files only — never `__pycache__/`, `*.pyc`, `dist/`, secrets, or other ignored artifacts
+3. Write a concise commit message focused on **why**
+4. Commit with a HEREDOC message
+5. Push to the current branch (`git push` or `git push -u origin HEAD` if needed)
+6. Confirm the push succeeded in your reply (branch + short summary)
+
+## Git safety (still required)
+
+- Never update git config
+- Never force-push to `main`/`master`
+- Never skip hooks unless the user explicitly requests it
+- Do not amend unless the user asked and the amend rules in user rules are satisfied
+
+## Version bumps
+
+For skin/addon changes in this project, bump `addon.xml` / `changelog.txt` versions when the change is user-visible, then include those files in the same commit.

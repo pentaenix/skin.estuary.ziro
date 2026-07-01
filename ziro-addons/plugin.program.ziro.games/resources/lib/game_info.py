@@ -13,7 +13,7 @@ from .app_title import app_title
 from .art_paths import usable_art_path
 from .db import GameDatabase
 from .metadata.local_metadata import lookup_local_metadata
-from .text_utils import clean_display_text
+from .text_utils import is_import_placeholder_description, resolve_game_description
 from .titles import display_title
 
 SKIN_IDS = ("skin.estuary.ziro",)
@@ -22,6 +22,9 @@ RES_FOLDERS = ("xml", "1080i", "720p")
 POSTER_CONTROL_ID = 200
 LOGO_CONTROL_ID = 201
 APP_NAME = app_title()
+
+_GAME_DETAIL_CACHE: dict[int, dict] = {}
+_RESOLVED_DIALOG_TARGETS: list[tuple[str, str]] | None = None
 
 GAME_DETAIL_SQL = """
 SELECT g.*, p.name AS platform,
@@ -58,10 +61,10 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
 
     def _apply_properties(self, game: dict) -> None:
         title = display_title(game.get("title", ""), rom_path=game.get("rom_path", ""))
-        art = _resolve_art_for_game(game)
+        art = game.get("_art") or _resolve_art_for_game(game, local=game.get("_local"))
         self.setProperty("ZiroGame.Id", str(game.get("id") or ""))
         self.setProperty("ZiroGame.Title", title)
-        self.setProperty("ZiroGame.Plot", clean_display_text(game.get("description") or ""))
+        self.setProperty("ZiroGame.Plot", resolve_game_description(game.get("description") or ""))
         self.setProperty("ZiroGame.Platform", game.get("platform") or game.get("platform_id") or "")
         self.setProperty("ZiroGame.Year", str(game.get("release_year") or ""))
         self.setProperty("ZiroGame.Developer", game.get("developer") or "")
@@ -123,7 +126,9 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
                     f'PlayMedia(plugin://plugin.video.youtube/?action=search_query&search={title} trailer)'
                 )
         elif control_id == 102:
-            art = _resolve_art_for_game(self._game)
+            art = self._game.get("_art") or _resolve_art_for_game(
+                self._game, local=self._game.get("_local")
+            )
             image = art.get("fanart_path") or art.get("screenshot_path") or art.get("cover_path") or ""
             if image:
                 xbmcgui.Window(10000).setProperty("infobackground", image)
@@ -138,14 +143,14 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
             self.setProperty("ZiroGame.Favorite", "1" if self._game["favorite"] else "0")
         elif control_id == 6:
             xbmc.executebuiltin(f"RunPlugin(plugin://plugin.program.ziro.games/?path=/refresh&game_id={game_id})")
-            refreshed = _load_game_details(game_id)
+            refreshed = _load_game_details(game_id, use_cache=False)
             if refreshed:
                 self._game = refreshed
                 ZiroGameInfoDialog._game = refreshed
                 self._apply_properties(refreshed)
         elif control_id == 10:
             xbmc.executebuiltin(f"RunPlugin(plugin://plugin.program.ziro.games/?path=/choose_art&game_id={game_id})")
-            refreshed = _load_game_details(game_id)
+            refreshed = _load_game_details(game_id, use_cache=False)
             if refreshed:
                 self._game = refreshed
                 ZiroGameInfoDialog._game = refreshed
@@ -162,21 +167,44 @@ def _format_last_played(value: str) -> str:
         return value[:16]
 
 
-def _load_game_details(game_id: int) -> dict | None:
+def clear_game_info_cache(game_id: int | None = None) -> None:
+    global _RESOLVED_DIALOG_TARGETS
+    if game_id is None:
+        _GAME_DETAIL_CACHE.clear()
+        _RESOLVED_DIALOG_TARGETS = None
+        return
+    _GAME_DETAIL_CACHE.pop(game_id, None)
+
+
+def _load_game_details(game_id: int, *, use_cache: bool = True) -> dict | None:
+    if use_cache and game_id in _GAME_DETAIL_CACHE:
+        return dict(_GAME_DETAIL_CACHE[game_id])
+
     db = GameDatabase()
     game = db.one(GAME_DETAIL_SQL, (game_id,))
     if not game:
         return None
-    return _merge_local_metadata(game)
 
-
-def _merge_local_metadata(game: dict) -> dict:
-    merged = dict(game)
     local = lookup_local_metadata(
-        merged.get("rom_path") or "",
-        source_folder=merged.get("source_folder") or "",
-        platform_id=merged.get("platform_id") or "",
+        game.get("rom_path") or "",
+        source_folder=game.get("source_folder") or "",
+        platform_id=game.get("platform_id") or "",
     )
+    merged = _merge_local_metadata(game, local=local)
+    merged["_local"] = local
+    merged["_art"] = _resolve_art_for_game(merged, local=local)
+    _GAME_DETAIL_CACHE[game_id] = merged
+    return dict(merged)
+
+
+def _merge_local_metadata(game: dict, *, local: dict | None = None) -> dict:
+    merged = dict(game)
+    if local is None:
+        local = lookup_local_metadata(
+            merged.get("rom_path") or "",
+            source_folder=merged.get("source_folder") or "",
+            platform_id=merged.get("platform_id") or "",
+        )
     for field in (
         "description",
         "developer",
@@ -189,14 +217,21 @@ def _merge_local_metadata(game: dict) -> dict:
         "video_path",
         "genres",
     ):
-        if local.get(field) and not merged.get(field):
-            merged[field] = local[field]
+        local_value = local.get(field)
+        if not local_value:
+            continue
+        if field == "description":
+            if not merged.get(field) or is_import_placeholder_description(str(merged.get("description") or "")):
+                merged[field] = local_value
+            continue
+        if not merged.get(field):
+            merged[field] = local_value
     if local.get("genres") and not merged.get("genres"):
         merged["genres"] = local["genres"]
     return merged
 
 
-def _resolve_art_for_game(game: dict) -> dict[str, str]:
+def _resolve_art_for_game(game: dict, *, local: dict | None = None) -> dict[str, str]:
     fields = ("cover_path", "fanart_path", "logo_path", "screenshot_path", "video_path")
     resolved: dict[str, str] = {}
     for field in fields:
@@ -204,7 +239,7 @@ def _resolve_art_for_game(game: dict) -> dict[str, str]:
         if path:
             resolved[field] = path
 
-    local = lookup_local_metadata(
+    local = local if local is not None else lookup_local_metadata(
         game.get("rom_path") or "",
         source_folder=game.get("source_folder") or "",
         platform_id=game.get("platform_id") or "",
@@ -291,6 +326,10 @@ def _dialog_xml_path(skin_root: str, res_folder: str) -> str:
 
 
 def resolve_game_info_targets() -> list[tuple[str, str]]:
+    global _RESOLVED_DIALOG_TARGETS
+    if _RESOLVED_DIALOG_TARGETS is not None:
+        return list(_RESOLVED_DIALOG_TARGETS)
+
     targets: list[tuple[str, str]] = []
     seen: set[tuple[str, str]] = set()
     active_skin_id = _current_skin_id()
@@ -325,7 +364,8 @@ def resolve_game_info_targets() -> list[tuple[str, str]]:
                 add_target(skin_root, "xml")
                 break
 
-    return targets
+    _RESOLVED_DIALOG_TARGETS = list(targets)
+    return list(targets)
 
 
 def show_game_info(game_id: int) -> None:

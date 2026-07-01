@@ -20,6 +20,7 @@ from resources.lib.scan_jobs import scan_in_background
 from resources.lib.art_paths import usable_art_path
 from resources.lib.metadata.local_metadata import discover_local_art
 from resources.lib.titles import display_title
+from resources.lib.text_utils import resolve_game_description
 
 from resources.lib.metadata.providers import game_artwork_provider
 
@@ -192,7 +193,7 @@ def add_game(game: dict) -> None:
         item.setArt(art)
     info = {
         "title": label,
-        "plot": game.get("description", ""),
+        "plot": resolve_game_description(game.get("description") or ""),
         "year": int(game["release_year"]) if game.get("release_year") else 0,
         "genre": game.get("genres", ""),
         "platform": game.get("platform") or game.get("platform_id", ""),
