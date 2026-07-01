@@ -19,19 +19,23 @@ APP_NAME = app_title()
 
 
 class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
+    _game: dict = {}
+
     def __init__(
         self,
         xml_name: str,
         script_path: str,
-        default_skin: str,
-        default_res: str,
-        game: dict,
+        default_skin: str = "",
+        default_res: str = "xml",
     ) -> None:
         super().__init__(str(xml_name), str(script_path), str(default_skin), str(default_res))
-        self.game = game
+
+    @classmethod
+    def set_game(cls, game: dict) -> None:
+        cls._game = game
 
     def onInit(self) -> None:
-        game = self.game
+        game = self._game
         title = display_title(game.get("title", ""), rom_path=game.get("rom_path", ""))
         self.setProperty("ZiroGame.Id", str(game.get("id") or ""))
         self.setProperty("ZiroGame.Title", title)
@@ -55,7 +59,7 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
         self.setProperty("ZiroGame.Rating", str(rating) if rating not in (None, "", 0) else "")
 
     def onClick(self, control_id: int) -> None:
-        game_id = int(self.game["id"])
+        game_id = int(self._game["id"])
         if control_id == 8:
             self.close()
             xbmc.executebuiltin(f"RunScript(script.ziro.games.launcher,game_id={game_id})")
@@ -64,7 +68,7 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
             if video_path and xbmcvfs.exists(video_path):
                 xbmc.Player().play(video_path)
                 return
-            title = display_title(self.game.get("title", ""), rom_path=self.game.get("rom_path", ""))
+            title = display_title(self._game.get("title", ""), rom_path=self._game.get("rom_path", ""))
             if xbmc.getCondVisibility("System.HasAddon(script.extendedinfo)"):
                 xbmc.executebuiltin(
                     f'RunScript(script.extendedinfo,info=youtubebrowser,id={title} trailer)'
@@ -75,9 +79,9 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
                 )
         elif control_id == 102:
             image = (
-                self.game.get("fanart_path")
-                or self.game.get("screenshot_path")
-                or self.game.get("cover_path")
+                self._game.get("fanart_path")
+                or self._game.get("screenshot_path")
+                or self._game.get("cover_path")
                 or ""
             )
             if image and xbmcvfs.exists(image):
@@ -89,15 +93,16 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
                 "UPDATE games SET favorite = CASE favorite WHEN 1 THEN 0 ELSE 1 END WHERE id=?",
                 (game_id,),
             )
-            self.game["favorite"] = 0 if int(self.game.get("favorite") or 0) else 1
-            self.setProperty("ZiroGame.Favorite", "1" if self.game["favorite"] else "0")
+            self._game["favorite"] = 0 if int(self._game.get("favorite") or 0) else 1
+            self.setProperty("ZiroGame.Favorite", "1" if self._game["favorite"] else "0")
         elif control_id == 6:
             xbmc.executebuiltin(f"RunPlugin(plugin://plugin.program.ziro.games/?path=/refresh&game_id={game_id})")
         elif control_id == 10:
             xbmc.executebuiltin(f"RunPlugin(plugin://plugin.program.ziro.games/?path=/choose_art&game_id={game_id})")
             refreshed = GameDatabase().get_game(game_id)
             if refreshed:
-                self.game = refreshed
+                self._game = refreshed
+                ZiroGameInfoDialog._game = refreshed
                 cover = (refreshed.get("cover_path") or "").strip()
                 self.setProperty("ZiroGame.Poster", cover if cover and xbmcvfs.exists(cover) else "")
                 fanart = refreshed.get("fanart_path") or ""
@@ -236,9 +241,10 @@ def show_game_info(game_id: int) -> None:
 
     active_skin_id = _current_skin_id()
     last_error = ""
+    ZiroGameInfoDialog.set_game(game)
     for skin_path, res_folder in resolve_game_info_targets():
         try:
-            dialog = ZiroGameInfoDialog(DIALOG_XML, skin_path, "", res_folder, game)
+            dialog = ZiroGameInfoDialog(DIALOG_XML, skin_path, "", res_folder)
             dialog.doModal()
             del dialog
             return
