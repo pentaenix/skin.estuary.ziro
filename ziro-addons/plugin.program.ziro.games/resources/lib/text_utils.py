@@ -18,13 +18,24 @@ def is_import_placeholder_description(text: str) -> bool:
 
 def strip_wrapping_quotes(text: str) -> str:
     value = (text or "").strip()
-    if len(value) < 2:
-        return value
-    for open_quote, close_quote in _WRAPPING_QUOTE_PAIRS:
-        if value.startswith(open_quote) and value.endswith(close_quote):
-            inner = value[len(open_quote) : -len(close_quote)].strip()
-            if inner:
-                return inner
+    if not value:
+        return ""
+
+    changed = True
+    while changed and value:
+        changed = False
+        for open_quote, close_quote in _WRAPPING_QUOTE_PAIRS:
+            if len(value) >= len(open_quote) + len(close_quote) and value.startswith(open_quote) and value.endswith(close_quote):
+                inner = value[len(open_quote) : -len(close_quote)].strip()
+                if inner != value:
+                    value = inner
+                    changed = True
+        while value.startswith('"'):
+            value = value[1:].strip()
+            changed = True
+        while value.endswith('"'):
+            value = value[:-1].strip()
+            changed = True
     return value
 
 

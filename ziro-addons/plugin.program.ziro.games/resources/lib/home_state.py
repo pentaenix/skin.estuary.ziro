@@ -13,6 +13,7 @@ GENRE_PROPERTY_PREFIX = "ZiroGames.Genre."
 GENRE_IDS = ("rpg", "platformer", "adventure", "racing", "fighting", "coop")
 
 HOME_WIDGET_LIST_IDS = (
+    17290,
     17300,
     17310,
     17320,

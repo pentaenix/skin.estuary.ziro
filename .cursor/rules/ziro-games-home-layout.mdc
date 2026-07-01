@@ -1,0 +1,34 @@
+---
+description: Protect Games home layout from regressions (categories banner, grouplist structure).
+globs:
+  - xml/Home.xml
+  - xml/Includes_Ziro_Games_Home.xml
+  - xml/Includes_Ziro_Games_Widgets.xml
+alwaysApply: false
+---
+
+# Games home layout (do not break)
+
+## Required: library categories banner
+
+The Games section (`control type="group" id="17000"`) **must** keep the top `WidgetListCategories` row inside `grouplist` `17001`, matching Movies (`5001`):
+
+- `content_path`: `plugin://plugin.program.ziro.games/?path=/library`
+- `list_id`: `17290`
+- Header: `Games Library`
+
+This banner was removed twice by accident. Do not delete it when changing platform rows or visibility.
+
+## Grouplist children: never wrap widgets in `<control type="group">`
+
+`WidgetGroupListCommon` uses `usecontrolcoords`. Wrapping `ZiroGamesWidgetList*` / `WidgetListCategories` includes in an extra group breaks row layout and can hide the categories banner.
+
+Pass dynamic visibility via `$PARAM[visible]` on **CategoryLabel**, **BusyListSpinner**, and the panel — not via a wrapper group.
+
+## Platform rows only (no genre shelves on home)
+
+Keep `ZiroGamesPlatformWidgets` in `17001`. Do **not** re-add `ZiroGamesGenreWidgets` to `Home.xml` unless explicitly requested.
+
+## Validation
+
+Run `python3 tools/ziro_validate_addons.py` before commit; it checks the categories banner and forbidden group wrappers.

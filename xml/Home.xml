@@ -757,6 +757,12 @@
 					<control type="grouplist" id="17001">
 						<include>WidgetGroupListCommon</include>
 						<pagecontrol>17010</pagecontrol>
+						<include content="WidgetListCategories" condition="System.HasAddon(plugin.program.ziro.games) + !Skin.HasSetting(home_no_categories_widget) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">
+							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/library"/>
+							<param name="widget_header" value="Games Library"/>
+							<param name="widget_target" value="programs"/>
+							<param name="list_id" value="17290"/>
+						</include>
 						<include content="ZiroGamesWidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">
 							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/continue"/>
 							<param name="widget_header" value="Continue Playing"/>

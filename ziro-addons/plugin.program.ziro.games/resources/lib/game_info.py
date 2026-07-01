@@ -20,7 +20,6 @@ SKIN_IDS = ("skin.estuary.ziro",)
 DIALOG_XML = "Custom_1110_DialogZiroGameInfo.xml"
 RES_FOLDERS = ("xml", "1080i", "720p")
 POSTER_CONTROL_ID = 200
-LOGO_CONTROL_ID = 201
 APP_NAME = app_title()
 
 _GAME_DETAIL_CACHE: dict[int, dict] = {}
@@ -80,7 +79,6 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
         self.setProperty("ZiroGame.Logo", art.get("logo_path", ""))
         self.setProperty("ZiroGame.Video", art.get("video_path", ""))
         self.setProperty("ZiroGame.HasPoster", "1" if art.get("cover_path") else "")
-        self.setProperty("ZiroGame.HasLogo", "1" if art.get("logo_path") else "")
         self.setProperty("ZiroGame.HasFanart", "1" if art.get("fanart_path") else "")
         self.setProperty("ZiroGame.HasScreenshot", "1" if art.get("screenshot_path") else "")
         xbmc.log(
@@ -88,23 +86,16 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
             xbmc.LOGINFO,
         )
         self._set_dialog_images(art)
-        rating = game.get("rating")
-        self.setProperty("ZiroGame.Rating", str(rating) if rating not in (None, "", 0) else "")
-        background = art.get("fanart_path") or art.get("screenshot_path") or art.get("cover_path") or ""
+        background = art.get("fanart_path") or art.get("cover_path") or ""
         if background:
             xbmcgui.Window(10000).setProperty("infobackground", background)
 
     def _set_dialog_images(self, art: dict) -> None:
         poster = art.get("cover_path", "")
-        logo = art.get("logo_path", "")
         try:
             self.getControl(POSTER_CONTROL_ID).setImage(poster)
         except RuntimeError as exc:
             xbmc.log(f"[Games] poster setImage failed: {exc}", xbmc.LOGWARNING)
-        try:
-            self.getControl(LOGO_CONTROL_ID).setImage(logo if logo else "")
-        except RuntimeError as exc:
-            xbmc.log(f"[Games] logo setImage failed: {exc}", xbmc.LOGWARNING)
 
     def onClick(self, control_id: int) -> None:
         game_id = int(self._game["id"])
@@ -129,7 +120,7 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
             art = self._game.get("_art") or _resolve_art_for_game(
                 self._game, local=self._game.get("_local")
             )
-            image = art.get("fanart_path") or art.get("screenshot_path") or art.get("cover_path") or ""
+            image = art.get("screenshot_path") or ""
             if image:
                 xbmcgui.Window(10000).setProperty("infobackground", image)
                 xbmc.executebuiltin("ActivateWindow(1104)")
@@ -250,8 +241,6 @@ def _resolve_art_for_game(game: dict, *, local: dict | None = None) -> dict[str,
             if path:
                 resolved[field] = path
 
-    if resolved.get("screenshot_path") and not resolved.get("logo_path"):
-        resolved["logo_path"] = resolved["screenshot_path"]
     return resolved
 
 
