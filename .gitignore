@@ -24,6 +24,8 @@ backgrounds/debuggrid1080.png
 # Ziro generated files should not be committed
 dist/
 *.zip
+__pycache__/
+*.pyc
 .ziro_games_patch_state.json
 .ziro_games_initial_setup_manifest.json
 
