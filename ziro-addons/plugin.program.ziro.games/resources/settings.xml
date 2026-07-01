@@ -318,7 +318,7 @@
       <group id="2" label="30080">
         <setting id="clear_artwork_cache" type="action" label="30078" help="30079">
           <level>0</level>
-          <data>RunPlugin(plugin://plugin.program.ziro.games/?path=/clear_cache)</data>
+          <data>RunScript(plugin.program.ziro.games)</data>
           <control type="button" format="action">
             <close>true</close>
           </control>

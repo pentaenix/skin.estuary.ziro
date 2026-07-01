@@ -177,7 +177,6 @@ def render_library_menu(router: Router) -> None:
     add_library_entry("All Games", "/all", "Full game list")
     add_action("Scan / Refresh Library", "/scan")
     add_action("Refresh All Artwork", "/refresh_artwork")
-    add_action("Clear Downloaded Artwork", "/clear_cache")
     add_library_entry("Sources", "/sources", "ROM folders and platforms")
     add_action("Settings", "/settings")
     xbmcplugin.setContent(HANDLE, "games")
@@ -455,7 +454,7 @@ def main() -> None:
             refresh_home_properties(db)
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/clear_cache":
-            from resources.lib.cache import clear_downloaded_artwork
+            from resources.lib.cache import clear_downloaded_artwork, refresh_games_ui
 
             if not xbmcgui.Dialog().yesno(
                 APP_NAME,
@@ -465,9 +464,8 @@ def main() -> None:
                 xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
                 return
             result = clear_downloaded_artwork(db)
-            refresh_home_properties(db)
+            refresh_games_ui(db)
             xbmcgui.Dialog().ok(APP_NAME, result.summary())
-            xbmc.executebuiltin("Container.Refresh")
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/choose_art":
             from resources.lib.metadata.art_picker import choose_game_art

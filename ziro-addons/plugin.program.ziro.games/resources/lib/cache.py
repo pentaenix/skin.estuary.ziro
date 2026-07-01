@@ -5,12 +5,13 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import xbmc
+import xbmcgui
 import xbmcvfs
 
 from .db import GameDatabase
 from .metadata.local_metadata import clear_gamelist_cache
 from .metadata.platform_art import _map_path, platform_art_dir
-from .paths import artwork_dir, userdata_dir
+from .paths import ADDON_ID, artwork_dir
 
 ART_PATH_FIELDS = (
     "cover_path",
@@ -27,6 +28,8 @@ class ClearCacheResult:
     games_updated: int = 0
 
     def summary(self) -> str:
+        if not self.games_updated and not self.files_removed:
+            return "No downloaded artwork cache was found to clear."
         return (
             f"Removed {self.files_removed} cached files.\n"
             f"Cleared artwork on {self.games_updated} games."
@@ -37,16 +40,11 @@ def _norm(path: str) -> str:
     return path.replace("\\", "/").lower()
 
 
-def _userdata_prefix() -> str:
-    return _norm(str(userdata_dir()))
-
-
 def is_downloaded_art_path(path: str | None) -> bool:
     if not path or not str(path).strip():
         return False
     norm = _norm(str(path))
-    prefix = _userdata_prefix()
-    if prefix not in norm:
+    if ADDON_ID.lower() not in norm:
         return False
     return "/artwork/" in norm or "/platform_art/" in norm
 
@@ -70,18 +68,51 @@ def _delete_folder_contents(folder: Path) -> int:
 
 
 def _remove_path_file(path: str) -> int:
-    if not path or not xbmcvfs.exists(path):
+    if not path:
         return 0
-    try:
-        xbmcvfs.delete(path)
-        return 1
-    except Exception:
+    removed = 0
+    for candidate in {path, xbmcvfs.translatePath(path)}:
+        if not candidate or not xbmcvfs.exists(candidate):
+            continue
         try:
-            Path(path).unlink(missing_ok=True)
-            return 1
-        except Exception as exc:
-            xbmc.log(f"[Games] cache delete failed file={path}: {exc}", xbmc.LOGWARNING)
-    return 0
+            xbmcvfs.delete(candidate)
+            removed += 1
+        except Exception:
+            try:
+                Path(candidate).unlink(missing_ok=True)
+                removed += 1
+            except Exception as exc:
+                xbmc.log(f"[Games] cache delete failed file={candidate}: {exc}", xbmc.LOGWARNING)
+    return removed
+
+
+def _field_matches_cache_sql(field: str) -> str:
+    return (
+        f"({field} LIKE '%{ADDON_ID}/artwork/%' OR {field} LIKE '%{ADDON_ID}\\artwork\\%'"
+        f" OR {field} LIKE '%{ADDON_ID}/platform_art/%' OR {field} LIKE '%{ADDON_ID}\\platform_art\\%')"
+    )
+
+
+def _count_games_with_cache_paths(db: GameDatabase) -> int:
+    row = db.one(
+        f"""
+        SELECT COUNT(DISTINCT id) AS n FROM games
+        WHERE {" OR ".join(_field_matches_cache_sql(field) for field in ART_PATH_FIELDS)}
+        """
+    )
+    return int(row["n"]) if row else 0
+
+
+def _clear_artwork_columns_sql(db: GameDatabase) -> None:
+    for field in ART_PATH_FIELDS:
+        db.execute(f"UPDATE games SET {field}='' WHERE {_field_matches_cache_sql(field)}")
+    db.execute(
+        f"""
+        UPDATE games
+        SET sgdb_game_id=NULL, ss_game_id=NULL, manual_metadata_locked=0
+        WHERE {" OR ".join(_field_matches_cache_sql(field) for field in ART_PATH_FIELDS)}
+        """
+    )
 
 
 def clear_downloaded_artwork(
@@ -119,7 +150,9 @@ def clear_downloaded_artwork(
         args,
     )
 
+    updated_ids: set[int] = set()
     for row in rows:
+        game_id = int(row["id"])
         updates: dict[str, str] = {}
         for field in ART_PATH_FIELDS:
             value = row.get(field) or ""
@@ -128,17 +161,29 @@ def clear_downloaded_artwork(
                 result.files_removed += _remove_path_file(value)
         if not updates:
             continue
-        db.update_game_artwork(int(row["id"]), updates)
+        db.update_game_artwork(game_id, updates)
         db.execute(
             """
             UPDATE games
             SET sgdb_game_id=NULL, ss_game_id=NULL, manual_metadata_locked=0
             WHERE id=?
             """,
-            (row["id"],),
+            (game_id,),
         )
-        result.games_updated += 1
+        updated_ids.add(game_id)
 
+    if game_ids:
+        result.games_updated = len(updated_ids)
+    else:
+        before = _count_games_with_cache_paths(db)
+        _clear_artwork_columns_sql(db)
+        after = _count_games_with_cache_paths(db)
+        result.games_updated = max(len(updated_ids), before - after, before)
+
+    xbmc.log(
+        f"[Games] clear cache files={result.files_removed} games={result.games_updated}",
+        xbmc.LOGINFO,
+    )
     clear_gamelist_cache()
     return result
 
@@ -149,3 +194,17 @@ def clear_artwork_for_source(db: GameDatabase, source_id: int) -> ClearCacheResu
     if not game_ids:
         return ClearCacheResult()
     return clear_downloaded_artwork(db, game_ids=game_ids, include_hidden=True)
+
+
+def refresh_games_ui(db: GameDatabase | None = None) -> None:
+    from .home_state import refresh_home_properties
+
+    refresh_home_properties(db)
+    for list_id in (17290, 17300, 17310, 17320):
+        try:
+            xbmc.executebuiltin(f"Container.Update({list_id},replace)")
+        except Exception:
+            pass
+    xbmc.executebuiltin("Container.Refresh")
+    xbmc.sleep(250)
+    xbmc.executebuiltin("Container.Refresh")
