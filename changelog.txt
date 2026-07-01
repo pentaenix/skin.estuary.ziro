@@ -1,3 +1,6 @@
+[B]2.4.7[/B]
+• Games: show cleaned game title instead of missing-art placeholder on home rows and lists
+
 [B]2.4.6[/B]
 • Games: drop Ziro from UI labels; fix Skraper wii.dat import and artwork refresh for full libraries
 

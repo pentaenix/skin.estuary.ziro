@@ -7,6 +7,7 @@ import xbmc
 import xbmcaddon
 import xbmcgui
 import xbmcplugin
+import xbmcvfs
 
 from resources.lib.app_title import app_title
 from resources.lib.db import GameDatabase
@@ -17,6 +18,7 @@ from resources.lib.paths_filter import is_allowed_source_folder
 from resources.lib.platforms import get_platform, platform_choices
 from resources.lib.routes import Router
 from resources.lib.scan_jobs import scan_in_background
+from resources.lib.titles import display_title
 
 from resources.lib.metadata.providers import game_artwork_provider
 
@@ -121,20 +123,34 @@ def _game_item_url(game_id: int) -> str:
     return plugin_url("/info", game_id=str(game_id))
 
 
+def _local_art_path(path: str | None) -> str:
+    path = (path or "").strip()
+    if not path or path.startswith("Default"):
+        return ""
+    return path if xbmcvfs.exists(path) else ""
+
+
 def add_game(game: dict) -> None:
     play_on_click = _play_on_click()
-    item = xbmcgui.ListItem(label=game["title"])
+    label = display_title(game.get("title", ""), rom_path=game.get("rom_path", ""))
+    item = xbmcgui.ListItem(label=label)
     item.setProperty("IsPlayable", "true" if play_on_click else "false")
     item.setProperty("ziro_game_id", str(game["id"]))
-    art = {
-        "thumb": game.get("cover_path") or "DefaultProgram.png",
-        "poster": game.get("cover_path") or "DefaultProgram.png",
-        "fanart": game.get("fanart_path") or "",
-        "clearlogo": game.get("logo_path") or "",
-    }
-    item.setArt({k: v for k, v in art.items() if v})
+    art: dict[str, str] = {}
+    cover = _local_art_path(game.get("cover_path"))
+    if cover:
+        art["thumb"] = cover
+        art["poster"] = cover
+    fanart = _local_art_path(game.get("fanart_path"))
+    if fanart:
+        art["fanart"] = fanart
+    logo = _local_art_path(game.get("logo_path"))
+    if logo:
+        art["clearlogo"] = logo
+    if art:
+        item.setArt(art)
     info = {
-        "title": game.get("title", ""),
+        "title": label,
         "plot": game.get("description", ""),
         "year": int(game["release_year"]) if game.get("release_year") else 0,
         "genre": game.get("genres", ""),
