@@ -19,6 +19,22 @@ VIDEO_SUFFIXES = {".mp4", ".webm", ".m4v", ".avi", ".mkv", ".mov"}
 _GAMELIST_CACHE: dict[str, dict[str, dict]] = {}
 _SKRAPER_DAT_CACHE: dict[str, dict[str, dict]] = {}
 
+REGION_TAG_RE = re.compile(r"\s*[\(\[].*?[\)\]]", re.IGNORECASE)
+
+PLATFORM_DAT_FILES: dict[str, tuple[str, ...]] = {
+    "wii": ("wii.dat",),
+    "gamecube": ("gamecube.dat", "gc.dat"),
+    "dreamcast": ("dreamcast.dat",),
+    "gba": ("gba.dat",),
+    "nds": ("nds.dat",),
+    "snes": ("snes.dat",),
+    "nes": ("nes.dat",),
+    "n64": ("n64.dat",),
+    "ps1": ("psx.dat", "ps1.dat", "sony playstation.dat"),
+    "ps2": ("ps2.dat",),
+    "psp": ("psp.dat",),
+}
+
 # Skraper media folders (under media/)
 SKRAPER_MEDIA_DIRS = {
     "cover_path": ("box2dfront", "box2d", "boxfront", "boxart"),
@@ -51,8 +67,53 @@ def _basename_key(path: str) -> str:
 
 def _normalize_match_key(text: str) -> str:
     value = html.unescape(text or "").lower()
+    value = REGION_TAG_RE.sub("", value)
     value = re.sub(r"[^\w\s]", " ", value)
     return re.sub(r"\s+", " ", value).strip()
+
+
+def _read_xml_root(path: str) -> ET.Element | None:
+    if not path or not xbmcvfs.exists(path):
+        return None
+    try:
+        handle = xbmcvfs.File(path)
+        data = handle.read()
+        handle.close()
+        if isinstance(data, bytes):
+            text = ""
+            for encoding in ("utf-8-sig", "utf-8", "cp1252", "latin-1"):
+                try:
+                    text = data.decode(encoding)
+                    break
+                except UnicodeDecodeError:
+                    continue
+            if not text:
+                text = data.decode("utf-8", errors="replace")
+        else:
+            text = data or ""
+        text = re.sub(r"<!DOCTYPE[^>]*>", "", text, flags=re.IGNORECASE)
+        return ET.fromstring(text)
+    except Exception as exc:
+        xbmc.log(f"[Games] XML parse failed path={path}: {exc}", xbmc.LOGWARNING)
+        return None
+
+
+def _rom_lookup_keys(rom_name: str) -> set[str]:
+    keys: set[str] = set()
+    base = _basename_key(rom_name)
+    if not base:
+        return keys
+    keys.add(base)
+    stem = base.rsplit(".", 1)[0] if "." in base else base
+    if stem:
+        keys.add(stem)
+        stripped = REGION_TAG_RE.sub("", stem).strip()
+        if stripped:
+            keys.add(stripped)
+            if "." in base:
+                ext = base.rsplit(".", 1)[-1]
+                keys.add(f"{stripped}.{ext}")
+    return {key for key in keys if key}
 
 
 def _resolve_path(base_dir: str, relative: str) -> str:
@@ -178,9 +239,11 @@ def _load_gamelist_index(folder: str) -> dict[str, dict]:
         return index
 
     try:
-        tree = ET.parse(gamelist_path)
-        root = tree.getroot()
-        for game_node in root.findall("game"):
+        root = _read_xml_root(gamelist_path)
+        if root is None:
+            _GAMELIST_CACHE[folder] = index
+            return index
+        for game_node in root.iter("game"):
             entry_path = (game_node.findtext("path") or "").strip()
             if not entry_path:
                 continue
@@ -198,47 +261,65 @@ def _load_gamelist_index(folder: str) -> dict[str, dict]:
                 if key:
                     index[key] = metadata
     except Exception as exc:
-        xbmc.log(f"[Ziro Games] gamelist.xml parse failed folder={folder}: {exc}", xbmc.LOGWARNING)
+        xbmc.log(f"[Games] gamelist.xml parse failed folder={folder}: {exc}", xbmc.LOGWARNING)
 
     _GAMELIST_CACHE[folder] = index
     return index
 
 
-def _find_skraper_dat_file(folder: str) -> str:
-    for file_path in _list_files(folder):
+def _find_skraper_dat_file(folder: str, platform_id: str = "") -> str:
+    if platform_id:
+        for name in PLATFORM_DAT_FILES.get(platform_id, ()):
+            path = os.path.join(folder, name)
+            if xbmcvfs.exists(path):
+                return path
+        preferred = f"{platform_id}.dat"
+        path = os.path.join(folder, preferred)
+        if xbmcvfs.exists(path):
+            return path
+    for file_path in sorted(_list_files(folder), key=str.lower):
         if file_path.lower().endswith(".dat"):
             return file_path
     return ""
 
 
-def _load_skraper_dat_index(folder: str) -> dict[str, dict]:
+def _load_skraper_dat_index(folder: str, platform_id: str = "") -> dict[str, dict]:
     folder = folder.rstrip("/\\")
-    if folder in _SKRAPER_DAT_CACHE:
-        return _SKRAPER_DAT_CACHE[folder]
+    cache_key = f"{folder}|{platform_id}"
+    if cache_key in _SKRAPER_DAT_CACHE:
+        return _SKRAPER_DAT_CACHE[cache_key]
 
     index: dict[str, dict] = {}
-    dat_path = _find_skraper_dat_file(folder)
+    dat_path = _find_skraper_dat_file(folder, platform_id)
     if not dat_path:
-        _SKRAPER_DAT_CACHE[folder] = index
+        _SKRAPER_DAT_CACHE[cache_key] = index
         return index
 
     try:
-        tree = ET.parse(dat_path)
-        root = tree.getroot()
-        for game_node in root.findall("game"):
+        root = _read_xml_root(dat_path)
+        if root is None:
+            _SKRAPER_DAT_CACHE[cache_key] = index
+            return index
+        for game_node in root.iter("game"):
             metadata = _skraper_game_to_metadata(game_node)
             metadata["skraper_game_name"] = metadata.get("title") or ""
+            title_key = _normalize_match_key(metadata.get("title") or "")
+            if title_key:
+                index[title_key] = dict(metadata)
             for rom_node in game_node.findall("rom"):
                 rom_name = (rom_node.attrib.get("name") or "").strip()
                 if not rom_name:
                     continue
-                key = _basename_key(rom_name)
-                if key:
+                for key in _rom_lookup_keys(rom_name):
                     index[key] = dict(metadata)
+        xbmc.log(
+            f"[Games] loaded Skraper dat path={dat_path} entries={len(index)}",
+            xbmc.LOGINFO,
+        )
     except Exception as exc:
-        xbmc.log(f"[Ziro Games] Skraper .dat parse failed path={dat_path}: {exc}", xbmc.LOGWARNING)
+        xbmc.log(f"[Games] Skraper .dat parse failed path={dat_path}: {exc}", xbmc.LOGWARNING)
 
-    _SKRAPER_DAT_CACHE[folder] = index
+    _SKRAPER_DAT_CACHE[cache_key] = index
     return index
 
 
@@ -251,15 +332,46 @@ def find_source_folder(rom_path: str, source_folder: str = "") -> str:
         candidate = "/".join(parts[:depth])
         if _folder_has_local_metadata(candidate):
             return candidate
-    return os.path.dirname(rom_path.replace("/", os.sep))
+    parent = os.path.dirname(rom_path.replace("/", os.sep))
+    return parent.rstrip("/\\") if parent else ""
+
+
+def _lookup_dat_metadata(rom_path: str, *, source_folder: str = "", platform_id: str = "") -> dict:
+    folders: list[str] = []
+    if source_folder:
+        folders.append(source_folder.rstrip("/\\"))
+    discovered = find_source_folder(rom_path, source_folder)
+    if discovered and discovered not in folders:
+        folders.append(discovered)
+
+    keys = _rom_lookup_keys(rom_path)
+    stem_key = _normalize_match_key(_stem(rom_path))
+
+    for folder in folders:
+        index = _load_skraper_dat_index(folder, platform_id)
+        for key in keys:
+            if key in index:
+                return dict(index[key])
+        if stem_key and stem_key in index:
+            return dict(index[stem_key])
+        best_meta: dict | None = None
+        best_score = 0
+        for meta in index.values():
+            score = _score_name_match(_stem(rom_path), meta.get("title") or "", meta.get("skraper_game_name") or "")
+            if score > best_score:
+                best_score = score
+                best_meta = meta
+        if best_meta and best_score >= 500:
+            return dict(best_meta)
+    return {}
 
 
 def lookup_gamelist_metadata(rom_path: str, *, source_folder: str = "") -> dict:
     folder = find_source_folder(rom_path, source_folder)
     index = _load_gamelist_index(folder)
-    basename = _basename_key(rom_path)
-    if basename in index:
-        return dict(index[basename])
+    for key in _rom_lookup_keys(rom_path):
+        if key in index:
+            return dict(index[key])
 
     rel_from_folder = _norm_path(rom_path)
     if folder and rel_from_folder.lower().startswith(_norm_path(folder).lower()):
@@ -269,13 +381,13 @@ def lookup_gamelist_metadata(rom_path: str, *, source_folder: str = "") -> dict:
     return {}
 
 
-def lookup_skraper_dat_metadata(rom_path: str, *, source_folder: str = "") -> dict:
-    folder = find_source_folder(rom_path, source_folder)
-    index = _load_skraper_dat_index(folder)
-    basename = _basename_key(rom_path)
-    if basename in index:
-        return dict(index[basename])
-    return {}
+def lookup_skraper_dat_metadata(
+    rom_path: str,
+    *,
+    source_folder: str = "",
+    platform_id: str = "",
+) -> dict:
+    return _lookup_dat_metadata(rom_path, source_folder=source_folder, platform_id=platform_id)
 
 
 def _stem(path: str) -> str:
@@ -386,8 +498,17 @@ def discover_local_art(rom_path: str, *, source_folder: str = "", game_name: str
     return found
 
 
-def lookup_local_metadata(rom_path: str, *, source_folder: str = "") -> dict:
-    metadata = lookup_skraper_dat_metadata(rom_path, source_folder=source_folder)
+def lookup_local_metadata(
+    rom_path: str,
+    *,
+    source_folder: str = "",
+    platform_id: str = "",
+) -> dict:
+    metadata = lookup_skraper_dat_metadata(
+        rom_path,
+        source_folder=source_folder,
+        platform_id=platform_id,
+    )
     if not metadata:
         metadata = lookup_gamelist_metadata(rom_path, source_folder=source_folder)
 
@@ -495,6 +616,7 @@ def import_metadata_for_game(
     game_id: int,
     *,
     source_folder: str = "",
+    platform_id: str = "",
     force: bool = False,
 ) -> tuple[str, str]:
     game = db.get_game(game_id)
@@ -504,13 +626,24 @@ def import_metadata_for_game(
         return "locked", "Manual metadata lock enabled"
 
     rom_path = game.get("rom_path") or ""
-    metadata = lookup_local_metadata(rom_path, source_folder=source_folder)
+    if not source_folder and game.get("source_id"):
+        source = db.one("SELECT folder_path FROM sources WHERE id=?", (game["source_id"],))
+        if source and source.get("folder_path"):
+            source_folder = source["folder_path"]
+    if not platform_id:
+        platform_id = game.get("platform_id") or ""
+
+    metadata = lookup_local_metadata(
+        rom_path,
+        source_folder=source_folder,
+        platform_id=platform_id,
+    )
     has_content = any(
         metadata.get(key)
         for key in ("cover_path", "fanart_path", "screenshot_path", "video_path", "description")
     )
     if not has_content:
-        return "no_match", "No Skraper metadata found near this ROM (look for .dat and media/ folders)"
+        return "no_match", "No local metadata found (check wii.dat and media/ next to your ROMs)"
 
     apply_local_metadata(db, game_id, metadata)
     return "ok", "Local metadata imported"

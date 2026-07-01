@@ -8,6 +8,7 @@ import xbmcaddon
 import xbmcgui
 import xbmcplugin
 
+from resources.lib.app_title import app_title
 from resources.lib.db import GameDatabase
 from resources.lib.game_info import show_game_info
 from resources.lib.home_state import refresh_home_platform_properties, refresh_home_properties
@@ -20,6 +21,7 @@ from resources.lib.scan_jobs import scan_in_background
 from resources.lib.metadata.providers import game_artwork_provider
 
 ADDON = xbmcaddon.Addon()
+APP_NAME = app_title()
 HANDLE = int(sys.argv[1])
 BASE_URL = sys.argv[0]
 
@@ -213,10 +215,10 @@ def show_scan_result(result) -> None:
     summary = result.summary()
     headline = summary.splitlines()[0]
     if result.imported:
-        xbmcgui.Dialog().notification("Ziro Games", headline, xbmcgui.NOTIFICATION_INFO, 4000)
+        xbmcgui.Dialog().notification(APP_NAME, headline, xbmcgui.NOTIFICATION_INFO, 4000)
         return
-    xbmc.log(f"[Ziro Games Scanner] {summary}", xbmc.LOGWARNING)
-    xbmcgui.Dialog().notification("Ziro Games", headline, xbmcgui.NOTIFICATION_WARNING, 5000)
+    xbmc.log(f"[Games Scanner] {summary}", xbmc.LOGWARNING)
+    xbmcgui.Dialog().notification(APP_NAME, headline, xbmcgui.NOTIFICATION_WARNING, 5000)
 
 
 def confirm_remove_source(router: Router, source_id: int) -> None:
@@ -230,17 +232,17 @@ def confirm_remove_source(router: Router, source_id: int) -> None:
         (source_id,),
     )
     if not source:
-        xbmcgui.Dialog().notification("Ziro Games", "Source not found", xbmcgui.NOTIFICATION_ERROR, 3000)
+        xbmcgui.Dialog().notification(APP_NAME, "Source not found", xbmcgui.NOTIFICATION_ERROR, 3000)
         return
     label = source.get("platform_name") or source["platform_id"]
     folder = source.get("folder_path") or ""
     if not xbmcgui.Dialog().yesno(
-        "Ziro Games — Remove source",
+        "Remove source",
         f"Remove this {label} source?\n\n{folder}",
     ):
         return
     purge = xbmcgui.Dialog().yesno(
-        "Ziro Games — Library cleanup",
+        "Library cleanup",
         "Also remove games imported from this source folder?\n\n"
         "Yes = hide those games from your library\n"
         "No = keep the games, only remove the source folder",
@@ -251,7 +253,7 @@ def confirm_remove_source(router: Router, source_id: int) -> None:
     purge_junk_games(router.db)
     router.db.clear_play_state_for_hidden_games()
     refresh_home_platform_properties(router.db)
-    xbmcgui.Dialog().notification("Ziro Games", "Source removed", xbmcgui.NOTIFICATION_INFO, 2500)
+    xbmcgui.Dialog().notification(APP_NAME, "Source removed", xbmcgui.NOTIFICATION_INFO, 2500)
     xbmc.executebuiltin(
         f"ActivateWindow(Programs,plugin://plugin.program.ziro.games/?path=/sources,return)"
     )
@@ -281,7 +283,7 @@ def offer_artwork_fetch(router: Router) -> None:
         if provider == PROVIDER_SKRAPER
         else f"Scan finished. Fetch missing box art from {label} now?\n\nLarge libraries can take a while."
     )
-    if not xbmcgui.Dialog().yesno("Ziro Games", prompt):
+    if not xbmcgui.Dialog().yesno(APP_NAME, prompt):
         return
     run_artwork_fetch(router)
 
@@ -301,7 +303,7 @@ def run_artwork_fetch(router: Router, *, refresh_all: bool = False) -> None:
     label = _provider_label(provider)
     heading = "Refresh all artwork" if refresh_all else "Fetch missing artwork"
     progress = xbmcgui.DialogProgress()
-    progress.create("Ziro Games", f"{heading} from {label}...")
+    progress.create(APP_NAME, f"{heading} from {label}...")
 
     def update(percent: int, item_label: str) -> bool:
         if progress.iscanceled():
@@ -319,9 +321,9 @@ def run_artwork_fetch(router: Router, *, refresh_all: bool = False) -> None:
 
     summary = result.summary()
     if result.updated and not any(item.status == "api_error" for item in result.results):
-        xbmcgui.Dialog().notification("Ziro Games", summary.splitlines()[0], xbmcgui.NOTIFICATION_INFO, 4000)
+        xbmcgui.Dialog().notification(APP_NAME, summary.splitlines()[0], xbmcgui.NOTIFICATION_INFO, 4000)
     else:
-        xbmcgui.Dialog().ok("Ziro Games — Artwork", summary)
+        xbmcgui.Dialog().ok("Artwork", summary)
     refresh_home_properties()
     xbmc.executebuiltin("Container.Refresh")
 
@@ -329,9 +331,9 @@ def run_artwork_fetch(router: Router, *, refresh_all: bool = False) -> None:
 def show_artwork_refresh(game_id: int, router: Router) -> None:
     result = router.refresh_artwork(game_id)
     if result.status == "ok":
-        xbmcgui.Dialog().notification("Ziro Games", f"Artwork updated for {result.title}", xbmcgui.NOTIFICATION_INFO, 2500)
+        xbmcgui.Dialog().notification(APP_NAME, f"Artwork updated for {result.title}", xbmcgui.NOTIFICATION_INFO, 2500)
     else:
-        xbmcgui.Dialog().notification("Ziro Games", result.message or result.status, xbmcgui.NOTIFICATION_ERROR, 4000)
+        xbmcgui.Dialog().notification(APP_NAME, result.message or result.status, xbmcgui.NOTIFICATION_ERROR, 4000)
 
 
 def main() -> None:
@@ -407,7 +409,7 @@ def main() -> None:
             if selected:
                 if not is_allowed_source_folder(selected):
                     xbmcgui.Dialog().ok(
-                        "Ziro Games",
+                        APP_NAME,
                         "That folder cannot be used as a game source.\n\n"
                         "Choose your ROM folder, not Kodi addons, dist, or skin files.",
                     )
@@ -415,12 +417,12 @@ def main() -> None:
                     return
                 router.add_source(platform_id, selected)
                 xbmcgui.Dialog().notification(
-                    "Ziro Games",
+                    APP_NAME,
                     f"{platform.name} source added",
                     xbmcgui.NOTIFICATION_INFO,
                     2500,
                 )
-                if xbmcgui.Dialog().yesno("Ziro Games", "Source added. Scan now?"):
+                if xbmcgui.Dialog().yesno(APP_NAME, "Source added. Scan now?"):
                     scan_in_background(offer_artwork=True)
                 xbmc.executebuiltin("Container.Refresh")
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
@@ -454,7 +456,7 @@ def main() -> None:
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/favorite":
             router.toggle_favorite(int(params["game_id"]))
-            xbmcgui.Dialog().notification("Ziro Games", "Favorite updated", xbmcgui.NOTIFICATION_INFO, 2000)
+            xbmcgui.Dialog().notification(APP_NAME, "Favorite updated", xbmcgui.NOTIFICATION_INFO, 2000)
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/refresh":
             game_id = int(params["game_id"])
@@ -480,12 +482,12 @@ def main() -> None:
                 label = "Skraper / local files"
             elif provider == PROVIDER_STEAMGRIDDB:
                 if not steamgriddb_api_key() or not validate_api_key(steamgriddb_api_key()):
-                    xbmcgui.Dialog().ok("Ziro Games", "Set a valid SteamGridDB API key in settings first.")
+                    xbmcgui.Dialog().ok(APP_NAME, "Set a valid SteamGridDB API key in settings first.")
                     xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
                     return
                 label = "SteamGridDB"
             elif not credentials_configured():
-                xbmcgui.Dialog().ok("Ziro Games", "Set ScreenScraper credentials in settings first.")
+                xbmcgui.Dialog().ok(APP_NAME, "Set ScreenScraper credentials in settings first.")
                 xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
                 return
             else:
@@ -493,7 +495,7 @@ def main() -> None:
             if provider == PROVIDER_SKRAPER:
                 prompt = (
                     "Re-import metadata for every game from gamelist.xml and local media folders?\n\n"
-                    "Run Skraper on your PC first, then point Ziro at those ROM folders."
+                    "Run Skraper on your PC first, then point your ROM source folder at the scraped output."
                 )
             else:
                 prompt = (
@@ -501,7 +503,7 @@ def main() -> None:
                     "Each game uses its platform when matching on ScreenScraper.\n"
                     "Large libraries can take a while."
                 )
-            if not xbmcgui.Dialog().yesno("Ziro Games", prompt):
+            if not xbmcgui.Dialog().yesno(APP_NAME, prompt):
                 xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
                 return
             run_artwork_fetch(router, refresh_all=True)
@@ -512,8 +514,8 @@ def main() -> None:
         else:
             raise ValueError(f"Unknown route: {path}")
     except Exception as exc:
-        xbmc.log(f"[Ziro Games] route failed path={path}: {exc}", xbmc.LOGERROR)
-        xbmcgui.Dialog().notification("Ziro Games", str(exc), xbmcgui.NOTIFICATION_ERROR, 5000)
+        xbmc.log(f"[Games] route failed path={path}: {exc}", xbmc.LOGERROR)
+        xbmcgui.Dialog().notification(APP_NAME, str(exc), xbmcgui.NOTIFICATION_ERROR, 5000)
         xbmcplugin.endOfDirectory(HANDLE, succeeded=False)
 
 

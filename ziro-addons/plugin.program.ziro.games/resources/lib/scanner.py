@@ -371,7 +371,12 @@ def scan(db: GameDatabase) -> ScanResult:
             if game_artwork_provider() == PROVIDER_SKRAPER:
                 row = db.one("SELECT id FROM games WHERE rom_path=?", (rom_path,))
                 if row:
-                    import_metadata_for_game(db, int(row["id"]), source_folder=folder)
+                    import_metadata_for_game(
+                        db,
+                        int(row["id"]),
+                        source_folder=folder,
+                        platform_id=platform_id,
+                    )
             result.imported += 1
 
         finalize_source_result(result, extensions)

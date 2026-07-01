@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="plugin.program.ziro.games" name="Ziro Games" version="0.4.7" provider-name="Ziro">
+<addon id="plugin.program.ziro.games" name="Games" version="0.4.8" provider-name="Ziro">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
   </requires>
@@ -7,7 +7,7 @@
     <provides>executable</provides>
   </extension>
   <extension point="xbmc.addon.metadata">
-    <summary lang="en_GB">Kodi-native game library for Estuary Ziro Games.</summary>
+    <summary lang="en_GB">Kodi-native game library with home rows, sources, and emulator launch.</summary>
     <description lang="en_GB">Provides browsable, artwork-ready game rows, source management, scanning, and launch routes for emulator-backed games.</description>
     <platform>all</platform>
     <license>GPL-2.0-or-later</license>

@@ -133,6 +133,9 @@ class GameDatabase:
         with self.connect() as conn:
             conn.executescript(SCHEMA)
             _apply_migrations(conn)
+            conn.execute(
+                "UPDATE games SET manual_metadata_locked=0 WHERE manual_metadata_locked IS NULL"
+            )
             conn.commit()
             conn.execute("INSERT OR REPLACE INTO schema_info(key, value) VALUES('schema_version', ?)", (str(SCHEMA_VERSION),))
             conn.executemany(
@@ -252,7 +255,7 @@ class GameDatabase:
         query = """
             SELECT * FROM games
             WHERE hidden=0
-              AND manual_metadata_locked=0
+              AND COALESCE(manual_metadata_locked, 0)=0
               AND (cover_path IS NULL OR cover_path='')
             ORDER BY sort_title
         """
@@ -264,7 +267,7 @@ class GameDatabase:
         query = """
             SELECT * FROM games
             WHERE hidden=0
-              AND manual_metadata_locked=0
+              AND COALESCE(manual_metadata_locked, 0)=0
             ORDER BY sort_title
         """
         if limit:

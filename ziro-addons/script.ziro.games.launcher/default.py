@@ -33,7 +33,7 @@ def parse_args() -> dict[str, str]:
 
 def get_launch_data(game_id: int) -> tuple[dict, dict]:
     if not DB_PATH.exists():
-        raise RuntimeError("Ziro Games database does not exist yet. Run a scan first.")
+        raise RuntimeError("Games database does not exist yet. Run a scan first.")
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     with conn:
@@ -98,7 +98,7 @@ def main() -> None:
         launch(int(args["game_id"]))
     except Exception as exc:
         xbmc.log(f"[Ziro Games Launcher] failed: {exc}", xbmc.LOGERROR)
-        xbmcgui.Dialog().notification("Ziro Games", str(exc), xbmcgui.NOTIFICATION_ERROR, 6000)
+        xbmcgui.Dialog().notification("Games", str(exc), xbmcgui.NOTIFICATION_ERROR, 6000)
 
 
 if __name__ == "__main__":

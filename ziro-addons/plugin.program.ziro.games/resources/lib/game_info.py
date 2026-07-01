@@ -5,10 +5,12 @@ import xbmcaddon
 import xbmcgui
 import xbmcvfs
 
+from .app_title import app_title
 from .db import GameDatabase
 
 SKIN_ID = "skin.estuary.ziro"
 DIALOG_XML = "Custom_1110_DialogZiroGameInfo.xml"
+APP_NAME = app_title()
 
 
 class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
@@ -99,16 +101,16 @@ def show_game_info(game_id: int) -> None:
     db = GameDatabase()
     game = db.get_game(game_id)
     if not game:
-        xbmcgui.Dialog().notification("Ziro Games", "Game not found", xbmcgui.NOTIFICATION_ERROR, 3000)
+        xbmcgui.Dialog().notification(APP_NAME, "Game not found", xbmcgui.NOTIFICATION_ERROR, 3000)
         return
     try:
         skin = xbmcaddon.Addon(SKIN_ID)
         skin_path = xbmc.translatePath(skin.getAddonInfo("path"))
     except Exception:
-        xbmcgui.Dialog().ok("Ziro Games", "Estuary Ziro skin is required for the game info screen.")
+        xbmcgui.Dialog().ok(APP_NAME, "This skin is required for the game info screen.")
         return
     if not xbmcvfs.exists(skin_path):
-        xbmcgui.Dialog().ok("Ziro Games", "Estuary Ziro skin path is not available.")
+        xbmcgui.Dialog().ok(APP_NAME, "Skin path is not available.")
         return
     dialog = ZiroGameInfoDialog(str(DIALOG_XML), skin_path, "xml", "1080i", game)
     dialog.doModal()

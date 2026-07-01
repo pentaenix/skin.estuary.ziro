@@ -60,8 +60,13 @@ class ArtworkBatchResult:
     results: list[ArtworkResult] = field(default_factory=list)
 
     def summary(self) -> str:
+        if not self.processed:
+            return (
+                "No games were checked.\n"
+                "Add ROM sources and scan your library, then try again."
+            )
         lines = [
-            "Artwork fetch complete.",
+            f"Checked {self.processed} games.",
             f"Updated: {self.updated}",
             f"Skipped: {self.skipped}",
             f"Failed: {self.failed}",
@@ -192,7 +197,7 @@ def _enrich_screenscraper(
             game_id,
             game["title"],
             "no_credentials",
-            "Set ScreenScraper username, password, developer ID, and developer password in Ziro Games settings",
+            "Set ScreenScraper username, password, developer ID, and developer password in Games settings",
         )
     if not validate_credentials():
         return ArtworkResult(game_id, game["title"], "bad_credentials", "ScreenScraper credentials are invalid")

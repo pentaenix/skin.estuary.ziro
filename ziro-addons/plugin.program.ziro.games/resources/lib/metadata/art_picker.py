@@ -4,12 +4,15 @@ import xbmc
 import xbmcgui
 import xbmcvfs
 
+from ..app_title import app_title
 from ..db import GameDatabase
 from ..paths import artwork_dir
 from .enricher import _artwork_path, _save_image
 from .providers import PROVIDER_SCREENSCRAPER, PROVIDER_SKRAPER, game_artwork_provider
 from .screenscraper import list_media_urls, lookup_game
 from .local_metadata import list_local_art_options, lookup_local_metadata
+
+APP_NAME = app_title()
 
 ART_TYPES: dict[str, tuple[str, str, tuple[str, ...]]] = {
     "cover": ("Cover / box art", "cover_path", ("box-2d", "boitiers_2d", "box2d")),
@@ -31,7 +34,7 @@ def choose_game_art(game_id: int) -> bool:
     db = GameDatabase()
     game = db.get_game(game_id)
     if not game:
-        xbmcgui.Dialog().notification("Ziro Games", "Game not found", xbmcgui.NOTIFICATION_ERROR, 3000)
+        xbmcgui.Dialog().notification(APP_NAME, "Game not found", xbmcgui.NOTIFICATION_ERROR, 3000)
         return False
 
     type_labels = [label for label, _, _ in ART_TYPES.values()]
@@ -59,7 +62,7 @@ def choose_game_art(game_id: int) -> bool:
             if jeu:
                 options.extend(list_media_urls(jeu, *needles))
         except Exception as exc:
-            xbmc.log(f"[Ziro Games] art picker lookup failed: {exc}", xbmc.LOGWARNING)
+            xbmc.log(f"[Games] art picker lookup failed: {exc}", xbmc.LOGWARNING)
     elif game_artwork_provider() == PROVIDER_SKRAPER:
         options.extend(list_local_art_options(game.get("rom_path") or "", art_key))
         local_meta = lookup_local_metadata(game.get("rom_path") or "")
@@ -80,7 +83,7 @@ def choose_game_art(game_id: int) -> bool:
 
     if not options:
         xbmcgui.Dialog().ok(
-            "Ziro Games",
+            APP_NAME,
             f"No alternate {label.lower()} images are available yet.\n\nTry Refresh metadata first.",
         )
         return False
@@ -98,7 +101,7 @@ def choose_game_art(game_id: int) -> bool:
 
     db.update_game_artwork(game_id, {field_name: saved_path})
     db.execute("UPDATE games SET manual_metadata_locked=1 WHERE id=?", (game_id,))
-    if xbmcgui.Dialog().yesno("Ziro Games", f"Preview “{selected_label}” before keeping it?"):
+    if xbmcgui.Dialog().yesno(APP_NAME, f"Preview “{selected_label}” before keeping it?"):
         _preview_image(saved_path)
-    xbmcgui.Dialog().notification("Ziro Games", f"{label} updated", xbmcgui.NOTIFICATION_INFO, 2500)
+    xbmcgui.Dialog().notification(APP_NAME, f"{label} updated", xbmcgui.NOTIFICATION_INFO, 2500)
     return True

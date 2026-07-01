@@ -7,6 +7,7 @@ import xbmc
 import xbmcgui
 import xbmcvfs
 
+from ..app_title import app_title
 from ..paths import userdata_dir
 from ..platforms import get_platform
 from .http_client import download_bytes
@@ -18,6 +19,8 @@ from .providers import (
 )
 from .screenscraper import credentials_configured, fetch_system_logo, validate_credentials
 from .steamgriddb import fetch_icon, search_autocomplete_all, validate_api_key
+
+APP_NAME = app_title()
 
 PLATFORM_SGDB_QUERIES: dict[str, str] = {
     "nes": "Nintendo Entertainment System",
@@ -97,15 +100,15 @@ def pick_platform_sgdb_match(platform_id: str) -> dict | None:
     api_key = steamgriddb_api_key()
     if not api_key or not validate_api_key(api_key):
         xbmcgui.Dialog().ok(
-            "Ziro Games",
-            "Set a valid SteamGridDB API key under Ziro Games settings → Metadata.",
+            APP_NAME,
+            "Set a valid SteamGridDB API key under Games settings → Metadata.",
         )
         return None
     query = _platform_query(platform_id)
     results = search_autocomplete_all(query, api_key, limit=30)
     if not results:
         xbmcgui.Dialog().notification(
-            "Ziro Games",
+            APP_NAME,
             f"No SteamGridDB matches for {query}",
             xbmcgui.NOTIFICATION_WARNING,
             3500,
@@ -144,10 +147,10 @@ def choose_platform_art(platform_id: str) -> str:
         return ""
     try:
         path = save_platform_art(platform_id, match)
-        xbmcgui.Dialog().notification("Ziro Games", "Platform artwork saved", xbmcgui.NOTIFICATION_INFO, 2500)
+        xbmcgui.Dialog().notification(APP_NAME, "Platform artwork saved", xbmcgui.NOTIFICATION_INFO, 2500)
         return path
     except Exception as exc:
-        xbmcgui.Dialog().ok("Ziro Games", str(exc))
+        xbmcgui.Dialog().ok(APP_NAME, str(exc))
         return ""
 
 
@@ -176,7 +179,7 @@ def get_platform_art_path(platform_id: str, *, allow_fetch: bool = True, interac
                     cached.write_bytes(download_bytes(asset["url"]))
                     return str(cached)
             except Exception as exc:
-                xbmc.log(f"[Ziro Games] cached SGDB platform art failed {platform_id}: {exc}", xbmc.LOGWARNING)
+                xbmc.log(f"[Games] cached SGDB platform art failed {platform_id}: {exc}", xbmc.LOGWARNING)
         if interactive:
             return choose_platform_art(platform_id)
         return ""
@@ -189,5 +192,5 @@ def get_platform_art_path(platform_id: str, *, allow_fetch: bool = True, interac
             cached.write_bytes(download_bytes(url))
             return str(cached)
         except Exception as exc:
-            xbmc.log(f"[Ziro Games] platform art fetch failed {platform_id}: {exc}", xbmc.LOGWARNING)
+            xbmc.log(f"[Games] platform art fetch failed {platform_id}: {exc}", xbmc.LOGWARNING)
     return ""

@@ -56,7 +56,7 @@ def _base_params() -> dict[str, str]:
     if missing:
         raise RuntimeError(
             "ScreenScraper credentials are incomplete. "
-            "Set username, password, developer id, and developer password in Ziro Games settings."
+            "Set username, password, developer id, and developer password in Games settings."
         )
     return params
 

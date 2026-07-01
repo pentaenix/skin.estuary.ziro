@@ -5,11 +5,13 @@ import threading
 import xbmc
 import xbmcgui
 
+from .app_title import app_title
 from .db import GameDatabase
 from .home_state import refresh_home_platform_properties
 from .routes import Router
 from .scanner import ScanResult
 
+APP_NAME = app_title()
 _scan_lock = threading.Lock()
 _scan_running = False
 
@@ -23,10 +25,10 @@ def _finish_scan(result: ScanResult, *, offer_artwork: bool = False) -> None:
     summary = result.summary()
     headline = summary.splitlines()[0]
     if result.imported:
-        _notify("Ziro Games", headline)
+        _notify(APP_NAME, headline)
     else:
-        _notify("Ziro Games", headline, error=True)
-        xbmc.log(f"[Ziro Games Scanner] {summary}", xbmc.LOGWARNING)
+        _notify(APP_NAME, headline, error=True)
+        xbmc.log(f"[Games Scanner] {summary}", xbmc.LOGWARNING)
 
     refresh_home_platform_properties()
     xbmc.executebuiltin("Container.Refresh")
@@ -39,7 +41,7 @@ def scan_in_background(*, offer_artwork: bool = False) -> bool:
     global _scan_running
     with _scan_lock:
         if _scan_running:
-            _notify("Ziro Games", "A library scan is already running.")
+            _notify(APP_NAME, "A library scan is already running.")
             return False
         _scan_running = True
 
@@ -50,12 +52,12 @@ def scan_in_background(*, offer_artwork: bool = False) -> bool:
             result = Router(db).scan_sources()
             _finish_scan(result, offer_artwork=offer_artwork)
         except Exception as exc:
-            xbmc.log(f"[Ziro Games Scanner] background scan failed: {exc}", xbmc.LOGERROR)
-            _notify("Ziro Games", f"Scan failed: {exc}", error=True)
+            xbmc.log(f"[Games Scanner] background scan failed: {exc}", xbmc.LOGERROR)
+            _notify(APP_NAME, f"Scan failed: {exc}", error=True)
         finally:
             with _scan_lock:
                 _scan_running = False
 
-    _notify("Ziro Games", "Scanning game library...")
+    _notify(APP_NAME, "Scanning game library...")
     threading.Thread(target=job, daemon=True).start()
     return True

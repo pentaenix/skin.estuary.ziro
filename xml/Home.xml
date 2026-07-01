@@ -786,7 +786,7 @@
 					</control>
 					<include content="ImageWidget" condition="!System.HasAddon(plugin.program.ziro.games)">
 						<param name="text_label" value="$LOCALIZE[31162]" />
-						<param name="button_label" value="Open Ziro Games" />
+						<param name="button_label" value="Open Games" />
 						<param name="button_onclick" value="ActivateWindow(Programs,plugin://plugin.program.ziro.games/?path=/library,return)"/>
 						<param name="button_id" value="17100"/>
 						<param name="visible" value="true"/>

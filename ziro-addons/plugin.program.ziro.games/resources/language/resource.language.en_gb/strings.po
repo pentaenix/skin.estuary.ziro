@@ -164,8 +164,8 @@ msgid "Play game"
 msgstr "Play game"
 
 msgctxt "#30061"
-msgid "Register Ziro Games once at screenscraper.fr (Developers page) and paste the developer ID and password here."
-msgstr "Register Ziro Games once at screenscraper.fr (Developers page) and paste the developer ID and password here."
+msgid "Register this add-on once at screenscraper.fr (Developers page) and paste the developer ID and password here."
+msgstr "Register this add-on once at screenscraper.fr (Developers page) and paste the developer ID and password here."
 
 msgctxt "#30062"
 msgid "ScreenScraper developer password"
