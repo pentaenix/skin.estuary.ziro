@@ -75,7 +75,7 @@ def _normalize_match_key(text: str) -> str:
 
 
 def _read_xml_root(path: str) -> ET.Element | None:
-    if not path or not xbmcvfs.exists(path):
+    if not path or not path_exists(path):
         return None
     try:
         handle = xbmcvfs.File(path)
@@ -149,7 +149,7 @@ def _parse_genres(value: str) -> list[str]:
 
 
 def _list_files(folder: str) -> list[str]:
-    if not folder or not xbmcvfs.exists(folder):
+    if not folder or not path_exists(folder):
         return []
     try:
         _dirs, files = xbmcvfs.listdir(folder)
@@ -159,7 +159,7 @@ def _list_files(folder: str) -> list[str]:
 
 
 def _list_dirs(folder: str) -> list[str]:
-    if not folder or not xbmcvfs.exists(folder):
+    if not folder or not path_exists(folder):
         return []
     try:
         dirs, _files = xbmcvfs.listdir(folder)
@@ -169,14 +169,56 @@ def _list_dirs(folder: str) -> list[str]:
 
 
 def _folder_has_local_metadata(folder: str) -> bool:
-    if xbmcvfs.exists(os.path.join(folder, "gamelist.xml")):
+    if path_exists(os.path.join(folder, "gamelist.xml")):
         return True
-    if xbmcvfs.exists(os.path.join(folder, "media")):
+    if path_exists(os.path.join(folder, "media")):
         return True
     for file_path in _list_files(folder):
         if file_path.lower().endswith(".dat"):
             return True
     return False
+
+
+def _rom_file_stems(rom_path: str, game_name: str = "") -> list[str]:
+    stems: list[str] = []
+    raw_name = _norm_path(rom_path).split("/")[-1]
+    if raw_name and "." in raw_name:
+        stems.append(raw_name.rsplit(".", 1)[0])
+    elif raw_name:
+        stems.append(raw_name)
+    if game_name and game_name.strip() and game_name.strip() not in stems:
+        stems.append(game_name.strip())
+    return stems
+
+
+def _discover_skraper_media_by_name(folder: str, rom_path: str, game_name: str) -> dict:
+    """Match Skraper files named after the ROM file (most common layout)."""
+    found: dict[str, str] = {}
+    media_root = os.path.join(folder, "media")
+    if not path_exists(media_root):
+        return found
+
+    available_dirs = {name.lower(): os.path.join(media_root, name) for name in _list_dirs(media_root)}
+    stems = _rom_file_stems(rom_path, game_name)
+
+    for field, dir_names in SKRAPER_MEDIA_DIRS.items():
+        suffixes = VIDEO_SUFFIXES if field == "video_path" else IMAGE_SUFFIXES
+        for dir_name in dir_names:
+            media_dir = available_dirs.get(dir_name.lower())
+            if not media_dir:
+                continue
+            for stem in stems:
+                for suffix in suffixes:
+                    candidate = os.path.join(media_dir, f"{stem}{suffix}")
+                    usable = usable_art_path(candidate)
+                    if usable:
+                        found[field] = usable
+                        break
+                if found.get(field):
+                    break
+            if found.get(field):
+                continue
+    return found
 
 
 def _game_entry_to_metadata(entry: ET.Element, base_dir: str) -> dict:
@@ -342,7 +384,7 @@ def _load_skraper_dat_index(folder: str, platform_id: str = "") -> dict[str, dic
 
 
 def find_source_folder(rom_path: str, source_folder: str = "") -> str:
-    if source_folder and xbmcvfs.exists(source_folder):
+    if source_folder and path_exists(source_folder):
         return source_folder.rstrip("/\\")
     rom = _norm_path(rom_path)
     parts = rom.split("/")
@@ -474,10 +516,15 @@ def _find_media_in_folder(folder: str, *needles: str, suffixes: set[str]) -> str
     return ""
 
 
-def _discover_skraper_media(folder: str, game_name: str, rom_stem: str) -> dict:
+def _discover_skraper_media(folder: str, game_name: str, rom_stem: str, *, rom_path: str = "") -> dict:
+    if rom_path:
+        found = _discover_skraper_media_by_name(folder, rom_path, game_name)
+        if found:
+            return found
+
     found: dict[str, str] = {}
     media_root = os.path.join(folder, "media")
-    if not xbmcvfs.exists(media_root):
+    if not path_exists(media_root):
         return found
 
     available_dirs = {name.lower(): os.path.join(media_root, name) for name in _list_dirs(media_root)}
@@ -502,16 +549,19 @@ def discover_local_art(rom_path: str, *, source_folder: str = "", game_name: str
     stem = _stem(rom_path)
     title_guess = game_name or stem.replace("_", " ").replace("-", " ")
 
-    skraper = _discover_skraper_media(folder, title_guess, stem)
+    skraper = _discover_skraper_media(folder, title_guess, stem, rom_path=rom_path)
     if skraper:
+        xbmc.log(
+            f"[Games] discovered local art rom={_basename_key(rom_path)} cover={skraper.get('cover_path', '')}",
+            xbmc.LOGINFO,
+        )
         return skraper
 
     media_roots = [folder, rom_dir]
     found: dict[str, str] = {}
-    name_variants = {
-        _normalize_match_key(stem),
-        _normalize_match_key(title_guess),
-    }
+    file_stems = _rom_file_stems(rom_path, game_name)
+    normalized_stems = [_normalize_match_key(stem) for stem in file_stems if _normalize_match_key(stem)]
+    name_variants = list(dict.fromkeys(file_stems + normalized_stems))
 
     for field, dirs in ES_MEDIA_DIRS.items():
         suffixes = VIDEO_SUFFIXES if field == "video_path" else IMAGE_SUFFIXES
@@ -525,9 +575,10 @@ def discover_local_art(rom_path: str, *, source_folder: str = "", game_name: str
                             continue
                         for suffix in suffixes:
                             candidates.append(os.path.join(base, f"{variant}{suffix}"))
-            for suffix in suffixes:
-                candidates.append(os.path.join(rom_dir, f"{stem}{suffix}"))
-                candidates.append(os.path.join(rom_dir, f"{stem}-image{suffix}"))
+            for stem_name in file_stems:
+                for suffix in suffixes:
+                    candidates.append(os.path.join(rom_dir, f"{stem_name}{suffix}"))
+                    candidates.append(os.path.join(rom_dir, f"{stem_name}-image{suffix}"))
         path = _first_existing(candidates)
         if path:
             found[field] = path

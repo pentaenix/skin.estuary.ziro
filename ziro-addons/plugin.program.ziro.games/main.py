@@ -18,6 +18,7 @@ from resources.lib.platforms import get_platform, platform_choices
 from resources.lib.routes import Router
 from resources.lib.scan_jobs import scan_in_background
 from resources.lib.art_paths import usable_art_path
+from resources.lib.metadata.local_metadata import discover_local_art
 from resources.lib.titles import display_title
 
 from resources.lib.metadata.providers import game_artwork_provider
@@ -123,23 +124,70 @@ def _game_item_url(game_id: int) -> str:
     return plugin_url("/info", game_id=str(game_id))
 
 
+def _set_list_item_info(item: xbmcgui.ListItem, info: dict) -> None:
+    try:
+        tag = item.getGameInfoTag()
+        tag.setTitle(info.get("title", ""))
+        tag.setPlot(info.get("plot", ""))
+        if info.get("year"):
+            tag.setYear(int(info["year"]))
+        if info.get("genre"):
+            tag.setGenres([part.strip() for part in str(info["genre"]).split(",") if part.strip()])
+        if info.get("platform"):
+            tag.setPlatform(info.get("platform", ""))
+        if info.get("developer"):
+            tag.setDeveloper(info.get("developer", ""))
+        if info.get("publisher"):
+            tag.setPublisher(info.get("publisher", ""))
+        if info.get("playcount") is not None:
+            tag.setPlayCount(int(info["playcount"]))
+        return
+    except Exception:
+        pass
+    try:
+        item.setInfo("game", info)
+    except Exception:
+        item.setInfo("video", info)
+
+
+def _resolve_list_art(game: dict) -> dict[str, str]:
+    discovered: dict[str, str] = {}
+    cover = usable_art_path(game.get("cover_path") or "", trust_if_plausible=True)
+    fanart = usable_art_path(game.get("fanart_path") or "", trust_if_plausible=True)
+    logo = usable_art_path(game.get("logo_path") or "", trust_if_plausible=True)
+    if not cover or not fanart or not logo:
+        discovered = discover_local_art(
+            game.get("rom_path") or "",
+            source_folder=game.get("source_folder") or "",
+            game_name=game.get("title") or "",
+        )
+        if not cover:
+            cover = usable_art_path(discovered.get("cover_path") or "", trust_if_plausible=True)
+        if not fanart:
+            fanart = usable_art_path(discovered.get("fanart_path") or "", trust_if_plausible=True)
+        if not logo:
+            logo = usable_art_path(
+                discovered.get("logo_path") or discovered.get("screenshot_path") or "",
+                trust_if_plausible=True,
+            )
+    art: dict[str, str] = {}
+    if cover:
+        art["poster"] = cover
+        art["thumb"] = cover
+    if fanart:
+        art["fanart"] = fanart
+    if logo:
+        art["clearlogo"] = logo
+    return art
+
+
 def add_game(game: dict) -> None:
     play_on_click = _play_on_click()
     label = display_title(game.get("title", ""), rom_path=game.get("rom_path", ""))
     item = xbmcgui.ListItem(label=label)
     item.setProperty("IsPlayable", "true" if play_on_click else "false")
     item.setProperty("ziro_game_id", str(game["id"]))
-    art: dict[str, str] = {}
-    cover = usable_art_path(game.get("cover_path") or "", trust_if_plausible=True)
-    if cover:
-        art["thumb"] = cover
-        art["poster"] = cover
-    fanart = usable_art_path(game.get("fanart_path") or "", trust_if_plausible=True)
-    if fanart:
-        art["fanart"] = fanart
-    logo = usable_art_path(game.get("logo_path") or "", trust_if_plausible=True)
-    if logo:
-        art["clearlogo"] = logo
+    art = _resolve_list_art(game)
     if art:
         item.setArt(art)
     info = {
@@ -152,10 +200,7 @@ def add_game(game: dict) -> None:
         "publisher": game.get("publisher") or "",
         "playcount": int(game.get("play_count") or 0),
     }
-    try:
-        item.setInfo("game", info)
-    except Exception:
-        item.setInfo("video", info)
+    _set_list_item_info(item, info)
     item.addContextMenuItems([
         ("Play", f"RunScript(script.ziro.games.launcher,game_id={game['id']})"),
         ("Game info", f"RunPlugin({plugin_url('/info', game_id=str(game['id']))})"),

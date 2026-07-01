@@ -189,11 +189,6 @@ def _resolve_art_for_game(game: dict) -> dict[str, str]:
         if path:
             resolved[field] = path
 
-    if resolved.get("cover_path") and resolved.get("fanart_path"):
-        if resolved.get("screenshot_path") and not resolved.get("logo_path"):
-            resolved["logo_path"] = resolved["screenshot_path"]
-        return resolved
-
     local = lookup_local_metadata(
         game.get("rom_path") or "",
         source_folder=game.get("source_folder") or "",
@@ -201,7 +196,7 @@ def _resolve_art_for_game(game: dict) -> dict[str, str]:
     )
     for field in fields:
         if not resolved.get(field):
-            path = usable_art_path(local.get(field) or "")
+            path = usable_art_path(local.get(field) or "", trust_if_plausible=True)
             if path:
                 resolved[field] = path
 
