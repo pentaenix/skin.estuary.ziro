@@ -177,6 +177,7 @@ def render_library_menu(router: Router) -> None:
     add_library_entry("All Games", "/all", "Full game list")
     add_action("Scan / Refresh Library", "/scan")
     add_action("Refresh All Artwork", "/refresh_artwork")
+    add_action("Clear Downloaded Artwork", "/clear_cache")
     add_library_entry("Sources", "/sources", "ROM folders and platforms")
     add_action("Settings", "/settings")
     xbmcplugin.setContent(HANDLE, "games")
@@ -244,9 +245,13 @@ def confirm_remove_source(router: Router, source_id: int) -> None:
     purge = xbmcgui.Dialog().yesno(
         "Library cleanup",
         "Also remove games imported from this source folder?\n\n"
-        "Yes = hide those games from your library\n"
+        "Yes = hide those games and clear their downloaded artwork\n"
         "No = keep the games, only remove the source folder",
     )
+    if purge:
+        from resources.lib.cache import clear_artwork_for_source
+
+        clear_artwork_for_source(router.db, source_id)
     router.remove_source(source_id, purge_games=purge)
     from resources.lib.scanner import purge_junk_games
 
@@ -448,6 +453,21 @@ def main() -> None:
             purge_junk_games(db)
             db.clear_play_state_for_hidden_games()
             refresh_home_properties(db)
+            xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
+        elif path == "/clear_cache":
+            from resources.lib.cache import clear_downloaded_artwork
+
+            if not xbmcgui.Dialog().yesno(
+                APP_NAME,
+                "Clear downloaded artwork from SteamGridDB and ScreenScraper?\n\n"
+                "Images stored next to your ROMs (Skraper) are kept.",
+            ):
+                xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
+                return
+            result = clear_downloaded_artwork(db)
+            refresh_home_properties(db)
+            xbmcgui.Dialog().ok(APP_NAME, result.summary())
+            xbmc.executebuiltin("Container.Refresh")
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/choose_art":
             from resources.lib.metadata.art_picker import choose_game_art

@@ -230,3 +230,15 @@ msgstr "Skraper / local metadata"
 msgctxt "#30077"
 msgid "Read gamelist.xml and media folders from Skraper or EmulationStation. No API keys required."
 msgstr "Read Skraper .dat files (wii.dat, dreamcast.dat) and media/ folders, or gamelist.xml. No API keys required."
+
+msgctxt "#30078"
+msgid "Clear downloaded artwork cache"
+msgstr ""
+
+msgctxt "#30079"
+msgid "Delete SteamGridDB and ScreenScraper images saved in addon data and reset game posters that use them. Skraper files next to your ROMs are kept."
+msgstr ""
+
+msgctxt "#30080"
+msgid "Library maintenance"
+msgstr ""

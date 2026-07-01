@@ -315,6 +315,15 @@
           </control>
         </setting>
       </group>
+      <group id="2" label="30080">
+        <setting id="clear_artwork_cache" type="action" label="30078" help="30079">
+          <level>0</level>
+          <data>RunPlugin(plugin://plugin.program.ziro.games/?path=/clear_cache)</data>
+          <control type="button" format="action">
+            <close>true</close>
+          </control>
+        </setting>
+      </group>
     </category>
     <category id="development" label="30050" help="">
       <group id="1" label="30051">
