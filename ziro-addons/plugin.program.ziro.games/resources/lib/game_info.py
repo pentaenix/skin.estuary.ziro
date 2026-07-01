@@ -64,7 +64,7 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
             self.close()
             xbmc.executebuiltin(f"RunScript(script.ziro.games.launcher,game_id={game_id})")
         elif control_id == 11:
-            video_path = self.game.get("video_path") or ""
+            video_path = self._game.get("video_path") or ""
             if video_path and xbmcvfs.exists(video_path):
                 xbmc.Player().play(video_path)
                 return
