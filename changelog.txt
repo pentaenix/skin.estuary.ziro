@@ -1,3 +1,6 @@
+[B]2.4.9[/B]
+• Games info: fix Windows artwork paths using ESCINFO and recursive Skraper media lookup
+
 [B]2.4.8[/B]
 • Games info dialog: match movie layout, fix local artwork paths, and clean description text
 

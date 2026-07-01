@@ -74,6 +74,14 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
         self.setProperty("ZiroGame.Screenshot", art.get("screenshot_path", ""))
         self.setProperty("ZiroGame.Logo", art.get("logo_path", ""))
         self.setProperty("ZiroGame.Video", art.get("video_path", ""))
+        self.setProperty("ZiroGame.HasPoster", "1" if art.get("cover_path") else "")
+        self.setProperty("ZiroGame.HasLogo", "1" if art.get("logo_path") else "")
+        self.setProperty("ZiroGame.HasFanart", "1" if art.get("fanart_path") else "")
+        self.setProperty("ZiroGame.HasScreenshot", "1" if art.get("screenshot_path") else "")
+        xbmc.log(
+            f"[Games] game info art game_id={game.get('id')} poster={art.get('cover_path', '')}",
+            xbmc.LOGINFO,
+        )
         rating = game.get("rating")
         self.setProperty("ZiroGame.Rating", str(rating) if rating not in (None, "", 0) else "")
         background = art.get("fanart_path") or art.get("screenshot_path") or art.get("cover_path") or ""
@@ -177,7 +185,7 @@ def _resolve_art_for_game(game: dict) -> dict[str, str]:
     fields = ("cover_path", "fanart_path", "logo_path", "screenshot_path", "video_path")
     resolved: dict[str, str] = {}
     for field in fields:
-        path = usable_art_path(game.get(field) or "")
+        path = usable_art_path(game.get(field) or "", trust_if_plausible=True)
         if path:
             resolved[field] = path
 

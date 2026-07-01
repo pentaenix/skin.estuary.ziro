@@ -441,16 +441,26 @@ def _score_name_match(file_stem: str, *needles: str) -> int:
     return best
 
 
+def _iter_image_files(folder: str, suffixes: set[str], *, max_depth: int = 4) -> list[str]:
+    if not folder or max_depth < 0 or not path_exists(folder):
+        return []
+    found: list[str] = []
+    for file_path in _list_files(folder):
+        if Path(file_path).suffix.lower() in suffixes:
+            found.append(file_path)
+    if max_depth > 0:
+        for name in _list_dirs(folder):
+            found.extend(_iter_image_files(os.path.join(folder, name), suffixes, max_depth=max_depth - 1))
+    return found
+
+
 def _find_media_in_folder(folder: str, *needles: str, suffixes: set[str]) -> str:
     if not folder or not path_exists(folder):
         return ""
     needles_norm = [_normalize_match_key(needle) for needle in needles if needle]
     best_path = ""
     best_score = 0
-    for file_path in _list_files(folder):
-        suffix = Path(file_path).suffix.lower()
-        if suffix not in suffixes:
-            continue
+    for file_path in _iter_image_files(folder, suffixes):
         stem_key = _normalize_match_key(Path(file_path).stem)
         for needle in needles_norm:
             if stem_key == needle:
@@ -530,13 +540,14 @@ def lookup_local_metadata(
     source_folder: str = "",
     platform_id: str = "",
 ) -> dict:
-    metadata = lookup_skraper_dat_metadata(
-        rom_path,
-        source_folder=source_folder,
-        platform_id=platform_id,
-    )
-    if not metadata:
-        metadata = lookup_gamelist_metadata(rom_path, source_folder=source_folder)
+    metadata: dict = {}
+    for chunk in (
+        lookup_gamelist_metadata(rom_path, source_folder=source_folder),
+        lookup_skraper_dat_metadata(rom_path, source_folder=source_folder, platform_id=platform_id),
+    ):
+        for key, value in chunk.items():
+            if value and not metadata.get(key):
+                metadata[key] = value
 
     game_name = metadata.get("title") or metadata.get("skraper_game_name") or ""
     discovered = discover_local_art(rom_path, source_folder=source_folder, game_name=game_name)
@@ -583,9 +594,9 @@ def list_local_art_options(rom_path: str, art_kind: str) -> list[tuple[str, str]
         for subdir in ("media", "downloaded_media", "images"):
             for media_name in (*skraper_dirs, *es_dirs):
                 base = os.path.join(subroot, subdir, media_name)
-                if not xbmcvfs.exists(base):
+                if not path_exists(base):
                     continue
-                for file_path in _list_files(base):
+                for file_path in _iter_image_files(base, suffixes):
                     entry = Path(file_path)
                     if entry.suffix.lower() not in suffixes:
                         continue

@@ -130,14 +130,14 @@ def add_game(game: dict) -> None:
     item.setProperty("IsPlayable", "true" if play_on_click else "false")
     item.setProperty("ziro_game_id", str(game["id"]))
     art: dict[str, str] = {}
-    cover = usable_art_path(game.get("cover_path") or "")
+    cover = usable_art_path(game.get("cover_path") or "", trust_if_plausible=True)
     if cover:
         art["thumb"] = cover
         art["poster"] = cover
-    fanart = usable_art_path(game.get("fanart_path") or "")
+    fanart = usable_art_path(game.get("fanart_path") or "", trust_if_plausible=True)
     if fanart:
         art["fanart"] = fanart
-    logo = usable_art_path(game.get("logo_path") or "")
+    logo = usable_art_path(game.get("logo_path") or "", trust_if_plausible=True)
     if logo:
         art["clearlogo"] = logo
     if art:

@@ -5,6 +5,7 @@ import xbmcgui
 import xbmcvfs
 
 from ..app_title import app_title
+from ..art_paths import usable_art_path
 from ..db import GameDatabase
 from ..paths import artwork_dir
 from .enricher import _artwork_path, _save_image
@@ -23,10 +24,11 @@ ART_TYPES: dict[str, tuple[str, str, tuple[str, ...]]] = {
 
 
 def _preview_image(path: str) -> None:
-    if not path or not xbmcvfs.exists(path):
+    usable = usable_art_path(path, trust_if_plausible=True)
+    if not usable:
         return
     window = xbmcgui.Window(10000)
-    window.setProperty("infobackground", path)
+    window.setProperty("infobackground", usable)
     xbmc.executebuiltin("ActivateWindow(1104)")
 
 
@@ -47,8 +49,8 @@ def choose_game_art(game_id: int) -> bool:
     label, field_name, needles = ART_TYPES[art_key]
 
     options: list[tuple[str, str]] = []
-    current_path = game.get(field_name) or ""
-    if current_path and xbmcvfs.exists(current_path):
+    current_path = usable_art_path(game.get(field_name) or "", trust_if_plausible=True)
+    if current_path:
         options.append((f"Current {label.lower()}", current_path))
 
     if game_artwork_provider() == PROVIDER_SCREENSCRAPER:
@@ -66,8 +68,8 @@ def choose_game_art(game_id: int) -> bool:
     elif game_artwork_provider() == PROVIDER_SKRAPER:
         options.extend(list_local_art_options(game.get("rom_path") or "", art_key))
         local_meta = lookup_local_metadata(game.get("rom_path") or "")
-        field_path = local_meta.get(field_name) or ""
-        if field_path and xbmcvfs.exists(field_path):
+        field_path = usable_art_path(local_meta.get(field_name) or "")
+        if field_path:
             if not any(field_path == existing for _, existing in options):
                 options.insert(0, ("gamelist.xml", field_path))
 

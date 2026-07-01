@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <window>
 	<defaultcontrol always="true">8</defaultcontrol>
-	<onload>SetProperty(infobackground,$INFO[Window.Property(ZiroGame.Fanart)],home)</onload>
 	<onunload>ClearProperty(infobackground,home)</onunload>
 	<controls>
 		<control type="group">
@@ -23,7 +22,7 @@
 					<bordersize>20</bordersize>
 				</control>
 				<control type="group">
-					<visible>!String.IsEmpty(Window.Property(ZiroGame.Poster))</visible>
+					<visible>String.IsEqual(Window.Property(ZiroGame.HasPoster),1)</visible>
 					<control type="image">
 						<depth>DepthContentPopout</depth>
 						<left>4</left>
@@ -31,7 +30,7 @@
 						<width>526</width>
 						<height>801</height>
 						<aspectratio>scale</aspectratio>
-						<texture background="true">$INFO[Window.Property(ZiroGame.Poster)]</texture>
+						<texture background="true">$ESCINFO[Window.Property(ZiroGame.Poster)]</texture>
 					</control>
 					<control type="image">
 						<left>20</left>
@@ -39,12 +38,12 @@
 						<width>320</width>
 						<height>120</height>
 						<aspectratio>keep</aspectratio>
-						<texture background="true">$INFO[Window.Property(ZiroGame.Logo)]</texture>
-						<visible>!String.IsEmpty(Window.Property(ZiroGame.Logo))</visible>
+						<texture background="true">$ESCINFO[Window.Property(ZiroGame.Logo)]</texture>
+						<visible>String.IsEqual(Window.Property(ZiroGame.HasLogo),1)</visible>
 					</control>
 				</control>
 				<control type="group">
-					<visible>String.IsEmpty(Window.Property(ZiroGame.Poster))</visible>
+					<visible>!String.IsEqual(Window.Property(ZiroGame.HasPoster),1)</visible>
 					<control type="image">
 						<depth>DepthContentPopout</depth>
 						<left>4</left>
@@ -80,7 +79,7 @@
 						<aligny>bottom</aligny>
 						<label></label>
 						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Header,$INFO[Window.Property(ZiroGame.Title)],home)</onclick>
-						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Text,$INFO[Window.Property(ZiroGame.Plot)],home)</onclick>
+						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Text,$ESCINFO[Window.Property(ZiroGame.Plot)],home)</onclick>
 						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">ActivateWindow(1102)</onclick>
 						<onup>5000</onup>
 						<onleft>138</onleft>
@@ -105,7 +104,7 @@
 						<aligny>bottom</aligny>
 						<label></label>
 						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Header,$INFO[Window.Property(ZiroGame.Title)],home)</onclick>
-						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Text,$INFO[Window.Property(ZiroGame.Plot)],home)</onclick>
+						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Text,$ESCINFO[Window.Property(ZiroGame.Plot)],home)</onclick>
 						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">ActivateWindow(1102)</onclick>
 						<onup>5000</onup>
 						<onleft>139</onleft>
@@ -119,7 +118,7 @@
 						<top>25</top>
 						<width>670</width>
 						<height>363</height>
-						<label fallback="19055">$INFO[Window.Property(ZiroGame.Plot)]</label>
+						<label fallback="19055">$ESCINFO[Window.Property(ZiroGame.Plot)]</label>
 						<autoscroll delay="10000" time="5000" repeat="10000">Skin.HasSetting(AutoScroll)</autoscroll>
 						<visible>Integer.IsGreater(Container(4000).NumItems,0)</visible>
 					</control>
@@ -128,7 +127,7 @@
 						<top>25</top>
 						<width>1165</width>
 						<height>363</height>
-						<label fallback="19055">$INFO[Window.Property(ZiroGame.Plot)]</label>
+						<label fallback="19055">$ESCINFO[Window.Property(ZiroGame.Plot)]</label>
 						<autoscroll delay="10000" time="5000" repeat="10000">Skin.HasSetting(AutoScroll)</autoscroll>
 						<visible>!Integer.IsGreater(Container(4000).NumItems,0)</visible>
 					</control>
@@ -222,7 +221,7 @@
 						<param name="id" value="102" />
 						<param name="icon" value="icons/infodialogs/image.png" />
 						<param name="label" value="$LOCALIZE[31028]" />
-						<param name="visible" value="!String.IsEmpty(Window.Property(ZiroGame.Fanart)) | !String.IsEmpty(Window.Property(ZiroGame.Screenshot))" />
+						<param name="visible" value="String.IsEqual(Window.Property(ZiroGame.HasFanart),1) | String.IsEqual(Window.Property(ZiroGame.HasScreenshot),1)" />
 					</include>
 					<include content="InfoDialogButton">
 						<param name="id" value="7" />
