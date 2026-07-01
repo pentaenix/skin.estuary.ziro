@@ -62,9 +62,6 @@
 						<textoffsety>20</textoffsety>
 						<aligny>bottom</aligny>
 						<label></label>
-						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Header,$INFO[Window.Property(ZiroGame.Title)],home)</onclick>
-						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Text,$INFO[Window.Property(ZiroGame.Plot)],home)</onclick>
-						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">ActivateWindow(1102)</onclick>
 						<onup>5000</onup>
 						<onleft>138</onleft>
 						<onright>138</onright>
@@ -87,9 +84,6 @@
 						<textoffsety>20</textoffsety>
 						<aligny>bottom</aligny>
 						<label></label>
-						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Header,$INFO[Window.Property(ZiroGame.Title)],home)</onclick>
-						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Text,$INFO[Window.Property(ZiroGame.Plot)],home)</onclick>
-						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">ActivateWindow(1102)</onclick>
 						<onup>5000</onup>
 						<onleft>139</onleft>
 						<onright>139</onright>

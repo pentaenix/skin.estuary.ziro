@@ -21,6 +21,7 @@ DIALOG_XML = "Custom_1110_DialogZiroGameInfo.xml"
 RES_FOLDERS = ("xml", "1080i", "720p")
 POSTER_CONTROL_ID = 200
 PLOT_TEXTBOX_IDS = (141, 142)
+PLOT_BUTTON_IDS = (138, 139)
 APP_NAME = app_title()
 
 _GAME_DETAIL_CACHE: dict[int, dict] = {}
@@ -51,6 +52,7 @@ def _set_home_backdrop(image_path: str) -> None:
 
 class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
     _game: dict = {}
+    _plot: str = ""
 
     def __init__(
         self,
@@ -74,6 +76,8 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
         self.setProperty("ZiroGame.Id", str(game.get("id") or ""))
         self.setProperty("ZiroGame.Title", title)
         plot = resolve_game_description(game.get("description") or "")
+        self._plot = plot
+        ZiroGameInfoDialog._plot = plot
         self.setProperty("ZiroGame.Plot", plot)
         self.setProperty("ZiroGame.Platform", game.get("platform") or game.get("platform_id") or "")
         self.setProperty("ZiroGame.Year", str(game.get("release_year") or ""))
@@ -116,6 +120,16 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
             except RuntimeError as exc:
                 xbmc.log(f"[Games] plot setText failed id={control_id}: {exc}", xbmc.LOGDEBUG)
 
+    def _open_plot_viewer(self) -> None:
+        plot = (self._plot or self.getProperty("ZiroGame.Plot") or "").strip()
+        if not plot:
+            return
+        title = (self.getProperty("ZiroGame.Title") or "").strip()
+        home = xbmcgui.Window(10000)
+        home.setProperty("TextViewer_Header", title)
+        home.setProperty("TextViewer_Text", plot)
+        xbmc.executebuiltin("ActivateWindow(1102)")
+
     def onClick(self, control_id: int) -> None:
         game_id = int(self._game["id"])
         if control_id == 8:
@@ -135,6 +149,8 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
                 xbmc.executebuiltin(
                     f'PlayMedia(plugin://plugin.video.youtube/?action=search_query&search={title} trailer)'
                 )
+        elif control_id in PLOT_BUTTON_IDS:
+            self._open_plot_viewer()
         elif control_id == 102:
             art = self._game.get("_art") or _resolve_art_for_game(
                 self._game, local=self._game.get("_local")

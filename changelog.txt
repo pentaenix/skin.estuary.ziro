@@ -1,3 +1,6 @@
+[B]2.5.9[/B]
+• Fix empty game description modal (open text viewer from Python)
+
 [B]2.5.8[/B]
 • Game info plot uses setText (fixes quote display); faster Wii home row via widget_limit
 
