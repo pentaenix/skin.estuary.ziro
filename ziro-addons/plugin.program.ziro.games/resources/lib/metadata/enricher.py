@@ -168,7 +168,9 @@ def _pick_ss_game(game: dict, *, force_picker: bool = False) -> dict | None:
 def _apply_metadata(db: GameDatabase, game_id: int, meta: dict) -> None:
     updates: dict = {}
     if meta.get("description"):
-        updates["description"] = meta["description"]
+        from ..text_utils import resolve_game_description
+
+        updates["description"] = resolve_game_description(str(meta["description"]))
     if meta.get("developer"):
         updates["developer"] = meta["developer"]
     if meta.get("publisher"):

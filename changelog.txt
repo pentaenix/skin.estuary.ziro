@@ -1,3 +1,7 @@
+[B]2.5.6[/B]
+• Game info: transparent letterbox around box art; Home screen button label
+• Games home: keep focus in games rows while shelves load; sync on games focus
+
 [B]2.5.5[/B]
 • Games home: restore library categories banner; layout validation to prevent regressions
 • Game info: box art only (no title-screen overlay); game metadata labels; Video / Show home screen buttons

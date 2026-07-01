@@ -260,7 +260,7 @@ def _skraper_game_to_metadata(game_node: ET.Element, base_dir: str = "") -> dict
     manufacturer = text("manufacturer")
     metadata = {
         "title": title,
-        "description": text("description") or text("desc"),
+        "description": resolve_game_description(text("description") or text("desc")),
         "developer": text("developer") or manufacturer,
         "publisher": text("publisher") or manufacturer,
         "genres": text("genre"),

@@ -751,11 +751,26 @@
 				</control>
 				<control type="group" id="17000">
 					<visible>String.IsEqual(Container(9000).ListItem.Property(id),games)</visible>
+					<onfocus>RunPlugin(plugin://plugin.program.ziro.games/?path=/sync_home)</onfocus>
 					<include content="Visible_Right_Delayed">
 						<param name="id" value="games"/>
 					</include>
+					<control type="button" id="17002">
+						<include>HiddenObject</include>
+						<onfocus>SetFocus(17001)</onfocus>
+						<onclick>noop</onclick>
+						<visible allowhiddenfocus="true">Control.HasFocus(17002)</visible>
+					</control>
+					<control type="button" id="17003">
+						<include>HiddenObject</include>
+						<onfocus>SetFocus(17001)</onfocus>
+						<onclick>noop</onclick>
+						<visible allowhiddenfocus="true">Control.HasFocus(17003)</visible>
+					</control>
 					<control type="grouplist" id="17001">
 						<include>WidgetGroupListCommon</include>
+						<onup>17002</onup>
+						<ondown>17003</ondown>
 						<pagecontrol>17010</pagecontrol>
 						<include content="WidgetListCategories" condition="System.HasAddon(plugin.program.ziro.games) + !Skin.HasSetting(home_no_categories_widget) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">
 							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/library"/>

@@ -12,15 +12,6 @@
 				<top>150</top>
 				<left>66</left>
 				<include>OpenClose_Left</include>
-				<control type="image">
-					<top>-16</top>
-					<left>-16</left>
-					<width>566</width>
-					<height>841</height>
-					<texture>colors/black.png</texture>
-					<bordertexture border="21">overlays/shadow.png</bordertexture>
-					<bordersize>20</bordersize>
-				</control>
 				<control type="group">
 					<visible>String.IsEqual(Window.Property(ZiroGame.HasPoster),1)</visible>
 					<control type="image" id="200">
@@ -30,7 +21,9 @@
 						<width>526</width>
 						<height>801</height>
 						<aspectratio align="center" aligny="center">keep</aspectratio>
-						<texture background="true"></texture>
+						<texture></texture>
+						<bordertexture border="21">overlays/shadow.png</bordertexture>
+						<bordersize>20</bordersize>
 					</control>
 				</control>
 				<control type="group">
@@ -206,7 +199,7 @@
 					<include content="InfoDialogButton">
 						<param name="id" value="102" />
 						<param name="icon" value="icons/infodialogs/image.png" />
-						<param name="label" value="Show home screen" />
+						<param name="label" value="Home screen" />
 						<param name="visible" value="String.IsEqual(Window.Property(ZiroGame.HasScreenshot),1)" />
 					</include>
 					<include content="InfoDialogButton">

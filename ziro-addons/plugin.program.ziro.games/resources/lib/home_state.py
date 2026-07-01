@@ -43,6 +43,7 @@ def refresh_home_platform_properties(db: GameDatabase | None = None) -> None:
 def refresh_home_properties(db: GameDatabase | None = None) -> None:
     db = db or GameDatabase()
     window = xbmcgui.Window(HOME_WINDOW_ID)
+    window.setProperty("ZiroGames.HomeReady", "0")
     for platform_id in platform_ids():
         window.clearProperty(f"{PLATFORM_PROPERTY_PREFIX}{platform_id}")
     for genre_id in GENRE_IDS:
@@ -92,6 +93,7 @@ def refresh_home_properties(db: GameDatabase | None = None) -> None:
         )
     )
     window.setProperty("ZiroGames.HasLibrary", "1" if has_games else "0")
+    window.setProperty("ZiroGames.HomeReady", "1")
     if xbmc.getCondVisibility("System.HasAddon(plugin.program.ziro.games)"):
         xbmc.log(
             f"[Ziro Games] home refreshed platforms={len(platform_rows)} genres={len(genre_rows)} has_library={has_games}",

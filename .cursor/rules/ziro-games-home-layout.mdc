@@ -29,6 +29,10 @@ Pass dynamic visibility via `$PARAM[visible]` on **CategoryLabel**, **BusyListSp
 
 Keep `ZiroGamesPlatformWidgets` in `17001`. Do **not** re-add `ZiroGamesGenreWidgets` to `Home.xml` unless explicitly requested.
 
+## Games-only vertical wrap (do not use 20000/20001)
+
+`grouplist` `17001` must override `WidgetGroupListCommon` with `<onup>17002</onup>` and `<ondown>17003</ondown>`, with hidden buttons `17002`/`17003` that call `SetFocus(17001)`. Global `20000`/`20001` refocus the whole home panel and can kick focus back to the side menu while game rows are still loading.
+
 ## Validation
 
 Run `python3 tools/ziro_validate_addons.py` before commit; it checks the categories banner and forbidden group wrappers.

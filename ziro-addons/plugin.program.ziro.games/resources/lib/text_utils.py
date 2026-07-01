@@ -10,6 +10,7 @@ _WRAPPING_QUOTE_PAIRS = (
     ("\u201c", "\u201d"),
     ("\u2018", "\u2019"),
 )
+_STRAY_QUOTE_RUN_RE = re.compile(r'"{2,}')
 
 
 def is_import_placeholder_description(text: str) -> bool:
@@ -36,7 +37,32 @@ def strip_wrapping_quotes(text: str) -> str:
         while value.endswith('"'):
             value = value[:-1].strip()
             changed = True
+        while value.startswith("'"):
+            value = value[1:].strip()
+            changed = True
+        while value.endswith("'"):
+            value = value[:-1].strip()
+            changed = True
     return value
+
+
+def strip_decorative_quotes(text: str) -> str:
+    value = (text or "").strip()
+    if not value:
+        return ""
+
+    value = html.unescape(value)
+    value = _STRAY_QUOTE_RUN_RE.sub("", value)
+    value = strip_wrapping_quotes(value)
+
+    lines: list[str] = []
+    for line in value.split("\n"):
+        cleaned = strip_wrapping_quotes(line.strip())
+        cleaned = cleaned.strip('"').strip("'").strip()
+        lines.append(cleaned)
+    value = "\n".join(lines)
+
+    return strip_wrapping_quotes(value).strip()
 
 
 def clean_display_text(text: str) -> str:
@@ -53,7 +79,7 @@ def clean_display_text(text: str) -> str:
     value = value.replace("\xa0", " ").replace("\r\n", "\n").replace("\r", "\n")
     value = re.sub(r"[ \t]+", " ", value)
     value = re.sub(r"\n{3,}", "\n\n", value)
-    value = strip_wrapping_quotes(value)
+    value = strip_decorative_quotes(value)
     return value.strip()
 
 
