@@ -79,16 +79,17 @@ CREATE TABLE IF NOT EXISTS game_genres (
 );
 """
 
+# SQLite ALTER TABLE only allows constant defaults (no CURRENT_TIMESTAMP).
 MIGRATIONS = [
-    ("sources", "enabled", "INTEGER NOT NULL DEFAULT 1"),
-    ("sources", "label", "TEXT"),
-    ("sources", "date_added", "TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP"),
-    ("games", "source_id", "INTEGER"),
-    ("games", "sgdb_game_id", "INTEGER"),
-    ("games", "manual_metadata_locked", "INTEGER NOT NULL DEFAULT 0"),
-    ("games", "metadata_updated_at", "TEXT"),
-    ("games", "ss_game_id", "INTEGER"),
-    ("games", "video_path", "TEXT"),
+    ("sources", "enabled", "INTEGER NOT NULL DEFAULT 1", None),
+    ("sources", "label", "TEXT", None),
+    ("sources", "date_added", "TEXT", "UPDATE sources SET date_added=datetime('now') WHERE date_added IS NULL OR date_added=''"),
+    ("games", "source_id", "INTEGER", None),
+    ("games", "sgdb_game_id", "INTEGER", None),
+    ("games", "manual_metadata_locked", "INTEGER NOT NULL DEFAULT 0", None),
+    ("games", "metadata_updated_at", "TEXT", None),
+    ("games", "ss_game_id", "INTEGER", None),
+    ("games", "video_path", "TEXT", None),
 ]
 
 
@@ -97,10 +98,12 @@ def _table_columns(conn: sqlite3.Connection, table: str) -> set[str]:
 
 
 def _apply_migrations(conn: sqlite3.Connection) -> None:
-    for table, column, definition in MIGRATIONS:
+    for table, column, definition, backfill_sql in MIGRATIONS:
         if column in _table_columns(conn, table):
             continue
         conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+        if backfill_sql:
+            conn.execute(backfill_sql)
 
 
 DEFAULT_PLATFORMS = all_platform_rows()

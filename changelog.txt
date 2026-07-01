@@ -1,3 +1,6 @@
+[B]2.4.4[/B]
+• Fix SQLite migration on Kodi (no CURRENT_TIMESTAMP in ALTER TABLE) and service startup race
+
 [B]2.4.3[/B]
 • Skraper: read wii.dat-style XML, map box2dfront/screenshot/screenshottitle/videos to game info
 

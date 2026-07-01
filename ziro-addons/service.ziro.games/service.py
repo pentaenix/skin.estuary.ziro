@@ -8,16 +8,29 @@ import sys
 from pathlib import Path
 
 import xbmc
+import xbmcaddon
 import xbmcvfs
 
 PLUGIN_ID = "plugin.program.ziro.games"
 SESSION_PATH = Path(xbmcvfs.translatePath(f"special://profile/addon_data/{PLUGIN_ID}/session.json"))
 
 
+def _plugin_installed() -> bool:
+    if not xbmc.getCondVisibility(f"System.HasAddon({PLUGIN_ID})"):
+        return False
+    try:
+        xbmcaddon.Addon(PLUGIN_ID)
+        return True
+    except Exception:
+        return False
+
+
 def _ensure_plugin_path() -> str:
     root = xbmcvfs.translatePath(f"special://addons/{PLUGIN_ID}")
-    if not root or not xbmcvfs.exists(root):
-        raise FileNotFoundError(f"{PLUGIN_ID} is not installed")
+    if not root:
+        raise FileNotFoundError(f"{PLUGIN_ID} addon path is empty")
+    if not xbmcvfs.exists(root) and not os.path.isdir(root):
+        raise FileNotFoundError(f"{PLUGIN_ID} is not installed at {root}")
     if root not in sys.path:
         sys.path.insert(0, root)
     return root
@@ -54,9 +67,16 @@ def focus_kodi() -> None:
         xbmc.executebuiltin("ActivateWindow(Home)")
 
 
-def refresh_home_state() -> None:
-    if not xbmc.getCondVisibility(f"System.HasAddon({PLUGIN_ID})"):
-        return
+def refresh_home_state(monitor: xbmc.Monitor | None = None) -> None:
+    wait = monitor or xbmc.Monitor()
+    for _ in range(20):
+        if _plugin_installed():
+            break
+        if wait.waitForAbort(0.25):
+            return
+    if not _plugin_installed():
+        raise FileNotFoundError(f"{PLUGIN_ID} is not installed")
+
     _ensure_plugin_path()
     import importlib
 
@@ -68,11 +88,13 @@ def refresh_home_state() -> None:
 def main() -> None:
     monitor = xbmc.Monitor()
     xbmc.log("[Ziro Games Service] started", xbmc.LOGINFO)
+    if monitor.waitForAbort(2):
+        return
     try:
-        refresh_home_state()
+        refresh_home_state(monitor)
     except Exception as exc:
         xbmc.log(f"[Ziro Games Service] home refresh failed: {exc}", xbmc.LOGWARNING)
-        if xbmc.getCondVisibility(f"System.HasAddon({PLUGIN_ID})"):
+        if _plugin_installed():
             xbmc.executebuiltin(f"RunPlugin(plugin://{PLUGIN_ID}/?path=/sync_home)")
     last_pid = None
     while not monitor.abortRequested():
