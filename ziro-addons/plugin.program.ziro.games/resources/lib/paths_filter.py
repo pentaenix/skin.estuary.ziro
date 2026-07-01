@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 
+import xbmcvfs
+
 BLOCKED_ROM_FRAGMENTS = (
     "ziro-addons",
     "skin.estuary.ziro",
@@ -48,6 +50,8 @@ def is_library_rom_path(path: str) -> bool:
     if not path or not str(path).strip():
         return False
     norm = _normalize(path)
+    if norm.startswith("mock://"):
+        return False
     base = _basename(path)
 
     if norm.endswith("/addon.xml") or base == "addon.xml":
@@ -89,3 +93,19 @@ def is_valid_game_title(title: str) -> bool:
     if text.lower() in {"readme", "changelog", "license", "settings", "main", "default"}:
         return False
     return True
+
+
+def is_placeholder_rom_path(path: str) -> bool:
+    norm = _normalize(path)
+    return norm.startswith("mock://") or norm.startswith("test://")
+
+
+def rom_file_exists(path: str) -> bool:
+    if not path or not str(path).strip():
+        return False
+    if is_placeholder_rom_path(path):
+        return False
+    try:
+        return bool(xbmcvfs.exists(path))
+    except Exception:
+        return False

@@ -244,6 +244,10 @@ def confirm_remove_source(router: Router, source_id: int) -> None:
         "No = keep the games, only remove the source folder",
     )
     router.remove_source(source_id, purge_games=purge)
+    from resources.lib.scanner import purge_junk_games
+
+    purge_junk_games(router.db)
+    router.db.clear_play_state_for_hidden_games()
     refresh_home_platform_properties(router.db)
     xbmcgui.Dialog().notification("Ziro Games", "Source removed", xbmcgui.NOTIFICATION_INFO, 2500)
     xbmc.executebuiltin(

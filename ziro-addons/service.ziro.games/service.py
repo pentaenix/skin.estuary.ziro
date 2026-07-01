@@ -81,8 +81,12 @@ def refresh_home_state(monitor: xbmc.Monitor | None = None) -> None:
     import importlib
 
     db_module = importlib.import_module("resources.lib.db")
+    scanner_module = importlib.import_module("resources.lib.scanner")
     home_module = importlib.import_module("resources.lib.home_state")
-    home_module.refresh_home_properties(db_module.GameDatabase())
+    db = db_module.GameDatabase()
+    scanner_module.purge_junk_games(db)
+    db.clear_play_state_for_hidden_games()
+    home_module.refresh_home_properties(db)
 
 
 def main() -> None:

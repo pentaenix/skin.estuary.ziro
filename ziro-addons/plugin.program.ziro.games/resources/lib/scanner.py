@@ -10,7 +10,7 @@ import xbmcaddon
 import xbmcvfs
 
 from .db import GameDatabase
-from .paths_filter import is_library_rom_path, is_valid_game_title
+from .paths_filter import is_library_rom_path, is_placeholder_rom_path, is_valid_game_title, rom_file_exists
 from .platforms import extensions_for, get_platform, iter_profile_defs, source_dict
 from .metadata.providers import PROVIDER_SKRAPER, game_artwork_provider
 from .metadata.local_metadata import clear_gamelist_cache, import_metadata_for_game
@@ -277,9 +277,19 @@ def purge_junk_games(db: GameDatabase) -> int:
     rows = db.rows("SELECT id, rom_path, title FROM games WHERE hidden=0")
     hidden = 0
     for row in rows:
+        rom_path = row.get("rom_path", "")
         title = (row.get("title") or "").strip()
-        if not is_library_rom_path(row.get("rom_path", "")) or not title or not is_valid_game_title(title):
-            db.execute("UPDATE games SET hidden=1 WHERE id=?", (row["id"],))
+        if (
+            not is_library_rom_path(rom_path)
+            or is_placeholder_rom_path(rom_path)
+            or not rom_file_exists(rom_path)
+            or not title
+            or not is_valid_game_title(title)
+        ):
+            db.execute(
+                "UPDATE games SET hidden=1, last_played=NULL, play_count=0 WHERE id=?",
+                (row["id"],),
+            )
             hidden += 1
     if hidden:
         xbmc.log(f"[Ziro Games Scanner] hid {hidden} junk library entries", xbmc.LOGINFO)
@@ -293,7 +303,14 @@ def scan(db: GameDatabase) -> ScanResult:
     outcome = ScanResult()
     sources = db.list_sources(enabled_only=True)
     if not sources:
+        db.clear_play_state_for_hidden_games()
         xbmc.log("[Ziro Games Scanner] no enabled sources configured", xbmc.LOGINFO)
+        try:
+            from .home_state import refresh_home_platform_properties
+
+            refresh_home_platform_properties(db)
+        except Exception as exc:
+            xbmc.log(f"[Ziro Games Scanner] home refresh failed: {exc}", xbmc.LOGWARNING)
         return outcome
 
     for source in sources:

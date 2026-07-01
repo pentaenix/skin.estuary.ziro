@@ -32,8 +32,6 @@ def parse_args() -> dict[str, str]:
 
 
 def get_launch_data(game_id: int) -> tuple[dict, dict]:
-    if game_id < 0:
-        raise RuntimeError("Mock games cannot launch. Scan your real folders first.")
     if not DB_PATH.exists():
         raise RuntimeError("Ziro Games database does not exist yet. Run a scan first.")
     conn = sqlite3.connect(str(DB_PATH))

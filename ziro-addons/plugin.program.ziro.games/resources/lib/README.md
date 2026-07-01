@@ -17,8 +17,8 @@ routes.py
 paths.py
   Userdata/profile paths, artwork/cache/db paths. Keep cross-platform where possible.
 
-mock.py
-  Temporary/demo data only. Do not rely on mock data for production behavior.
+paths_filter.py
+  Filters junk paths/titles and verifies ROM files exist on disk.
 ```
 
 If you add metadata providers, prefer a new package:

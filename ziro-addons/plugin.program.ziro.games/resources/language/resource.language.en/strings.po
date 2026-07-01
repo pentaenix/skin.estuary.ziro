@@ -131,10 +131,6 @@ msgctxt "#30051"
 msgid "Developer options"
 msgstr "Developer options"
 
-msgctxt "#30052"
-msgid "Show mock games when database is empty"
-msgstr "Show mock games when database is empty"
-
 msgctxt "#30053"
 msgid "Debug logging"
 msgstr "Debug logging"

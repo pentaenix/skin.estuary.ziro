@@ -318,11 +318,6 @@
     </category>
     <category id="development" label="30050" help="">
       <group id="1" label="30051">
-        <setting id="dev_mock_library" type="boolean" label="30052" help="">
-          <level>0</level>
-          <default>false</default>
-          <control type="toggle"/>
-        </setting>
         <setting id="debug_logging" type="boolean" label="30053" help="">
           <level>0</level>
           <default>false</default>

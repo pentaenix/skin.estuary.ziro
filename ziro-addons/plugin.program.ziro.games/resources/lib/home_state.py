@@ -15,6 +15,8 @@ GENRE_IDS = ("rpg", "platformer", "adventure", "racing", "fighting", "coop")
 _VALID_GAMES_WHERE = """
     hidden = 0
     AND LENGTH(TRIM(title)) > 0
+    AND rom_path NOT LIKE 'mock://%'
+    AND rom_path NOT LIKE 'test://%'
     AND rom_path NOT LIKE '%ziro-addons%'
     AND rom_path NOT LIKE '%skin.estuary.ziro%'
     AND rom_path NOT LIKE '%plugin.program.ziro.games%'
