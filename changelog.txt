@@ -1,3 +1,6 @@
+[B]2.4.8[/B]
+• Games info dialog: match movie layout, fix local artwork paths, and clean description text
+
 [B]2.4.7[/B]
 • Games: show cleaned game title instead of missing-art placeholder on home rows and lists
 

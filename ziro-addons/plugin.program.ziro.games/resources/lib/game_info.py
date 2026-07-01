@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime
 
 import xbmc
 import xbmcaddon
@@ -9,13 +10,29 @@ import xbmcgui
 import xbmcvfs
 
 from .app_title import app_title
+from .art_paths import usable_art_path
 from .db import GameDatabase
+from .metadata.local_metadata import lookup_local_metadata
+from .text_utils import clean_display_text
 from .titles import display_title
 
 SKIN_IDS = ("skin.estuary.ziro",)
 DIALOG_XML = "Custom_1110_DialogZiroGameInfo.xml"
 RES_FOLDERS = ("xml", "1080i", "720p")
 APP_NAME = app_title()
+
+GAME_DETAIL_SQL = """
+SELECT g.*, p.name AS platform,
+       COALESCE(group_concat(ge.name, ', '), '') AS genres,
+       s.folder_path AS source_folder
+FROM games g
+LEFT JOIN platforms p ON p.id = g.platform_id
+LEFT JOIN game_genres gg ON gg.game_id = g.id
+LEFT JOIN genres ge ON ge.id = gg.genre_id
+LEFT JOIN sources s ON s.id = g.source_id
+WHERE g.id=? AND g.hidden=0
+GROUP BY g.id
+"""
 
 
 class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
@@ -35,37 +52,42 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
         cls._game = game
 
     def onInit(self) -> None:
-        game = self._game
+        self._apply_properties(self._game)
+
+    def _apply_properties(self, game: dict) -> None:
         title = display_title(game.get("title", ""), rom_path=game.get("rom_path", ""))
+        art = _resolve_art_for_game(game)
         self.setProperty("ZiroGame.Id", str(game.get("id") or ""))
         self.setProperty("ZiroGame.Title", title)
-        self.setProperty("ZiroGame.Plot", game.get("description") or "")
+        self.setProperty("ZiroGame.Plot", clean_display_text(game.get("description") or ""))
         self.setProperty("ZiroGame.Platform", game.get("platform") or game.get("platform_id") or "")
         self.setProperty("ZiroGame.Year", str(game.get("release_year") or ""))
         self.setProperty("ZiroGame.Developer", game.get("developer") or "")
         self.setProperty("ZiroGame.Publisher", game.get("publisher") or "")
         self.setProperty("ZiroGame.Genre", game.get("genres") or "")
-        self.setProperty("ZiroGame.PlayCount", str(game.get("play_count") or 0))
+        play_count = int(game.get("play_count") or 0)
+        self.setProperty("ZiroGame.PlayCount", str(play_count) if play_count else "")
+        self.setProperty("ZiroGame.LastPlayed", _format_last_played(game.get("last_played") or ""))
         self.setProperty("ZiroGame.Favorite", "1" if int(game.get("favorite") or 0) else "0")
-        cover = (game.get("cover_path") or "").strip()
-        self.setProperty("ZiroGame.Poster", cover if cover and xbmcvfs.exists(cover) else "")
-        fanart = game.get("fanart_path") or ""
-        screenshot = game.get("screenshot_path") or ""
-        self.setProperty("ZiroGame.Fanart", fanart if fanart and xbmcvfs.exists(fanart) else "")
-        self.setProperty("ZiroGame.Screenshot", screenshot if screenshot and xbmcvfs.exists(screenshot) else "")
-        logo = game.get("logo_path") or screenshot or ""
-        self.setProperty("ZiroGame.Logo", logo if logo and xbmcvfs.exists(logo) else "")
+        self.setProperty("ZiroGame.Poster", art.get("cover_path", ""))
+        self.setProperty("ZiroGame.Fanart", art.get("fanart_path", ""))
+        self.setProperty("ZiroGame.Screenshot", art.get("screenshot_path", ""))
+        self.setProperty("ZiroGame.Logo", art.get("logo_path", ""))
+        self.setProperty("ZiroGame.Video", art.get("video_path", ""))
         rating = game.get("rating")
         self.setProperty("ZiroGame.Rating", str(rating) if rating not in (None, "", 0) else "")
+        background = art.get("fanart_path") or art.get("screenshot_path") or art.get("cover_path") or ""
+        if background:
+            xbmcgui.Window(10000).setProperty("infobackground", background)
 
     def onClick(self, control_id: int) -> None:
         game_id = int(self._game["id"])
         if control_id == 8:
             self.close()
             xbmc.executebuiltin(f"RunScript(script.ziro.games.launcher,game_id={game_id})")
-        elif control_id == 11:
-            video_path = self._game.get("video_path") or ""
-            if video_path and xbmcvfs.exists(video_path):
+        elif control_id in {11, 110}:
+            video_path = usable_art_path(self._game.get("video_path") or "")
+            if video_path:
                 xbmc.Player().play(video_path)
                 return
             title = display_title(self._game.get("title", ""), rom_path=self._game.get("rom_path", ""))
@@ -78,13 +100,9 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
                     f'PlayMedia(plugin://plugin.video.youtube/?action=search_query&search={title} trailer)'
                 )
         elif control_id == 102:
-            image = (
-                self._game.get("fanart_path")
-                or self._game.get("screenshot_path")
-                or self._game.get("cover_path")
-                or ""
-            )
-            if image and xbmcvfs.exists(image):
+            art = _resolve_art_for_game(self._game)
+            image = art.get("fanart_path") or art.get("screenshot_path") or art.get("cover_path") or ""
+            if image:
                 xbmcgui.Window(10000).setProperty("infobackground", image)
                 xbmc.executebuiltin("ActivateWindow(1104)")
         elif control_id == 7:
@@ -97,20 +115,91 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
             self.setProperty("ZiroGame.Favorite", "1" if self._game["favorite"] else "0")
         elif control_id == 6:
             xbmc.executebuiltin(f"RunPlugin(plugin://plugin.program.ziro.games/?path=/refresh&game_id={game_id})")
-        elif control_id == 10:
-            xbmc.executebuiltin(f"RunPlugin(plugin://plugin.program.ziro.games/?path=/choose_art&game_id={game_id})")
-            refreshed = GameDatabase().get_game(game_id)
+            refreshed = _load_game_details(game_id)
             if refreshed:
                 self._game = refreshed
                 ZiroGameInfoDialog._game = refreshed
-                cover = (refreshed.get("cover_path") or "").strip()
-                self.setProperty("ZiroGame.Poster", cover if cover and xbmcvfs.exists(cover) else "")
-                fanart = refreshed.get("fanart_path") or ""
-                screenshot = refreshed.get("screenshot_path") or ""
-                self.setProperty("ZiroGame.Fanart", fanart if fanart and xbmcvfs.exists(fanart) else "")
-                self.setProperty("ZiroGame.Screenshot", screenshot if screenshot and xbmcvfs.exists(screenshot) else "")
-                logo = refreshed.get("logo_path") or screenshot or ""
-                self.setProperty("ZiroGame.Logo", logo if logo and xbmcvfs.exists(logo) else "")
+                self._apply_properties(refreshed)
+        elif control_id == 10:
+            xbmc.executebuiltin(f"RunPlugin(plugin://plugin.program.ziro.games/?path=/choose_art&game_id={game_id})")
+            refreshed = _load_game_details(game_id)
+            if refreshed:
+                self._game = refreshed
+                ZiroGameInfoDialog._game = refreshed
+                self._apply_properties(refreshed)
+
+
+def _format_last_played(value: str) -> str:
+    value = (value or "").strip()
+    if not value:
+        return ""
+    try:
+        return datetime.fromisoformat(value.replace("Z", "")).strftime("%Y-%m-%d %H:%M")
+    except ValueError:
+        return value[:16]
+
+
+def _load_game_details(game_id: int) -> dict | None:
+    db = GameDatabase()
+    game = db.one(GAME_DETAIL_SQL, (game_id,))
+    if not game:
+        return None
+    return _merge_local_metadata(game)
+
+
+def _merge_local_metadata(game: dict) -> dict:
+    merged = dict(game)
+    local = lookup_local_metadata(
+        merged.get("rom_path") or "",
+        source_folder=merged.get("source_folder") or "",
+        platform_id=merged.get("platform_id") or "",
+    )
+    for field in (
+        "description",
+        "developer",
+        "publisher",
+        "release_year",
+        "cover_path",
+        "fanart_path",
+        "logo_path",
+        "screenshot_path",
+        "video_path",
+        "genres",
+    ):
+        if local.get(field) and not merged.get(field):
+            merged[field] = local[field]
+    if local.get("genres") and not merged.get("genres"):
+        merged["genres"] = local["genres"]
+    return merged
+
+
+def _resolve_art_for_game(game: dict) -> dict[str, str]:
+    fields = ("cover_path", "fanart_path", "logo_path", "screenshot_path", "video_path")
+    resolved: dict[str, str] = {}
+    for field in fields:
+        path = usable_art_path(game.get(field) or "")
+        if path:
+            resolved[field] = path
+
+    if resolved.get("cover_path") and resolved.get("fanart_path"):
+        if resolved.get("screenshot_path") and not resolved.get("logo_path"):
+            resolved["logo_path"] = resolved["screenshot_path"]
+        return resolved
+
+    local = lookup_local_metadata(
+        game.get("rom_path") or "",
+        source_folder=game.get("source_folder") or "",
+        platform_id=game.get("platform_id") or "",
+    )
+    for field in fields:
+        if not resolved.get(field):
+            path = usable_art_path(local.get(field) or "")
+            if path:
+                resolved[field] = path
+
+    if resolved.get("screenshot_path") and not resolved.get("logo_path"):
+        resolved["logo_path"] = resolved["screenshot_path"]
+    return resolved
 
 
 def _normalize_path(path: str) -> str:
@@ -184,7 +273,6 @@ def _dialog_xml_path(skin_root: str, res_folder: str) -> str:
 
 
 def resolve_game_info_targets() -> list[tuple[str, str]]:
-    """Return skin roots and resolution folders to try for the game info dialog."""
     targets: list[tuple[str, str]] = []
     seen: set[tuple[str, str]] = set()
     active_skin_id = _current_skin_id()
@@ -219,22 +307,11 @@ def resolve_game_info_targets() -> list[tuple[str, str]]:
                 add_target(skin_root, "xml")
                 break
 
-    if targets:
-        xbmc.log(
-            f"[Games] game info targets for skin={active_skin_id}: {targets}",
-            xbmc.LOGINFO,
-        )
-    else:
-        xbmc.log(
-            f"[Games] no game info targets found for skin={active_skin_id}; roots={_candidate_skin_roots()}",
-            xbmc.LOGWARNING,
-        )
     return targets
 
 
 def show_game_info(game_id: int) -> None:
-    db = GameDatabase()
-    game = db.get_game(game_id)
+    game = _load_game_details(game_id)
     if not game:
         xbmcgui.Dialog().notification(APP_NAME, "Game not found", xbmcgui.NOTIFICATION_ERROR, 3000)
         return

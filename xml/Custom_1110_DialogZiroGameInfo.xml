@@ -22,31 +22,81 @@
 					<bordertexture border="21">overlays/shadow.png</bordertexture>
 					<bordersize>20</bordersize>
 				</control>
-				<control type="image">
-					<depth>DepthContentPopout</depth>
-					<left>4</left>
-					<top>4</top>
-					<width>526</width>
-					<height>801</height>
-					<aspectratio>scale</aspectratio>
-					<texture fallback="DefaultGames.png">$INFO[Window.Property(ZiroGame.Poster)]</texture>
+				<control type="group">
+					<visible>!String.IsEmpty(Window.Property(ZiroGame.Poster))</visible>
+					<control type="image">
+						<depth>DepthContentPopout</depth>
+						<left>4</left>
+						<top>4</top>
+						<width>526</width>
+						<height>801</height>
+						<aspectratio>scale</aspectratio>
+						<texture background="true">$INFO[Window.Property(ZiroGame.Poster)]</texture>
+					</control>
+					<control type="image">
+						<left>20</left>
+						<top>20</top>
+						<width>320</width>
+						<height>120</height>
+						<aspectratio>keep</aspectratio>
+						<texture background="true">$INFO[Window.Property(ZiroGame.Logo)]</texture>
+						<visible>!String.IsEmpty(Window.Property(ZiroGame.Logo))</visible>
+					</control>
 				</control>
-				<control type="image">
-					<left>20</left>
-					<top>20</top>
-					<width>320</width>
-					<height>120</height>
-					<aspectratio>keep</aspectratio>
-					<texture>$INFO[Window.Property(ZiroGame.Logo)]</texture>
-					<visible>!String.IsEmpty(Window.Property(ZiroGame.Logo))</visible>
+				<control type="group">
+					<visible>String.IsEmpty(Window.Property(ZiroGame.Poster))</visible>
+					<control type="image">
+						<depth>DepthContentPopout</depth>
+						<left>4</left>
+						<top>4</top>
+						<width>526</width>
+						<height>801</height>
+						<aspectratio>scale</aspectratio>
+						<texture colordiffuse="FF303030">colors/black.png</texture>
+					</control>
+					<control type="textbox">
+						<left>40</left>
+						<top>260</top>
+						<width>450</width>
+						<height>280</height>
+						<font>font36_title</font>
+						<align>center</align>
+						<aligny>center</aligny>
+						<label>$INFO[Window.Property(ZiroGame.Title)]</label>
+					</control>
 				</control>
 			</control>
 			<control type="group">
 				<include>OpenClose_Right</include>
 				<left>620</left>
-				<top>124</top>
+				<top>-30</top>
 				<control type="group" id="140">
-					<top>344</top>
+					<top>468</top>
+					<control type="button" id="138">
+						<width>754</width>
+						<height>418</height>
+						<textoffsetx>40</textoffsetx>
+						<textoffsety>20</textoffsety>
+						<aligny>bottom</aligny>
+						<label></label>
+						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Header,$INFO[Window.Property(ZiroGame.Title)],home)</onclick>
+						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Text,$INFO[Window.Property(ZiroGame.Plot)],home)</onclick>
+						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">ActivateWindow(1102)</onclick>
+						<onup>5000</onup>
+						<onleft>138</onleft>
+						<onright>138</onright>
+						<ondown>5000</ondown>
+						<texturenofocus border="21">dialogs/dialog-bg.png</texturenofocus>
+						<visible>Integer.IsGreater(Container(4000).NumItems,0)</visible>
+					</control>
+					<control type="image">
+						<left>735</left>
+						<width>512</width>
+						<height>418</height>
+						<aligny>bottom</aligny>
+						<texture border="21">dialogs/dialog-bg.png</texture>
+						<visible>Integer.IsGreater(Container(4000).NumItems,0)</visible>
+					</control>
 					<control type="button" id="139">
 						<width>1245</width>
 						<height>418</height>
@@ -57,7 +107,21 @@
 						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Header,$INFO[Window.Property(ZiroGame.Title)],home)</onclick>
 						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Text,$INFO[Window.Property(ZiroGame.Plot)],home)</onclick>
 						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">ActivateWindow(1102)</onclick>
+						<onup>5000</onup>
+						<onleft>139</onleft>
+						<onright>139</onright>
+						<ondown>5000</ondown>
 						<texturenofocus border="21">dialogs/dialog-bg.png</texturenofocus>
+						<visible>!Integer.IsGreater(Container(4000).NumItems,0)</visible>
+					</control>
+					<control type="textbox">
+						<left>40</left>
+						<top>25</top>
+						<width>670</width>
+						<height>363</height>
+						<label fallback="19055">$INFO[Window.Property(ZiroGame.Plot)]</label>
+						<autoscroll delay="10000" time="5000" repeat="10000">Skin.HasSetting(AutoScroll)</autoscroll>
+						<visible>Integer.IsGreater(Container(4000).NumItems,0)</visible>
 					</control>
 					<control type="textbox">
 						<left>40</left>
@@ -66,6 +130,7 @@
 						<height>363</height>
 						<label fallback="19055">$INFO[Window.Property(ZiroGame.Plot)]</label>
 						<autoscroll delay="10000" time="5000" repeat="10000">Skin.HasSetting(AutoScroll)</autoscroll>
+						<visible>!Integer.IsGreater(Container(4000).NumItems,0)</visible>
 					</control>
 				</control>
 				<control type="grouplist" id="4000">
@@ -74,8 +139,10 @@
 					<top>488</top>
 					<height>355</height>
 					<itemgap>-8</itemgap>
-					<ondown>9000</ondown>
+					<ondown>5000</ondown>
 					<onup>140</onup>
+					<onright>140</onright>
+					<onleft>140</onleft>
 					<include content="InfoDialogMetadata">
 						<param name="control_id" value="147" />
 						<param name="label" value="[COLOR button_focus]Platform: [/COLOR]$INFO[Window.Property(ZiroGame.Platform)]" />
@@ -108,21 +175,27 @@
 					</include>
 					<include content="InfoDialogMetadata">
 						<param name="control_id" value="153" />
+						<param name="label" value="[COLOR button_focus]$LOCALIZE[592]: [/COLOR]$INFO[Window.Property(ZiroGame.LastPlayed)]" />
+						<param name="visible" value="!String.IsEmpty(Window.Property(ZiroGame.LastPlayed))" />
+					</include>
+					<include content="InfoDialogMetadata">
+						<param name="control_id" value="154" />
 						<param name="label" value="[COLOR button_focus]$LOCALIZE[161]: [/COLOR]$INFO[Window.Property(ZiroGame.PlayCount)]" />
 						<param name="visible" value="!String.IsEmpty(Window.Property(ZiroGame.PlayCount))" />
 					</include>
 				</control>
-				<control type="grouplist" id="9000">
+				<control type="grouplist" id="5000">
 					<left>0</left>
 					<top>864</top>
 					<width>1246</width>
 					<height>400</height>
-					<onleft>9000</onleft>
-					<onright>9000</onright>
+					<onleft>5000</onleft>
+					<onright>5000</onright>
 					<onup>140</onup>
 					<itemgap>-16</itemgap>
 					<align>center</align>
 					<orientation>horizontal</orientation>
+					<scrolltime tween="quadratic">200</scrolltime>
 					<include content="InfoDialogButton">
 						<param name="id" value="8" />
 						<param name="icon" value="icons/infodialogs/play.png" />
@@ -130,9 +203,15 @@
 					</include>
 					<include content="InfoDialogButton">
 						<param name="id" value="11" />
+						<param name="icon" value="icons/infodialogs/trailer.png" />
+						<param name="label" value="$LOCALIZE[20410]" />
+						<param name="visible" value="!String.IsEmpty(Window.Property(ZiroGame.Video))" />
+					</include>
+					<include content="InfoDialogButton">
+						<param name="id" value="110" />
 						<param name="icon" value="icons/infodialogs/trailer_search.png" />
 						<param name="label" value="$LOCALIZE[31090]" />
-						<param name="visible" value="true" />
+						<param name="visible" value="String.IsEmpty(Window.Property(ZiroGame.Video))" />
 					</include>
 					<include content="InfoDialogButton">
 						<param name="id" value="10" />

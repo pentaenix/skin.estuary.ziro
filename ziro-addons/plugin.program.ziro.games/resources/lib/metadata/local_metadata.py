@@ -11,7 +11,9 @@ import xbmc
 import xbmcvfs
 
 from ..db import GameDatabase
+from ..art_paths import normalize_art_path, path_exists, usable_art_path
 from .genre_sync import map_genre_names_to_ids
+from ..text_utils import clean_display_text
 
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
 VIDEO_SUFFIXES = {".mp4", ".webm", ".m4v", ".avi", ".mkv", ".mov"}
@@ -125,9 +127,9 @@ def _resolve_path(base_dir: str, relative: str) -> str:
     joined = os.path.join(base_dir, relative.replace("/", os.sep))
     candidates = [joined, xbmcvfs.translatePath(joined)]
     for candidate in candidates:
-        if candidate and xbmcvfs.exists(candidate):
-            return candidate
-    return joined
+        if candidate and path_exists(candidate):
+            return normalize_art_path(candidate)
+    return normalize_art_path(joined)
 
 
 def _parse_release_year(value: str) -> int | None:
@@ -190,7 +192,7 @@ def _game_entry_to_metadata(entry: ET.Element, base_dir: str) -> dict:
 
     metadata = {
         "title": text("name"),
-        "description": html.unescape(text("desc")),
+        "description": clean_display_text(text("desc")),
         "developer": text("developer"),
         "publisher": text("publisher"),
         "genres": text("genre"),
@@ -206,24 +208,40 @@ def _game_entry_to_metadata(entry: ET.Element, base_dir: str) -> dict:
     return metadata
 
 
-def _skraper_game_to_metadata(game_node: ET.Element) -> dict:
+def _skraper_game_to_metadata(game_node: ET.Element, base_dir: str = "") -> dict:
     title = (game_node.attrib.get("name") or "").strip()
 
     def text(tag: str) -> str:
         node = game_node.find(tag)
-        return html.unescape((node.text or "").strip()) if node is not None else ""
+        return clean_display_text((node.text or "").strip()) if node is not None else ""
 
     manufacturer = text("manufacturer")
     metadata = {
         "title": title,
-        "description": text("description"),
-        "developer": manufacturer,
-        "publisher": manufacturer,
+        "description": text("description") or text("desc"),
+        "developer": text("developer") or manufacturer,
+        "publisher": text("publisher") or manufacturer,
         "genres": text("genre"),
     }
-    year = _parse_release_year(text("year"))
+    year = _parse_release_year(text("year") or text("releasedate"))
     if year:
         metadata["release_year"] = year
+
+    for tag, field in (
+        ("image", "cover_path"),
+        ("thumbnail", "cover_path"),
+        ("box2dfront", "cover_path"),
+        ("fanart", "fanart_path"),
+        ("screenshot", "screenshot_path"),
+        ("titleshot", "screenshot_path"),
+        ("marquee", "logo_path"),
+        ("wheel", "logo_path"),
+        ("video", "video_path"),
+    ):
+        rel = (game_node.findtext(tag) or "").strip()
+        if rel and base_dir and not metadata.get(field):
+            metadata[field] = _resolve_path(base_dir, rel)
+
     return metadata
 
 
@@ -301,7 +319,7 @@ def _load_skraper_dat_index(folder: str, platform_id: str = "") -> dict[str, dic
             _SKRAPER_DAT_CACHE[cache_key] = index
             return index
         for game_node in root.iter("game"):
-            metadata = _skraper_game_to_metadata(game_node)
+            metadata = _skraper_game_to_metadata(game_node, folder)
             metadata["skraper_game_name"] = metadata.get("title") or ""
             title_key = _normalize_match_key(metadata.get("title") or "")
             if title_key:
@@ -399,8 +417,9 @@ def _stem(path: str) -> str:
 
 def _first_existing(paths: list[str]) -> str:
     for path in paths:
-        if path and xbmcvfs.exists(path):
-            return path
+        usable = usable_art_path(path)
+        if usable:
+            return usable
     return ""
 
 
@@ -423,19 +442,26 @@ def _score_name_match(file_stem: str, *needles: str) -> int:
 
 
 def _find_media_in_folder(folder: str, *needles: str, suffixes: set[str]) -> str:
-    if not folder or not xbmcvfs.exists(folder):
+    if not folder or not path_exists(folder):
         return ""
+    needles_norm = [_normalize_match_key(needle) for needle in needles if needle]
     best_path = ""
     best_score = 0
     for file_path in _list_files(folder):
         suffix = Path(file_path).suffix.lower()
         if suffix not in suffixes:
             continue
+        stem_key = _normalize_match_key(Path(file_path).stem)
+        for needle in needles_norm:
+            if stem_key == needle:
+                return normalize_art_path(file_path)
         score = _score_name_match(Path(file_path).stem, *needles)
         if score > best_score:
             best_score = score
             best_path = file_path
-    return best_path if best_score >= 200 else ""
+    if best_score >= 200:
+        return normalize_art_path(best_path)
+    return ""
 
 
 def _discover_skraper_media(folder: str, game_name: str, rom_stem: str) -> dict:
@@ -590,7 +616,14 @@ def apply_local_metadata(db: GameDatabase, game_id: int, metadata: dict) -> dict
         value = metadata.get(field)
         if value in (None, ""):
             continue
-        if field.endswith("_path") and not xbmcvfs.exists(str(value)):
+        if field.endswith("_path"):
+            usable = usable_art_path(str(value))
+            if not usable:
+                continue
+            updates[field] = usable
+            continue
+        if field == "description":
+            updates[field] = clean_display_text(str(value))
             continue
         updates[field] = value
 

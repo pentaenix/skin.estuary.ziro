@@ -7,7 +7,6 @@ import xbmc
 import xbmcaddon
 import xbmcgui
 import xbmcplugin
-import xbmcvfs
 
 from resources.lib.app_title import app_title
 from resources.lib.db import GameDatabase
@@ -18,6 +17,7 @@ from resources.lib.paths_filter import is_allowed_source_folder
 from resources.lib.platforms import get_platform, platform_choices
 from resources.lib.routes import Router
 from resources.lib.scan_jobs import scan_in_background
+from resources.lib.art_paths import usable_art_path
 from resources.lib.titles import display_title
 
 from resources.lib.metadata.providers import game_artwork_provider
@@ -123,13 +123,6 @@ def _game_item_url(game_id: int) -> str:
     return plugin_url("/info", game_id=str(game_id))
 
 
-def _local_art_path(path: str | None) -> str:
-    path = (path or "").strip()
-    if not path or path.startswith("Default"):
-        return ""
-    return path if xbmcvfs.exists(path) else ""
-
-
 def add_game(game: dict) -> None:
     play_on_click = _play_on_click()
     label = display_title(game.get("title", ""), rom_path=game.get("rom_path", ""))
@@ -137,14 +130,14 @@ def add_game(game: dict) -> None:
     item.setProperty("IsPlayable", "true" if play_on_click else "false")
     item.setProperty("ziro_game_id", str(game["id"]))
     art: dict[str, str] = {}
-    cover = _local_art_path(game.get("cover_path"))
+    cover = usable_art_path(game.get("cover_path") or "")
     if cover:
         art["thumb"] = cover
         art["poster"] = cover
-    fanart = _local_art_path(game.get("fanart_path"))
+    fanart = usable_art_path(game.get("fanart_path") or "")
     if fanart:
         art["fanart"] = fanart
-    logo = _local_art_path(game.get("logo_path"))
+    logo = usable_art_path(game.get("logo_path") or "")
     if logo:
         art["clearlogo"] = logo
     if art:
