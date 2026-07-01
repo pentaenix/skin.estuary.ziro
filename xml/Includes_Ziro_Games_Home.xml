@@ -25,7 +25,7 @@
 					<param name="list_id" value="$PARAM[list_id]"/>
 				</include>
 				<visible>$PARAM[visible]</visible>
-				<visible>Integer.IsGreater(Container($PARAM[list_id]).NumItems,0) | Container($PARAM[list_id]).IsUpdating | [!String.IsEqual(Window(Home).Property(ZiroGames.HomeReady),1) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)]</visible>
+				<visible>Integer.IsGreater(Container($PARAM[list_id]).NumItems,0) | Container($PARAM[list_id]).IsUpdating</visible>
 				<itemlayout width="310" height="340">
 					<control type="group">
 						<left>70</left>
@@ -244,7 +244,7 @@
 				<left>0</left>
 				<top>115</top>
 				<visible>$PARAM[visible]</visible>
-				<visible>Integer.IsGreater(Container($PARAM[list_id]).NumItems,0) | Container($PARAM[list_id]).IsUpdating | [!String.IsEqual(Window(Home).Property(ZiroGames.HomeReady),1) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)]</visible>
+				<visible>Integer.IsGreater(Container($PARAM[list_id]).NumItems,0) | Container($PARAM[list_id]).IsUpdating</visible>
 				<right>0</right>
 				<height>503</height>
 				<include content="WidgetListCommon">
@@ -312,7 +312,7 @@
 				<left>0</left>
 				<top>115</top>
 				<visible>$PARAM[visible]</visible>
-				<visible>Integer.IsGreater(Container($PARAM[list_id]).NumItems,0) | Container($PARAM[list_id]).IsUpdating | [!String.IsEqual(Window(Home).Property(ZiroGames.HomeReady),1) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)]</visible>
+				<visible>Integer.IsGreater(Container($PARAM[list_id]).NumItems,0) | Container($PARAM[list_id]).IsUpdating</visible>
 				<right>0</right>
 				<height>503</height>
 				<include content="WidgetListCommon">
@@ -364,7 +364,7 @@
 				<left>0</left>
 				<top>115</top>
 				<visible>$PARAM[visible]</visible>
-				<visible>Integer.IsGreater(Container($PARAM[list_id]).NumItems,0) | Container($PARAM[list_id]).IsUpdating | [!String.IsEqual(Window(Home).Property(ZiroGames.HomeReady),1) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)]</visible>
+				<visible>Integer.IsGreater(Container($PARAM[list_id]).NumItems,0) | Container($PARAM[list_id]).IsUpdating</visible>
 				<right>0</right>
 				<height>503</height>
 				<include content="WidgetListCommon">

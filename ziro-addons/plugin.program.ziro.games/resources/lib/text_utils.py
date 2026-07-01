@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html
 import re
+import unicodedata
 
 IMPORT_PLACEHOLDER_RE = re.compile(r"^Imported from .+", re.IGNORECASE)
 _WRAPPING_QUOTE_PAIRS = (
@@ -9,12 +10,41 @@ _WRAPPING_QUOTE_PAIRS = (
     ("'", "'"),
     ("\u201c", "\u201d"),
     ("\u2018", "\u2019"),
+    ("\u00ab", "\u00bb"),
+    ("\u2039", "\u203a"),
 )
-_STRAY_QUOTE_RUN_RE = re.compile(r'"{2,}')
+_EXPLICIT_EDGE_QUOTES = set(
+    '"\'`´′″‛«»„“”‚‘’‹›「」『』'
+)
 
 
 def is_import_placeholder_description(text: str) -> bool:
     return bool(IMPORT_PLACEHOLDER_RE.match((text or "").strip()))
+
+
+def _is_edge_quote_char(char: str) -> bool:
+    if not char:
+        return False
+    if char in _EXPLICIT_EDGE_QUOTES:
+        return True
+    return unicodedata.category(char) in {"Pi", "Pf"}
+
+
+def strip_edge_quotes(text: str) -> str:
+    value = (text or "").strip()
+    if not value:
+        return ""
+
+    changed = True
+    while changed and value:
+        changed = False
+        while value and _is_edge_quote_char(value[0]):
+            value = value[1:].strip()
+            changed = True
+        while value and _is_edge_quote_char(value[-1]):
+            value = value[:-1].strip()
+            changed = True
+    return value
 
 
 def strip_wrapping_quotes(text: str) -> str:
@@ -31,17 +61,9 @@ def strip_wrapping_quotes(text: str) -> str:
                 if inner != value:
                     value = inner
                     changed = True
-        while value.startswith('"'):
-            value = value[1:].strip()
-            changed = True
-        while value.endswith('"'):
-            value = value[:-1].strip()
-            changed = True
-        while value.startswith("'"):
-            value = value[1:].strip()
-            changed = True
-        while value.endswith("'"):
-            value = value[:-1].strip()
+        stripped = strip_edge_quotes(value)
+        if stripped != value:
+            value = stripped
             changed = True
     return value
 
@@ -52,17 +74,16 @@ def strip_decorative_quotes(text: str) -> str:
         return ""
 
     value = html.unescape(value)
-    value = _STRAY_QUOTE_RUN_RE.sub("", value)
+    value = re.sub(r'"{2,}', "", value)
     value = strip_wrapping_quotes(value)
 
     lines: list[str] = []
     for line in value.split("\n"):
-        cleaned = strip_wrapping_quotes(line.strip())
-        cleaned = cleaned.strip('"').strip("'").strip()
+        cleaned = strip_wrapping_quotes(strip_edge_quotes(line.strip()))
         lines.append(cleaned)
     value = "\n".join(lines)
 
-    return strip_wrapping_quotes(value).strip()
+    return strip_wrapping_quotes(strip_edge_quotes(value)).strip()
 
 
 def clean_display_text(text: str) -> str:

@@ -8,9 +8,11 @@ from .scanner import ScanResult, scan, source_for_platform
 
 GAME_SELECT = """
 SELECT g.*, p.name AS platform,
-       COALESCE(group_concat(ge.name, ', '), '') AS genres
+       COALESCE(group_concat(ge.name, ', '), '') AS genres,
+       s.folder_path AS source_folder
 FROM games g
 LEFT JOIN platforms p ON p.id = g.platform_id
+LEFT JOIN sources s ON s.id = g.source_id
 LEFT JOIN game_genres gg ON gg.game_id = g.id
 LEFT JOIN genres ge ON ge.id = gg.genre_id
 WHERE g.hidden=0

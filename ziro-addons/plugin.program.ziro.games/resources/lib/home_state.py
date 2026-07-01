@@ -43,11 +43,6 @@ def refresh_home_platform_properties(db: GameDatabase | None = None) -> None:
 def refresh_home_properties(db: GameDatabase | None = None) -> None:
     db = db or GameDatabase()
     window = xbmcgui.Window(HOME_WINDOW_ID)
-    window.setProperty("ZiroGames.HomeReady", "0")
-    for platform_id in platform_ids():
-        window.clearProperty(f"{PLATFORM_PROPERTY_PREFIX}{platform_id}")
-    for genre_id in GENRE_IDS:
-        window.clearProperty(f"{GENRE_PROPERTY_PREFIX}{genre_id}")
 
     platform_rows = db.rows(
         f"""
@@ -58,8 +53,13 @@ def refresh_home_properties(db: GameDatabase | None = None) -> None:
         HAVING game_count > 0
         """
     )
-    for row in platform_rows:
-        window.setProperty(f"{PLATFORM_PROPERTY_PREFIX}{row['platform_id']}", "1")
+    active_platforms = {str(row["platform_id"]) for row in platform_rows}
+    for platform_id in platform_ids():
+        key = f"{PLATFORM_PROPERTY_PREFIX}{platform_id}"
+        if platform_id in active_platforms:
+            window.setProperty(key, "1")
+        else:
+            window.clearProperty(key)
 
     genre_rows = db.rows(
         f"""
@@ -80,18 +80,15 @@ def refresh_home_properties(db: GameDatabase | None = None) -> None:
         HAVING game_count > 0
         """
     )
-    for row in genre_rows:
-        window.setProperty(f"{GENRE_PROPERTY_PREFIX}{row['genre_id']}", "1")
+    active_genres = {str(row["genre_id"]) for row in genre_rows}
+    for genre_id in GENRE_IDS:
+        key = f"{GENRE_PROPERTY_PREFIX}{genre_id}"
+        if genre_id in active_genres:
+            window.setProperty(key, "1")
+        else:
+            window.clearProperty(key)
 
-    has_games = bool(
-        db.rows(
-            f"""
-            SELECT 1 FROM games
-            WHERE {_VALID_GAMES_WHERE}
-            LIMIT 1
-            """
-        )
-    )
+    has_games = bool(active_platforms)
     window.setProperty("ZiroGames.HasLibrary", "1" if has_games else "0")
     window.setProperty("ZiroGames.HomeReady", "1")
     if xbmc.getCondVisibility("System.HasAddon(plugin.program.ziro.games)"):
@@ -108,7 +105,9 @@ def refresh_home_widgets(db: GameDatabase | None = None) -> None:
     window.setProperty("ZiroGames.RefreshToken", token)
     if not xbmc.getCondVisibility("Window.IsActive(home)"):
         return
-    for list_id in HOME_WIDGET_LIST_IDS:
+    if not xbmc.getCondVisibility("String.IsEqual(Container(9000).ListItem.Property(id),games)"):
+        return
+    for list_id in (17290, 17300, 17310, 17320):
         try:
             xbmc.executebuiltin(f"Container.Update({list_id},replace)")
         except Exception:

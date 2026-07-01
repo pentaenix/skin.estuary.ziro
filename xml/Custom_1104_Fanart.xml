@@ -12,7 +12,14 @@
 		<control type="image">
 			<include>FullScreenDimensions</include>
 			<aspectratio>keep</aspectratio>
-			<texture>$INFO[Window(home).Property(fanart)]</texture>
+			<texture background="true">$INFO[Window(home).Property(fanart)]</texture>
+			<visible>!String.IsEmpty(Window(home).Property(fanart))</visible>
+		</control>
+		<control type="image">
+			<include>FullScreenDimensions</include>
+			<aspectratio>keep</aspectratio>
+			<texture background="true">$INFO[Window(home).Property(infobackground)]</texture>
+			<visible>String.IsEmpty(Window(home).Property(fanart)) + !String.IsEmpty(Window(home).Property(infobackground))</visible>
 		</control>
 		<control type="button" id="3000">
 			<include>HiddenObject</include>

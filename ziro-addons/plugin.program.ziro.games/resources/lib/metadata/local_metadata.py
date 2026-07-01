@@ -20,6 +20,7 @@ VIDEO_SUFFIXES = {".mp4", ".webm", ".m4v", ".avi", ".mkv", ".mov"}
 
 _GAMELIST_CACHE: dict[str, dict[str, dict]] = {}
 _SKRAPER_DAT_CACHE: dict[str, dict[str, dict]] = {}
+_DISCOVER_ART_CACHE: dict[str, dict[str, str]] = {}
 
 REGION_TAG_RE = re.compile(r"\s*[\(\[].*?[\)\]]", re.IGNORECASE)
 
@@ -57,6 +58,7 @@ ES_MEDIA_DIRS = {
 def clear_gamelist_cache() -> None:
     _GAMELIST_CACHE.clear()
     _SKRAPER_DAT_CACHE.clear()
+    _DISCOVER_ART_CACHE.clear()
 
 
 def _norm_path(path: str) -> str:
@@ -544,6 +546,10 @@ def _discover_skraper_media(folder: str, game_name: str, rom_stem: str, *, rom_p
 
 
 def discover_local_art(rom_path: str, *, source_folder: str = "", game_name: str = "") -> dict:
+    cache_key = f"{rom_path}|{source_folder}|{game_name}".lower()
+    if cache_key in _DISCOVER_ART_CACHE:
+        return dict(_DISCOVER_ART_CACHE[cache_key])
+
     folder = find_source_folder(rom_path, source_folder)
     rom_dir = os.path.dirname(rom_path.replace("/", os.sep))
     stem = _stem(rom_path)
@@ -555,6 +561,7 @@ def discover_local_art(rom_path: str, *, source_folder: str = "", game_name: str
             f"[Games] discovered local art rom={_basename_key(rom_path)} cover={skraper.get('cover_path', '')}",
             xbmc.LOGINFO,
         )
+        _DISCOVER_ART_CACHE[cache_key] = dict(skraper)
         return skraper
 
     media_roots = [folder, rom_dir]
@@ -582,6 +589,7 @@ def discover_local_art(rom_path: str, *, source_folder: str = "", game_name: str
         path = _first_existing(candidates)
         if path:
             found[field] = path
+    _DISCOVER_ART_CACHE[cache_key] = dict(found)
     return found
 
 

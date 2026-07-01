@@ -152,18 +152,16 @@ def _set_list_item_info(item: xbmcgui.ListItem, info: dict) -> None:
 
 
 def _resolve_list_art(game: dict) -> dict[str, str]:
-    discovered: dict[str, str] = {}
     cover = usable_art_path(game.get("cover_path") or "", trust_if_plausible=True)
     fanart = usable_art_path(game.get("fanart_path") or "", trust_if_plausible=True)
     logo = usable_art_path(game.get("logo_path") or "", trust_if_plausible=True)
-    if not cover or not fanart or not logo:
+    if not cover:
         discovered = discover_local_art(
             game.get("rom_path") or "",
             source_folder=game.get("source_folder") or "",
             game_name=game.get("title") or "",
         )
-        if not cover:
-            cover = usable_art_path(discovered.get("cover_path") or "", trust_if_plausible=True)
+        cover = usable_art_path(discovered.get("cover_path") or "", trust_if_plausible=True)
         if not fanart:
             fanart = usable_art_path(discovered.get("fanart_path") or "", trust_if_plausible=True)
         if not logo:

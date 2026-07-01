@@ -1,3 +1,7 @@
+[B]2.5.7[/B]
+• Fix Home screen viewer black screen; reduce games home shake while shelves load
+• Faster widget art loading; stronger description quote stripping
+
 [B]2.5.6[/B]
 • Game info: transparent letterbox around box art; Home screen button label
 • Games home: keep focus in games rows while shelves load; sync on games focus

@@ -31,12 +31,21 @@ SELECT g.*, p.name AS platform,
        s.folder_path AS source_folder
 FROM games g
 LEFT JOIN platforms p ON p.id = g.platform_id
+LEFT JOIN sources s ON s.id = g.source_id
 LEFT JOIN game_genres gg ON gg.game_id = g.id
 LEFT JOIN genres ge ON ge.id = gg.genre_id
-LEFT JOIN sources s ON s.id = g.source_id
 WHERE g.id=? AND g.hidden=0
 GROUP BY g.id
 """
+
+
+def _set_home_backdrop(image_path: str) -> None:
+    path = usable_art_path(image_path, trust_if_plausible=True)
+    if not path:
+        return
+    window = xbmcgui.Window(10000)
+    window.setProperty("fanart", path)
+    window.setProperty("infobackground", path)
 
 
 class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
@@ -88,7 +97,7 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
         self._set_dialog_images(art)
         background = art.get("fanart_path") or art.get("cover_path") or ""
         if background:
-            xbmcgui.Window(10000).setProperty("infobackground", background)
+            _set_home_backdrop(background)
 
     def _set_dialog_images(self, art: dict) -> None:
         poster = art.get("cover_path", "")
@@ -120,9 +129,9 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
             art = self._game.get("_art") or _resolve_art_for_game(
                 self._game, local=self._game.get("_local")
             )
-            image = art.get("screenshot_path") or ""
+            image = usable_art_path(art.get("screenshot_path") or "", trust_if_plausible=True)
             if image:
-                xbmcgui.Window(10000).setProperty("infobackground", image)
+                _set_home_backdrop(image)
                 xbmc.executebuiltin("ActivateWindow(1104)")
         elif control_id == 7:
             db = GameDatabase()

@@ -100,12 +100,25 @@ def is_placeholder_rom_path(path: str) -> bool:
     return norm.startswith("mock://") or norm.startswith("test://")
 
 
+_ROM_EXISTS_CACHE: dict[str, bool] = {}
+
+
 def rom_file_exists(path: str) -> bool:
     if not path or not str(path).strip():
         return False
     if is_placeholder_rom_path(path):
         return False
+    normalized = (path or "").replace("\\", "/")
+    cached = _ROM_EXISTS_CACHE.get(normalized)
+    if cached is not None:
+        return cached
     try:
-        return bool(xbmcvfs.exists(path))
+        exists = bool(xbmcvfs.exists(path))
     except Exception:
-        return False
+        exists = False
+    _ROM_EXISTS_CACHE[normalized] = exists
+    return exists
+
+
+def clear_rom_exists_cache() -> None:
+    _ROM_EXISTS_CACHE.clear()

@@ -751,7 +751,6 @@
 				</control>
 				<control type="group" id="17000">
 					<visible>String.IsEqual(Container(9000).ListItem.Property(id),games)</visible>
-					<onfocus>RunPlugin(plugin://plugin.program.ziro.games/?path=/sync_home)</onfocus>
 					<include content="Visible_Right_Delayed">
 						<param name="id" value="games"/>
 					</include>
