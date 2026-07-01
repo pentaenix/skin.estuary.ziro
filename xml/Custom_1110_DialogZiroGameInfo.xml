@@ -132,6 +132,7 @@
 						<param name="id" value="11" />
 						<param name="icon" value="icons/infodialogs/trailer_search.png" />
 						<param name="label" value="$LOCALIZE[31090]" />
+						<param name="visible" value="true" />
 					</include>
 					<include content="InfoDialogButton">
 						<param name="id" value="10" />
@@ -142,7 +143,7 @@
 						<param name="id" value="102" />
 						<param name="icon" value="icons/infodialogs/image.png" />
 						<param name="label" value="$LOCALIZE[31028]" />
-						<param name="visible" value="!String.IsEmpty(Window.Property(ZiroGame.Fanart))" />
+						<param name="visible" value="!String.IsEmpty(Window.Property(ZiroGame.Fanart)) | !String.IsEmpty(Window.Property(ZiroGame.Screenshot))" />
 					</include>
 					<include content="InfoDialogButton">
 						<param name="id" value="7" />

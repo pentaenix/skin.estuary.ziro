@@ -36,8 +36,12 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
         self.setProperty("ZiroGame.PlayCount", str(game.get("play_count") or 0))
         self.setProperty("ZiroGame.Favorite", "1" if int(game.get("favorite") or 0) else "0")
         self.setProperty("ZiroGame.Poster", game.get("cover_path") or "")
-        self.setProperty("ZiroGame.Fanart", game.get("fanart_path") or "")
-        self.setProperty("ZiroGame.Logo", game.get("logo_path") or "")
+        fanart = game.get("fanart_path") or ""
+        screenshot = game.get("screenshot_path") or ""
+        self.setProperty("ZiroGame.Fanart", fanart)
+        self.setProperty("ZiroGame.Screenshot", screenshot)
+        logo = game.get("logo_path") or screenshot or ""
+        self.setProperty("ZiroGame.Logo", logo)
         rating = game.get("rating")
         self.setProperty("ZiroGame.Rating", str(rating) if rating not in (None, "", 0) else "")
 
@@ -61,9 +65,14 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
                     f'PlayMedia(plugin://plugin.video.youtube/?action=search_query&search={title} trailer)'
                 )
         elif control_id == 102:
-            fanart = self.game.get("fanart_path") or self.game.get("cover_path") or ""
-            if fanart:
-                xbmcgui.Window(10000).setProperty("infobackground", fanart)
+            image = (
+                self.game.get("fanart_path")
+                or self.game.get("screenshot_path")
+                or self.game.get("cover_path")
+                or ""
+            )
+            if image:
+                xbmcgui.Window(10000).setProperty("infobackground", image)
                 xbmc.executebuiltin("ActivateWindow(1104)")
         elif control_id == 7:
             db = GameDatabase()
@@ -82,7 +91,8 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
                 self.game = refreshed
                 self.setProperty("ZiroGame.Poster", refreshed.get("cover_path") or "")
                 self.setProperty("ZiroGame.Fanart", refreshed.get("fanart_path") or "")
-                self.setProperty("ZiroGame.Logo", refreshed.get("logo_path") or "")
+                self.setProperty("ZiroGame.Screenshot", refreshed.get("screenshot_path") or "")
+                self.setProperty("ZiroGame.Logo", refreshed.get("logo_path") or refreshed.get("screenshot_path") or "")
 
 
 def show_game_info(game_id: int) -> None:

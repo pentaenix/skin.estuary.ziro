@@ -1,3 +1,6 @@
+[B]2.4.3[/B]
+• Skraper: read wii.dat-style XML, map box2dfront/screenshot/screenshottitle/videos to game info
+
 [B]2.4.2[/B]
 • Fix Games DB migration crash (duplicate column enabled) and service import on startup
 
