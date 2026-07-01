@@ -1,3 +1,6 @@
+[B]2.5.8[/B]
+• Game info plot uses setText (fixes quote display); faster Wii home row via widget_limit
+
 [B]2.5.7[/B]
 • Fix Home screen viewer black screen; reduce games home shake while shelves load
 • Faster widget art loading; stronger description quote stripping

@@ -778,19 +778,19 @@
 							<param name="list_id" value="17290"/>
 						</include>
 						<include content="ZiroGamesWidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">
-							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/continue"/>
+							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/continue&widget_limit=15"/>
 							<param name="widget_header" value="Continue Playing"/>
 							<param name="widget_target" value="programs"/>
 							<param name="list_id" value="17300"/>
 						</include>
 						<include content="ZiroGamesWidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">
-							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/recent"/>
+							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/recent&widget_limit=15"/>
 							<param name="widget_header" value="Recently Added"/>
 							<param name="widget_target" value="programs"/>
 							<param name="list_id" value="17310"/>
 						</include>
 						<include content="ZiroGamesWidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">
-							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/favorites"/>
+							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/favorites&widget_limit=15"/>
 							<param name="widget_header" value="Favorites"/>
 							<param name="widget_target" value="programs"/>
 							<param name="list_id" value="17320"/>

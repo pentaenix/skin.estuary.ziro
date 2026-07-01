@@ -63,7 +63,7 @@
 						<aligny>bottom</aligny>
 						<label></label>
 						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Header,$INFO[Window.Property(ZiroGame.Title)],home)</onclick>
-						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Text,$ESCINFO[Window.Property(ZiroGame.Plot)],home)</onclick>
+						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Text,$INFO[Window.Property(ZiroGame.Plot)],home)</onclick>
 						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">ActivateWindow(1102)</onclick>
 						<onup>5000</onup>
 						<onleft>138</onleft>
@@ -88,7 +88,7 @@
 						<aligny>bottom</aligny>
 						<label></label>
 						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Header,$INFO[Window.Property(ZiroGame.Title)],home)</onclick>
-						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Text,$ESCINFO[Window.Property(ZiroGame.Plot)],home)</onclick>
+						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">SetProperty(TextViewer_Text,$INFO[Window.Property(ZiroGame.Plot)],home)</onclick>
 						<onclick condition="!String.IsEmpty(Window.Property(ZiroGame.Plot))">ActivateWindow(1102)</onclick>
 						<onup>5000</onup>
 						<onleft>139</onleft>
@@ -97,21 +97,21 @@
 						<texturenofocus border="21">dialogs/dialog-bg.png</texturenofocus>
 						<visible>!Integer.IsGreater(Container(4000).NumItems,0)</visible>
 					</control>
-					<control type="textbox">
+					<control type="textbox" id="141">
 						<left>40</left>
 						<top>25</top>
 						<width>670</width>
 						<height>620</height>
-						<label fallback="19055">$ESCINFO[Window.Property(ZiroGame.Plot)]</label>
+						<label fallback="19055"></label>
 						<autoscroll delay="10000" time="5000" repeat="10000">Skin.HasSetting(AutoScroll)</autoscroll>
 						<visible>Integer.IsGreater(Container(4000).NumItems,0)</visible>
 					</control>
-					<control type="textbox">
+					<control type="textbox" id="142">
 						<left>40</left>
 						<top>25</top>
 						<width>1165</width>
 						<height>620</height>
-						<label fallback="19055">$ESCINFO[Window.Property(ZiroGame.Plot)]</label>
+						<label fallback="19055"></label>
 						<autoscroll delay="10000" time="5000" repeat="10000">Skin.HasSetting(AutoScroll)</autoscroll>
 						<visible>!Integer.IsGreater(Container(4000).NumItems,0)</visible>
 					</control>

@@ -85,6 +85,24 @@ def plugin_url(path: str, **query: str) -> str:
     return f"{BASE_URL}?path={path}" + (f"&{qs}" if qs else "")
 
 
+def parse_widget_limit(params: dict) -> int | None:
+    raw = (params.get("widget_limit") or "").strip()
+    if not raw:
+        return None
+    try:
+        value = int(raw)
+    except ValueError:
+        return None
+    return max(1, min(value, 50))
+
+
+def list_route_options(params: dict) -> tuple[int | None, bool]:
+    widget_limit = parse_widget_limit(params)
+    if widget_limit is None:
+        return None, True
+    return widget_limit, False
+
+
 def add_directory(label: str, path: str, art: dict[str, str] | None = None) -> None:
     item = xbmcgui.ListItem(label=label)
     item.setProperty("IsPlayable", "false")
@@ -409,11 +427,20 @@ def main() -> None:
         elif path == "/all":
             render_game_list(router.all_games())
         elif path == "/continue":
-            render_game_list(router.continue_playing())
+            limit, _ = list_route_options(params)
+            games = router.continue_playing()
+            if limit:
+                games = games[:limit]
+            render_game_list(games)
         elif path == "/recent":
-            render_game_list(router.recently_added())
+            limit, _ = list_route_options(params)
+            render_game_list(router.recently_added(limit=limit or 50))
         elif path == "/favorites":
-            render_game_list(router.favorites())
+            limit, _ = list_route_options(params)
+            games = router.favorites()
+            if limit:
+                games = games[:limit]
+            render_game_list(games)
         elif path == "/platforms":
             for platform in router.platforms():
                 count = int(platform.get("game_count") or 0)
@@ -440,14 +467,20 @@ def main() -> None:
             xbmc.executebuiltin("Container.Refresh")
         elif path.startswith("/platform/"):
             platform_id = path.rsplit("/", 1)[-1]
-            render_game_list(router.by_platform(platform_id))
+            limit, verify_rom = list_route_options(params)
+            render_game_list(
+                router.by_platform(platform_id, limit=limit, verify_rom=verify_rom)
+            )
         elif path == "/genres":
             for genre in router.genres():
                 add_directory(genre["name"], f"/genre/{genre['id']}")
             xbmcplugin.endOfDirectory(HANDLE)
         elif path.startswith("/genre/"):
             genre_id = path.rsplit("/", 1)[-1]
-            render_game_list(router.by_genre(genre_id))
+            limit, verify_rom = list_route_options(params)
+            render_game_list(
+                router.by_genre(genre_id, limit=limit, verify_rom=verify_rom)
+            )
         elif path == "/sources":
             add_action("Add Game Source...", "/sources/add")
             for source in router.sources():

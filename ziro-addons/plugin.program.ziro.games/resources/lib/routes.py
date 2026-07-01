@@ -31,23 +31,41 @@ WHERE g.hidden=0
 GROUP_ORDER = " GROUP BY g.id "
 
 
+def _widget_order_sql() -> str:
+    return """
+        ORDER BY CASE
+            WHEN g.cover_path IS NOT NULL AND TRIM(g.cover_path) != '' THEN 0
+            ELSE 1
+        END,
+        g.sort_title
+    """
+
+
 class Router:
     def __init__(self, db: GameDatabase) -> None:
         self.db = db
 
-    def _filter_rows(self, rows: list[dict]) -> list[dict]:
+    def _filter_rows(
+        self,
+        rows: list[dict],
+        *,
+        limit: int | None = None,
+        verify_rom: bool = True,
+    ) -> list[dict]:
         filtered: list[dict] = []
         for row in rows:
             rom_path = row.get("rom_path", "")
             if not is_library_rom_path(rom_path):
                 continue
-            if not rom_file_exists(rom_path):
+            if verify_rom and not rom_file_exists(rom_path):
                 continue
             if not (row.get("title") or "").strip():
                 continue
             if not is_valid_game_title(row.get("title", "")):
                 continue
             filtered.append(row)
+            if limit is not None and len(filtered) >= limit:
+                break
         return filtered
 
     def continue_playing(self) -> list[dict]:
@@ -95,12 +113,49 @@ class Router:
             """
         )
 
-    def by_platform(self, platform_id: str) -> list[dict]:
+    def by_platform(
+        self,
+        platform_id: str,
+        *,
+        limit: int | None = None,
+        verify_rom: bool = True,
+    ) -> list[dict]:
+        params: list[object] = [platform_id]
+        sql_limit = ""
+        if limit is not None:
+            sql_limit = " LIMIT ?"
+            params.append(max(limit * 4, limit + 12))
         rows = self.db.rows(
-            GAME_SELECT + " AND g.platform_id=?" + GROUP_ORDER + " ORDER BY g.sort_title",
-            (platform_id,),
+            GAME_SELECT
+            + " AND g.platform_id=?"
+            + GROUP_ORDER
+            + _widget_order_sql()
+            + sql_limit,
+            tuple(params),
         )
-        return self._filter_rows(rows)
+        return self._filter_rows(rows, limit=limit, verify_rom=verify_rom)
+
+    def by_genre(
+        self,
+        genre_id: str,
+        *,
+        limit: int | None = None,
+        verify_rom: bool = True,
+    ) -> list[dict]:
+        params: list[object] = [genre_id]
+        sql_limit = ""
+        if limit is not None:
+            sql_limit = " LIMIT ?"
+            params.append(max(limit * 4, limit + 12))
+        rows = self.db.rows(
+            GAME_SELECT
+            + " AND EXISTS (SELECT 1 FROM game_genres gg2 WHERE gg2.game_id=g.id AND gg2.genre_id=?)"
+            + GROUP_ORDER
+            + _widget_order_sql()
+            + sql_limit,
+            tuple(params),
+        )
+        return self._filter_rows(rows, limit=limit, verify_rom=verify_rom)
 
     def genres(self) -> list[dict]:
         return self.db.rows(
@@ -114,16 +169,6 @@ class Router:
             ORDER BY g.name
             """
         )
-
-    def by_genre(self, genre_id: str) -> list[dict]:
-        rows = self.db.rows(
-            GAME_SELECT
-            + " AND EXISTS (SELECT 1 FROM game_genres gg2 WHERE gg2.game_id=g.id AND gg2.genre_id=?)"
-            + GROUP_ORDER
-            + " ORDER BY g.sort_title",
-            (genre_id,),
-        )
-        return self._filter_rows(rows)
 
     def sources(self) -> list[dict]:
         return self.db.list_sources(enabled_only=False)

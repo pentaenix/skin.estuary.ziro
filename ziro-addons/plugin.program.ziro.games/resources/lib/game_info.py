@@ -20,6 +20,7 @@ SKIN_IDS = ("skin.estuary.ziro",)
 DIALOG_XML = "Custom_1110_DialogZiroGameInfo.xml"
 RES_FOLDERS = ("xml", "1080i", "720p")
 POSTER_CONTROL_ID = 200
+PLOT_TEXTBOX_IDS = (141, 142)
 APP_NAME = app_title()
 
 _GAME_DETAIL_CACHE: dict[int, dict] = {}
@@ -72,7 +73,8 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
         art = game.get("_art") or _resolve_art_for_game(game, local=game.get("_local"))
         self.setProperty("ZiroGame.Id", str(game.get("id") or ""))
         self.setProperty("ZiroGame.Title", title)
-        self.setProperty("ZiroGame.Plot", resolve_game_description(game.get("description") or ""))
+        plot = resolve_game_description(game.get("description") or "")
+        self.setProperty("ZiroGame.Plot", plot)
         self.setProperty("ZiroGame.Platform", game.get("platform") or game.get("platform_id") or "")
         self.setProperty("ZiroGame.Year", str(game.get("release_year") or ""))
         self.setProperty("ZiroGame.Developer", game.get("developer") or "")
@@ -95,6 +97,7 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
             xbmc.LOGINFO,
         )
         self._set_dialog_images(art)
+        self._set_dialog_plot(plot)
         background = art.get("fanart_path") or art.get("cover_path") or ""
         if background:
             _set_home_backdrop(background)
@@ -105,6 +108,13 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
             self.getControl(POSTER_CONTROL_ID).setImage(poster)
         except RuntimeError as exc:
             xbmc.log(f"[Games] poster setImage failed: {exc}", xbmc.LOGWARNING)
+
+    def _set_dialog_plot(self, plot: str) -> None:
+        for control_id in PLOT_TEXTBOX_IDS:
+            try:
+                self.getControl(control_id).setText(plot)
+            except RuntimeError as exc:
+                xbmc.log(f"[Games] plot setText failed id={control_id}: {exc}", xbmc.LOGDEBUG)
 
     def onClick(self, control_id: int) -> None:
         game_id = int(self._game["id"])

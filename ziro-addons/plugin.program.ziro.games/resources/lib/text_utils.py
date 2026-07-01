@@ -14,7 +14,7 @@ _WRAPPING_QUOTE_PAIRS = (
     ("\u2039", "\u203a"),
 )
 _EXPLICIT_EDGE_QUOTES = set(
-    '"\'`´′″‛«»„“”‚‘’‹›「」『』'
+    '"\'`´′″‛«»„“”‚‘’‹›「」『』\uff02'
 )
 
 
@@ -87,9 +87,12 @@ def strip_decorative_quotes(text: str) -> str:
 
 
 def clean_display_text(text: str) -> str:
-    value = html.unescape((text or "").strip())
+    value = (text or "").strip()
     if not value:
         return ""
+
+    value = value.replace('\\"', '"').replace("\\'", "'")
+    value = html.unescape(value)
 
     if "Ã" in value or "â€™" in value or "â€œ" in value:
         try:
