@@ -1,3 +1,6 @@
+[B]2.5.0[/B]
+• Games: unify platform widget art with Recently Added (no double border); taller info plot panel; info art via setImage
+
 [B]2.4.9[/B]
 • Games info: fix Windows artwork paths using ESCINFO and recursive Skraper media lookup
 

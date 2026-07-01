@@ -19,6 +19,8 @@ from .titles import display_title
 SKIN_IDS = ("skin.estuary.ziro",)
 DIALOG_XML = "Custom_1110_DialogZiroGameInfo.xml"
 RES_FOLDERS = ("xml", "1080i", "720p")
+POSTER_CONTROL_ID = 200
+LOGO_CONTROL_ID = 201
 APP_NAME = app_title()
 
 GAME_DETAIL_SQL = """
@@ -82,11 +84,24 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
             f"[Games] game info art game_id={game.get('id')} poster={art.get('cover_path', '')}",
             xbmc.LOGINFO,
         )
+        self._set_dialog_images(art)
         rating = game.get("rating")
         self.setProperty("ZiroGame.Rating", str(rating) if rating not in (None, "", 0) else "")
         background = art.get("fanart_path") or art.get("screenshot_path") or art.get("cover_path") or ""
         if background:
             xbmcgui.Window(10000).setProperty("infobackground", background)
+
+    def _set_dialog_images(self, art: dict) -> None:
+        poster = art.get("cover_path", "")
+        logo = art.get("logo_path", "")
+        try:
+            self.getControl(POSTER_CONTROL_ID).setImage(poster)
+        except RuntimeError as exc:
+            xbmc.log(f"[Games] poster setImage failed: {exc}", xbmc.LOGWARNING)
+        try:
+            self.getControl(LOGO_CONTROL_ID).setImage(logo if logo else "")
+        except RuntimeError as exc:
+            xbmc.log(f"[Games] logo setImage failed: {exc}", xbmc.LOGWARNING)
 
     def onClick(self, control_id: int) -> None:
         game_id = int(self._game["id"])

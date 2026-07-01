@@ -23,22 +23,22 @@
 				</control>
 				<control type="group">
 					<visible>String.IsEqual(Window.Property(ZiroGame.HasPoster),1)</visible>
-					<control type="image">
+					<control type="image" id="200">
 						<depth>DepthContentPopout</depth>
 						<left>4</left>
 						<top>4</top>
 						<width>526</width>
 						<height>801</height>
 						<aspectratio>scale</aspectratio>
-						<texture background="true">$ESCINFO[Window.Property(ZiroGame.Poster)]</texture>
+						<texture background="true"></texture>
 					</control>
-					<control type="image">
+					<control type="image" id="201">
 						<left>20</left>
 						<top>20</top>
 						<width>320</width>
 						<height>120</height>
 						<aspectratio>keep</aspectratio>
-						<texture background="true">$ESCINFO[Window.Property(ZiroGame.Logo)]</texture>
+						<texture background="true"></texture>
 						<visible>String.IsEqual(Window.Property(ZiroGame.HasLogo),1)</visible>
 					</control>
 				</control>
@@ -70,10 +70,10 @@
 				<left>620</left>
 				<top>-30</top>
 				<control type="group" id="140">
-					<top>468</top>
+					<top>158</top>
 					<control type="button" id="138">
 						<width>754</width>
-						<height>418</height>
+						<height>676</height>
 						<textoffsetx>40</textoffsetx>
 						<textoffsety>20</textoffsety>
 						<aligny>bottom</aligny>
@@ -91,14 +91,14 @@
 					<control type="image">
 						<left>735</left>
 						<width>512</width>
-						<height>418</height>
+						<height>676</height>
 						<aligny>bottom</aligny>
 						<texture border="21">dialogs/dialog-bg.png</texture>
 						<visible>Integer.IsGreater(Container(4000).NumItems,0)</visible>
 					</control>
 					<control type="button" id="139">
 						<width>1245</width>
-						<height>418</height>
+						<height>676</height>
 						<textoffsetx>40</textoffsetx>
 						<textoffsety>20</textoffsety>
 						<aligny>bottom</aligny>
@@ -117,7 +117,7 @@
 						<left>40</left>
 						<top>25</top>
 						<width>670</width>
-						<height>363</height>
+						<height>620</height>
 						<label fallback="19055">$ESCINFO[Window.Property(ZiroGame.Plot)]</label>
 						<autoscroll delay="10000" time="5000" repeat="10000">Skin.HasSetting(AutoScroll)</autoscroll>
 						<visible>Integer.IsGreater(Container(4000).NumItems,0)</visible>
@@ -126,7 +126,7 @@
 						<left>40</left>
 						<top>25</top>
 						<width>1165</width>
-						<height>363</height>
+						<height>620</height>
 						<label fallback="19055">$ESCINFO[Window.Property(ZiroGame.Plot)]</label>
 						<autoscroll delay="10000" time="5000" repeat="10000">Skin.HasSetting(AutoScroll)</autoscroll>
 						<visible>!Integer.IsGreater(Container(4000).NumItems,0)</visible>
@@ -135,8 +135,8 @@
 				<control type="grouplist" id="4000">
 					<orientation>vertical</orientation>
 					<left>730</left>
-					<top>488</top>
-					<height>355</height>
+					<top>178</top>
+					<height>636</height>
 					<itemgap>-8</itemgap>
 					<ondown>5000</ondown>
 					<onup>140</onup>
