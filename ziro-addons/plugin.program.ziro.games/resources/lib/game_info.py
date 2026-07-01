@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 
 import xbmc
@@ -107,37 +108,123 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
                 self.setProperty("ZiroGame.Logo", logo if logo and xbmcvfs.exists(logo) else "")
 
 
-def _dialog_xml_path(skin_root: str, res_folder: str) -> str:
-    return os.path.join(skin_root, res_folder, DIALOG_XML)
+def _normalize_path(path: str) -> str:
+    path = xbmcvfs.translatePath(path or "").strip()
+    if not path:
+        return ""
+    return path.replace("\\", "/")
 
 
-def _resolve_skin_root(skin_root: str, seen: set[str]) -> tuple[str, str] | None:
-    skin_root = xbmcvfs.translatePath(skin_root).rstrip("/\\")
-    if not skin_root or skin_root in seen:
-        return None
-    seen.add(skin_root)
-    if not xbmcvfs.exists(skin_root):
-        return None
-    for res_folder in RES_FOLDERS:
-        if xbmcvfs.exists(_dialog_xml_path(skin_root, res_folder)):
-            return skin_root, res_folder
-    return None
+def _path_exists(path: str) -> bool:
+    normalized = _normalize_path(path)
+    if not normalized:
+        return False
+    if xbmcvfs.exists(normalized):
+        return True
+    os_path = os.path.normpath(normalized)
+    return os.path.isfile(os_path) or os.path.isdir(os_path)
 
 
-def resolve_game_info_skin() -> tuple[str, str] | None:
-    """Return (skin_root, res_folder) when the game info dialog XML is available."""
+def _skin_id_from_path(skin_root: str) -> str:
+    normalized = _normalize_path(skin_root).rstrip("/")
+    return normalized.rsplit("/", 1)[-1] if normalized else ""
+
+
+def _current_skin_id() -> str:
+    try:
+        payload = {
+            "jsonrpc": "2.0",
+            "method": "Settings.GetSettingValue",
+            "params": {"setting": "lookandfeel.skin"},
+            "id": 1,
+        }
+        response = json.loads(xbmc.executeJSONRPC(json.dumps(payload)))
+        value = response.get("result", {}).get("value")
+        if isinstance(value, dict):
+            skin_id = str(value.get("value") or "").strip()
+            if skin_id:
+                return skin_id
+    except Exception as exc:
+        xbmc.log(f"[Games] skin setting lookup failed: {exc}", xbmc.LOGDEBUG)
+
+    return _skin_id_from_path(_normalize_path("special://skin/"))
+
+
+def _candidate_skin_roots() -> list[str]:
+    roots: list[str] = []
     seen: set[str] = set()
 
+    def add(path: str) -> None:
+        root = _normalize_path(path).rstrip("/")
+        if root and root not in seen:
+            seen.add(root)
+            roots.append(root)
+
+    try:
+        add(xbmc.getSkinDir())
+    except Exception:
+        pass
+    add("special://skin/")
+    add("special://addons/skin.estuary.ziro/")
     for skin_id in SKIN_IDS:
         try:
-            addon = xbmcaddon.Addon(skin_id)
-            resolved = _resolve_skin_root(addon.getAddonInfo("path"), seen)
-            if resolved:
-                return resolved
-        except Exception as exc:
-            xbmc.log(f"[Games] skin lookup failed for {skin_id}: {exc}", xbmc.LOGDEBUG)
+            add(xbmcaddon.Addon(skin_id).getAddonInfo("path"))
+        except Exception:
+            pass
+    return roots
 
-    return _resolve_skin_root("special://skin/", seen)
+
+def _dialog_xml_path(skin_root: str, res_folder: str) -> str:
+    return f"{skin_root.rstrip('/')}/{res_folder}/{DIALOG_XML}"
+
+
+def resolve_game_info_targets() -> list[tuple[str, str]]:
+    """Return skin roots and resolution folders to try for the game info dialog."""
+    targets: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    active_skin_id = _current_skin_id()
+
+    def add_target(skin_root: str, res_folder: str) -> None:
+        root = _normalize_path(skin_root).rstrip("/")
+        if not root:
+            return
+        key = (root, res_folder)
+        if key in seen:
+            return
+        seen.add(key)
+        targets.append(key)
+
+    for skin_root in _candidate_skin_roots():
+        for res_folder in RES_FOLDERS:
+            if _path_exists(_dialog_xml_path(skin_root, res_folder)):
+                add_target(skin_root, res_folder)
+
+    if active_skin_id in SKIN_IDS:
+        for skin_root in _candidate_skin_roots():
+            if _skin_id_from_path(skin_root) != active_skin_id and active_skin_id not in skin_root:
+                continue
+            if _path_exists(skin_root):
+                add_target(skin_root, "xml")
+                for res_folder in RES_FOLDERS[1:]:
+                    add_target(skin_root, res_folder)
+
+    if not targets:
+        for skin_root in _candidate_skin_roots():
+            if _path_exists(skin_root):
+                add_target(skin_root, "xml")
+                break
+
+    if targets:
+        xbmc.log(
+            f"[Games] game info targets for skin={active_skin_id}: {targets}",
+            xbmc.LOGINFO,
+        )
+    else:
+        xbmc.log(
+            f"[Games] no game info targets found for skin={active_skin_id}; roots={_candidate_skin_roots()}",
+            xbmc.LOGWARNING,
+        )
+    return targets
 
 
 def show_game_info(game_id: int) -> None:
@@ -147,16 +234,34 @@ def show_game_info(game_id: int) -> None:
         xbmcgui.Dialog().notification(APP_NAME, "Game not found", xbmcgui.NOTIFICATION_ERROR, 3000)
         return
 
-    resolved = resolve_game_info_skin()
-    if not resolved:
-        xbmcgui.Dialog().ok(
-            APP_NAME,
-            "Estuary Ziro is required for the game info screen.\n\n"
-            "Install skin.estuary.ziro, set it as the active skin, then try again.",
-        )
-        return
+    active_skin_id = _current_skin_id()
+    last_error = ""
+    for skin_path, res_folder in resolve_game_info_targets():
+        try:
+            dialog = ZiroGameInfoDialog(DIALOG_XML, skin_path, "", res_folder, game)
+            dialog.doModal()
+            del dialog
+            return
+        except Exception as exc:
+            last_error = str(exc)
+            xbmc.log(
+                f"[Games] game info open failed ({skin_path}/{res_folder}): {exc}",
+                xbmc.LOGWARNING,
+            )
 
-    skin_path, res_folder = resolved
-    dialog = ZiroGameInfoDialog(DIALOG_XML, skin_path, "Default", res_folder, game)
-    dialog.doModal()
-    del dialog
+    if active_skin_id in SKIN_IDS:
+        message = (
+            "Could not open the game info dialog.\n\n"
+            f"Active skin: {active_skin_id}\n"
+            f"Missing file: xml/{DIALOG_XML}\n\n"
+            "Re-run dev_deploy_to_kodi.bat, restart Kodi, then try again."
+        )
+    else:
+        message = (
+            "Estuary Ziro is required for the game info screen.\n\n"
+            f"Active skin: {active_skin_id or 'unknown'}\n"
+            "Set skin.estuary.ziro as the active skin, then try again."
+        )
+    if last_error:
+        message += f"\n\nDetails: {last_error}"
+    xbmcgui.Dialog().ok(APP_NAME, message)
