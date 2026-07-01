@@ -77,13 +77,6 @@ _add(PlatformDef("xbox360", "Xbox 360", "Xbox 360", "Microsoft", 410, (".iso", "
 _add(PlatformDef("xboxone", "Xbox One", "Xbox One", "Microsoft", 420, (".iso", ".xvc"), "xenia_xboxone", "emulator_xenia", "Xenia", '"{rom_path}"', "xenia.exe"))
 _add(PlatformDef("xboxseries", "Xbox Series X|S", "Xbox Series", "Microsoft", 430, (".iso", ".xvc"), "xenia_xboxseries", "emulator_xenia", "Xenia", '"{rom_path}"', "xenia.exe"))
 
-LEGACY_SOURCE_SETTINGS: dict[str, str] = {
-    "source_gamecube": "gamecube",
-    "source_wii": "wii",
-    "source_gba": "gba",
-}
-
-
 def get_platform(platform_id: str) -> PlatformDef | None:
     return PLATFORMS.get(platform_id)
 

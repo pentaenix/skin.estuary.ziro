@@ -7,30 +7,6 @@ msgstr ""
 "Language: en\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-msgctxt "#30000"
-msgid "Sources"
-msgstr "Sources"
-
-msgctxt "#30001"
-msgid "Legacy default ROM folders. Prefer Sources in the Ziro Games menu."
-msgstr "Legacy default ROM folders. Prefer Sources in the Ziro Games menu."
-
-msgctxt "#30002"
-msgid "Legacy folders"
-msgstr "Legacy folders"
-
-msgctxt "#30003"
-msgid "Legacy/default GameCube folder"
-msgstr "Legacy/default GameCube folder"
-
-msgctxt "#30004"
-msgid "Legacy/default Wii folder"
-msgstr "Legacy/default Wii folder"
-
-msgctxt "#30005"
-msgid "Legacy/default Game Boy Advance folder"
-msgstr "Legacy/default Game Boy Advance folder"
-
 msgctxt "#30010"
 msgid "Emulators"
 msgstr "Emulators"

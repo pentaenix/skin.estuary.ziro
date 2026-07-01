@@ -22,8 +22,6 @@ After adding a source, choose **Scan now** or run:
 Games -> Scan / Refresh Library
 ```
 
-Legacy/default settings paths still exist, but they are now optional fallbacks only. They should not be the primary workflow.
-
 ## Current local-path limitation
 
 The first production path targets the user's Windows TV PC with local/direct-attached storage. Dolphin and mGBA need paths they can open from Windows. Kodi network paths such as `smb://...` may scan, but most standalone emulators will not launch them unless they are mapped to normal Windows drive paths.

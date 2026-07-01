@@ -11,7 +11,7 @@ import xbmcvfs
 
 from .db import GameDatabase
 from .paths_filter import is_library_rom_path, is_valid_game_title
-from .platforms import LEGACY_SOURCE_SETTINGS, extensions_for, get_platform, iter_profile_defs, source_dict
+from .platforms import extensions_for, get_platform, iter_profile_defs, source_dict
 from .metadata.providers import PROVIDER_SKRAPER, game_artwork_provider
 from .metadata.local_metadata import clear_gamelist_cache, import_metadata_for_game
 
@@ -204,7 +204,7 @@ def iter_games(folder: str, extensions: list[str], recursive: bool = True, stats
 
 
 def configure_defaults(db: GameDatabase) -> None:
-    """Ensure emulator profiles exist and import legacy settings-folder sources if set."""
+    """Ensure emulator profiles exist from addon settings."""
     for profile in iter_profile_defs():
         exe = ADDON.getSetting(profile["emulator_setting"])
         db.ensure_emulator_profile({
@@ -219,13 +219,6 @@ def configure_defaults(db: GameDatabase) -> None:
             "fullscreen": True,
             "return_focus_to_kodi": True,
         })
-
-    for setting_key, platform_id in LEGACY_SOURCE_SETTINGS.items():
-        legacy_source = normalize_folder(ADDON.getSetting(setting_key))
-        if legacy_source:
-            db.ensure_source({
-                **source_dict(platform_id, legacy_source, label="Legacy settings source"),
-            })
 
 
 def source_for_platform(platform_id: str, folder_path: str) -> dict:
