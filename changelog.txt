@@ -1,3 +1,6 @@
+[B]2.5.4[/B]
+• Games home: fix broken widget layout (restore grouplist rows, per-control visibility)
+
 [B]2.5.3[/B]
 • Games home: show platform rows on first open (dynamic widget visibility + home sync on focus)
 

@@ -103,9 +103,10 @@ def refresh_home_widgets(db: GameDatabase | None = None) -> None:
     window = xbmcgui.Window(HOME_WINDOW_ID)
     token = str(int(window.getProperty("ZiroGames.RefreshToken") or "0") + 1)
     window.setProperty("ZiroGames.RefreshToken", token)
+    if not xbmc.getCondVisibility("Window.IsActive(home)"):
+        return
     for list_id in HOME_WIDGET_LIST_IDS:
         try:
             xbmc.executebuiltin(f"Container.Update({list_id},replace)")
         except Exception:
             pass
-    xbmc.executebuiltin("Container.Refresh")

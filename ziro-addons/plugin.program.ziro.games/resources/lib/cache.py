@@ -200,5 +200,3 @@ def refresh_games_ui(db: GameDatabase | None = None) -> None:
     from .home_state import refresh_home_widgets
 
     refresh_home_widgets(db)
-    xbmc.sleep(250)
-    xbmc.executebuiltin("Container.Refresh")
