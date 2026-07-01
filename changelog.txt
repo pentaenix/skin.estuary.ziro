@@ -1,3 +1,6 @@
+[B]2.4.5[/B]
+• Games: hide empty home rows and library sections; empty library shows Add Source and Scan only
+
 [B]2.4.4[/B]
 • Fix SQLite migration on Kodi (no CURRENT_TIMESTAMP in ALTER TABLE) and service startup race
 

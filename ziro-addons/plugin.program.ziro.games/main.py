@@ -156,9 +156,20 @@ def add_game(game: dict) -> None:
 
 
 def render_library_menu(router: Router) -> None:
-    add_library_entry("Continue Playing", "/continue", "Games you have launched recently")
-    add_library_entry("Recently Added", "/recent", "Newest games in your library")
-    add_library_entry("Favorites", "/favorites", "Games you marked as favorites")
+    has_games = bool(router.all_games(limit=1))
+    if not has_games:
+        add_action("Add Game Source", "/sources/add")
+        add_action("Scan / Refresh Library", "/scan")
+        xbmcplugin.setContent(HANDLE, "games")
+        xbmcplugin.endOfDirectory(HANDLE)
+        return
+
+    if router.continue_playing():
+        add_library_entry("Continue Playing", "/continue", "Games you have launched recently")
+    if router.recently_added(limit=1):
+        add_library_entry("Recently Added", "/recent", "Newest games in your library")
+    if router.favorites():
+        add_library_entry("Favorites", "/favorites", "Games you marked as favorites")
     add_library_entry("Platforms", "/platforms", "Browse by console")
     add_library_entry("Genres", "/genres", "Browse by genre")
     add_library_entry("All Games", "/all", "Full game list")
@@ -170,16 +181,7 @@ def render_library_menu(router: Router) -> None:
     xbmcplugin.endOfDirectory(HANDLE)
 
 
-def render_message(label: str, message: str) -> None:
-    item = xbmcgui.ListItem(label=label)
-    item.setProperty("IsPlayable", "false")
-    item.setInfo("video", {"title": label, "plot": message})
-    xbmcplugin.addDirectoryItem(HANDLE, plugin_url("/settings"), item, False)
-
-
-def render_game_list(games: list[dict], empty_label: str = "No games yet") -> None:
-    if not games:
-        render_message(empty_label, "Add one or more game source folders, then run Scan / Refresh Library.")
+def render_game_list(games: list[dict]) -> None:
     for game in games:
         add_game(game)
     xbmcplugin.setContent(HANDLE, "games")
@@ -346,13 +348,13 @@ def main() -> None:
             refresh_home_properties(db)
             render_library_menu(router)
         elif path == "/all":
-            render_game_list(router.all_games(), "No games yet")
+            render_game_list(router.all_games())
         elif path == "/continue":
-            render_game_list(router.continue_playing(), "Nothing in Continue Playing")
+            render_game_list(router.continue_playing())
         elif path == "/recent":
-            render_game_list(router.recently_added(), "No recently added games")
+            render_game_list(router.recently_added())
         elif path == "/favorites":
-            render_game_list(router.favorites(), "No favorite games")
+            render_game_list(router.favorites())
         elif path == "/platforms":
             for platform in router.platforms():
                 count = int(platform.get("game_count") or 0)
@@ -379,14 +381,14 @@ def main() -> None:
             xbmc.executebuiltin("Container.Refresh")
         elif path.startswith("/platform/"):
             platform_id = path.rsplit("/", 1)[-1]
-            render_game_list(router.by_platform(platform_id), "No games for this platform")
+            render_game_list(router.by_platform(platform_id))
         elif path == "/genres":
             for genre in router.genres():
                 add_directory(genre["name"], f"/genre/{genre['id']}")
             xbmcplugin.endOfDirectory(HANDLE)
         elif path.startswith("/genre/"):
             genre_id = path.rsplit("/", 1)[-1]
-            render_game_list(router.by_genre(genre_id), "No games for this genre")
+            render_game_list(router.by_genre(genre_id))
         elif path == "/sources":
             add_action("Add Game Source...", "/sources/add")
             for source in router.sources():
