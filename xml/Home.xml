@@ -961,6 +961,7 @@
 						<item>
 							<label>$LOCALIZE[15016]</label>
 							<property name="menu_id">$NUMBER[17000]</property>
+							<onfocus>RunPlugin(plugin://plugin.program.ziro.games/?path=/sync_home)</onfocus>
 							<onclick>ActivateWindow(Programs,plugin://plugin.program.ziro.games/?path=/library,return)</onclick>
 							<thumb>icons/sidemenu/games.png</thumb>
 							<property name="id">games</property>

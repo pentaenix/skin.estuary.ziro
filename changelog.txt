@@ -1,3 +1,6 @@
+[B]2.5.3[/B]
+• Games home: show platform rows on first open (dynamic widget visibility + home sync on focus)
+
 [B]2.5.2[/B]
 • Games home: platform rows only (no library/genre category shelves); enable Wall and InfoWall grid views in Programs
 

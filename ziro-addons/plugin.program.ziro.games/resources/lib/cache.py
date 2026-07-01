@@ -197,14 +197,8 @@ def clear_artwork_for_source(db: GameDatabase, source_id: int) -> ClearCacheResu
 
 
 def refresh_games_ui(db: GameDatabase | None = None) -> None:
-    from .home_state import refresh_home_properties
+    from .home_state import refresh_home_widgets
 
-    refresh_home_properties(db)
-    for list_id in (17290, 17300, 17310, 17320):
-        try:
-            xbmc.executebuiltin(f"Container.Update({list_id},replace)")
-        except Exception:
-            pass
-    xbmc.executebuiltin("Container.Refresh")
+    refresh_home_widgets(db)
     xbmc.sleep(250)
     xbmc.executebuiltin("Container.Refresh")

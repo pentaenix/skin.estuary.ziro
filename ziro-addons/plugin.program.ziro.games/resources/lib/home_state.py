@@ -12,6 +12,13 @@ GENRE_PROPERTY_PREFIX = "ZiroGames.Genre."
 
 GENRE_IDS = ("rpg", "platformer", "adventure", "racing", "fighting", "coop")
 
+HOME_WIDGET_LIST_IDS = (
+    17300,
+    17310,
+    17320,
+    *range(17510, 17780, 10),
+)
+
 _VALID_GAMES_WHERE = """
     hidden = 0
     AND LENGTH(TRIM(title)) > 0
@@ -89,3 +96,16 @@ def refresh_home_properties(db: GameDatabase | None = None) -> None:
             f"[Ziro Games] home refreshed platforms={len(platform_rows)} genres={len(genre_rows)} has_library={has_games}",
             xbmc.LOGINFO,
         )
+
+
+def refresh_home_widgets(db: GameDatabase | None = None) -> None:
+    refresh_home_properties(db)
+    window = xbmcgui.Window(HOME_WINDOW_ID)
+    token = str(int(window.getProperty("ZiroGames.RefreshToken") or "0") + 1)
+    window.setProperty("ZiroGames.RefreshToken", token)
+    for list_id in HOME_WIDGET_LIST_IDS:
+        try:
+            xbmc.executebuiltin(f"Container.Update({list_id},replace)")
+        except Exception:
+            pass
+    xbmc.executebuiltin("Container.Refresh")

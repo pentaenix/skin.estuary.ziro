@@ -228,7 +228,10 @@
 		</definition>
 	</include>
 	<include name="ZiroGamesWidgetListPoster">
+		<param name="visible">true</param>
 		<definition>
+			<control type="group">
+				<visible>$PARAM[visible]</visible>
 			<include content="CategoryLabel">
 				<param name="label">$PARAM[widget_header]</param>
 				<param name="list_id" value="$PARAM[list_id]"/>
@@ -273,6 +276,7 @@
 				</focusedlayout>
 				<content sortby="$PARAM[sortby]" sortorder="$PARAM[sortorder]" target="$PARAM[widget_target]" limit="15">$PARAM[content_path]</content>
 			</control>
+			</control>
 		</definition>
 	</include>
 	<include name="InfoWallGameBoxLayout">
@@ -292,7 +296,10 @@
 		</definition>
 	</include>
 	<include name="ZiroGamesWidgetListBoxArt">
+		<param name="visible">true</param>
 		<definition>
+			<control type="group">
+				<visible>$PARAM[visible]</visible>
 			<include content="CategoryLabel">
 				<param name="label">$PARAM[widget_header]</param>
 				<param name="list_id" value="$PARAM[list_id]"/>
@@ -337,10 +344,14 @@
 				</focusedlayout>
 				<content sortby="$PARAM[sortby]" sortorder="$PARAM[sortorder]" target="$PARAM[widget_target]" limit="15">$PARAM[content_path]</content>
 			</control>
+			</control>
 		</definition>
 	</include>
 	<include name="ZiroGamesWidgetListCaseArt">
+		<param name="visible">true</param>
 		<definition>
+			<control type="group">
+				<visible>$PARAM[visible]</visible>
 			<include content="CategoryLabel">
 				<param name="label">$PARAM[widget_header]</param>
 				<param name="list_id" value="$PARAM[list_id]"/>
@@ -384,6 +395,7 @@
 					</control>
 				</focusedlayout>
 				<content sortby="$PARAM[sortby]" sortorder="$PARAM[sortorder]" target="$PARAM[widget_target]" limit="15">$PARAM[content_path]</content>
+			</control>
 			</control>
 		</definition>
 	</include>

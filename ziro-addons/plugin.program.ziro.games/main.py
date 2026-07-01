@@ -503,10 +503,11 @@ def main() -> None:
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/sync_home":
             from resources.lib.scanner import purge_junk_games
+            from resources.lib.home_state import refresh_home_widgets
 
             purge_junk_games(db)
             db.clear_play_state_for_hidden_games()
-            refresh_home_properties(db)
+            refresh_home_widgets(db)
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/clear_cache":
             from resources.lib.cache import clear_downloaded_artwork, refresh_games_ui

@@ -86,14 +86,12 @@ def refresh_home_state(monitor: xbmc.Monitor | None = None) -> None:
     db = db_module.GameDatabase()
     scanner_module.purge_junk_games(db)
     db.clear_play_state_for_hidden_games()
-    home_module.refresh_home_properties(db)
+    home_module.refresh_home_widgets(db)
 
 
 def main() -> None:
     monitor = xbmc.Monitor()
     xbmc.log("[Ziro Games Service] started", xbmc.LOGINFO)
-    if monitor.waitForAbort(2):
-        return
     try:
         refresh_home_state(monitor)
     except Exception as exc:
