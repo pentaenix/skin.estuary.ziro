@@ -177,13 +177,6 @@
 						<param name="id" value="11" />
 						<param name="icon" value="icons/infodialogs/trailer.png" />
 						<param name="label" value="Video" />
-						<param name="visible" value="!String.IsEmpty(Window.Property(ZiroGame.Video))" />
-					</include>
-					<include content="InfoDialogButton">
-						<param name="id" value="110" />
-						<param name="icon" value="icons/infodialogs/trailer_search.png" />
-						<param name="label" value="Video" />
-						<param name="visible" value="String.IsEmpty(Window.Property(ZiroGame.Video))" />
 					</include>
 					<include content="InfoDialogButton">
 						<param name="id" value="10" />

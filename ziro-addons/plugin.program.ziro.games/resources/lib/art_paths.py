@@ -5,6 +5,7 @@ import os
 import xbmcvfs
 
 _IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif")
+_VIDEO_SUFFIXES = (".mp4", ".webm", ".m4v", ".avi", ".mkv", ".mov", ".wmv", ".mpg", ".mpeg")
 
 
 def normalize_art_path(path: str) -> str:
@@ -18,6 +19,11 @@ def normalize_art_path(path: str) -> str:
 def _looks_like_image_path(path: str) -> bool:
     lower = path.lower()
     return lower.startswith(("http://", "https://")) or lower.endswith(_IMAGE_SUFFIXES)
+
+
+def _looks_like_video_path(path: str) -> bool:
+    lower = path.lower()
+    return lower.startswith(("http://", "https://")) or lower.endswith(_VIDEO_SUFFIXES)
 
 
 def _path_candidates(path: str) -> list[str]:
@@ -51,5 +57,15 @@ def usable_art_path(path: str, *, trust_if_plausible: bool = False) -> str:
             return candidate.replace("\\", "/")
     normalized = normalize_art_path(path)
     if trust_if_plausible and normalized and _looks_like_image_path(normalized):
+        return normalized
+    return ""
+
+
+def usable_video_path(path: str, *, trust_if_plausible: bool = True) -> str:
+    for candidate in _path_candidates(path):
+        if path_exists(candidate):
+            return candidate.replace("\\", "/")
+    normalized = normalize_art_path(path)
+    if trust_if_plausible and normalized and _looks_like_video_path(normalized):
         return normalized
     return ""

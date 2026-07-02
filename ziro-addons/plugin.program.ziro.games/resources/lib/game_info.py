@@ -10,9 +10,9 @@ import xbmcgui
 import xbmcvfs
 
 from .app_title import app_title
-from .art_paths import usable_art_path
+from .art_paths import usable_art_path, usable_video_path
 from .db import GameDatabase
-from .metadata.local_metadata import lookup_local_metadata
+from .metadata.local_metadata import discover_local_art, lookup_local_metadata
 from .text_utils import is_import_placeholder_description, resolve_game_description
 from .titles import display_title
 
@@ -61,6 +61,7 @@ def _set_home_backdrop(image_path: str) -> None:
 class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
     _game: dict = {}
     _plot: str = ""
+    _video_path: str = ""
 
     def __init__(
         self,
@@ -100,12 +101,14 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
         self.setProperty("ZiroGame.Fanart", art.get("fanart_path", ""))
         self.setProperty("ZiroGame.Screenshot", art.get("screenshot_path", ""))
         self.setProperty("ZiroGame.Logo", art.get("logo_path", ""))
-        self.setProperty("ZiroGame.Video", art.get("video_path", ""))
+        video_path = _resolve_video_path(game, art=art, local=game.get("_local"))
+        self._video_path = video_path
+        self.setProperty("ZiroGame.HasVideo", "1" if video_path else "")
         self.setProperty("ZiroGame.HasPoster", "1" if art.get("cover_path") else "")
         self.setProperty("ZiroGame.HasFanart", "1" if art.get("fanart_path") else "")
         self.setProperty("ZiroGame.HasScreenshot", "1" if art.get("screenshot_path") else "")
         xbmc.log(
-            f"[Games] game info art game_id={game.get('id')} poster={art.get('cover_path', '')}",
+            f"[Games] game info art game_id={game.get('id')} poster={art.get('cover_path', '')} video={video_path}",
             xbmc.LOGINFO,
         )
         self._set_dialog_images(art)
@@ -145,19 +148,16 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
         self.clearProperty("ZiroGame.VideoPlaying")
 
     def _play_game_video(self) -> None:
-        art = self._game.get("_art") or _resolve_art_for_game(
+        video_path = self._video_path or _resolve_video_path(
             self._game, local=self._game.get("_local")
-        )
-        video_path = usable_art_path(
-            self._game.get("video_path") or art.get("video_path") or "",
-            trust_if_plausible=True,
         )
         if video_path:
             player = xbmc.Player()
             if player.isPlaying():
                 player.stop()
-            # Fullscreen so the trailer is in front; Back exits the player.
-            player.play(video_path, windowed=False)
+            item = xbmcgui.ListItem(path=video_path)
+            xbmc.log(f"[Games] game info play video: {video_path}", xbmc.LOGINFO)
+            player.play(item, windowed=False)
             return
 
         title = display_title(self._game.get("title", ""), rom_path=self._game.get("rom_path", ""))
@@ -186,7 +186,7 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
         if control_id == 8:
             self.close()
             xbmc.executebuiltin(f"RunScript(script.ziro.games.launcher,game_id={game_id})")
-        elif control_id in {11, 110}:
+        elif control_id == 11:
             self._play_game_video()
         elif control_id in PLOT_BUTTON_IDS:
             self._open_plot_viewer()
@@ -296,11 +296,35 @@ def _merge_local_metadata(game: dict, *, local: dict | None = None) -> dict:
     return merged
 
 
+def _resolve_video_path(
+    game: dict,
+    *,
+    art: dict | None = None,
+    local: dict | None = None,
+) -> str:
+    local = local if local is not None else game.get("_local") or {}
+    art = art if art is not None else game.get("_art") or _resolve_art_for_game(game, local=local)
+    for raw in (game.get("video_path"), art.get("video_path"), local.get("video_path")):
+        path = usable_video_path(str(raw or ""))
+        if path:
+            return path
+    discovered = discover_local_art(
+        game.get("rom_path") or "",
+        source_folder=game.get("source_folder") or "",
+        game_name=game.get("title") or "",
+    )
+    return usable_video_path(discovered.get("video_path") or "")
+
+
 def _resolve_art_for_game(game: dict, *, local: dict | None = None) -> dict[str, str]:
     fields = ("cover_path", "fanart_path", "logo_path", "screenshot_path", "video_path")
     resolved: dict[str, str] = {}
     for field in fields:
-        path = usable_art_path(game.get(field) or "", trust_if_plausible=True)
+        raw = game.get(field) or ""
+        if field == "video_path":
+            path = usable_video_path(raw)
+        else:
+            path = usable_art_path(raw, trust_if_plausible=True)
         if path:
             resolved[field] = path
 
@@ -311,9 +335,23 @@ def _resolve_art_for_game(game: dict, *, local: dict | None = None) -> dict[str,
     )
     for field in fields:
         if not resolved.get(field):
-            path = usable_art_path(local.get(field) or "", trust_if_plausible=True)
+            raw = local.get(field) or ""
+            if field == "video_path":
+                path = usable_video_path(raw)
+            else:
+                path = usable_art_path(raw, trust_if_plausible=True)
             if path:
                 resolved[field] = path
+
+    if not resolved.get("video_path"):
+        discovered = discover_local_art(
+            game.get("rom_path") or "",
+            source_folder=game.get("source_folder") or "",
+            game_name=game.get("title") or "",
+        )
+        path = usable_video_path(discovered.get("video_path") or "")
+        if path:
+            resolved["video_path"] = path
 
     return resolved
 

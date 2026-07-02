@@ -1,3 +1,6 @@
+[B]2.5.13[/B]
+• Fix game info Video button flicker; resolve and play .mp4 trailers correctly
+
 [B]2.5.12[/B]
 • Fix game info Back/ESC; play videos fullscreen so trailers are visible
 

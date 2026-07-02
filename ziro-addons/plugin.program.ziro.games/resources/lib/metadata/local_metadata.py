@@ -11,7 +11,7 @@ import xbmc
 import xbmcvfs
 
 from ..db import GameDatabase
-from ..art_paths import normalize_art_path, path_exists, usable_art_path
+from ..art_paths import normalize_art_path, path_exists, usable_art_path, usable_video_path
 from .genre_sync import map_genre_names_to_ids
 from ..text_utils import clean_display_text, resolve_game_description
 
@@ -212,7 +212,7 @@ def _discover_skraper_media_by_name(folder: str, rom_path: str, game_name: str) 
             for stem in stems:
                 for suffix in suffixes:
                     candidate = os.path.join(media_dir, f"{stem}{suffix}")
-                    usable = usable_art_path(candidate)
+                    usable = usable_video_path(candidate) if field == "video_path" else usable_art_path(candidate)
                     if usable:
                         found[field] = usable
                         break
@@ -459,9 +459,10 @@ def _stem(path: str) -> str:
     return name
 
 
-def _first_existing(paths: list[str]) -> str:
+def _first_existing(paths: list[str], *, video: bool = False) -> str:
+    resolver = usable_video_path if video else usable_art_path
     for path in paths:
-        usable = usable_art_path(path)
+        usable = resolver(path)
         if usable:
             return usable
     return ""
@@ -586,7 +587,7 @@ def discover_local_art(rom_path: str, *, source_folder: str = "", game_name: str
                 for suffix in suffixes:
                     candidates.append(os.path.join(rom_dir, f"{stem_name}{suffix}"))
                     candidates.append(os.path.join(rom_dir, f"{stem_name}-image{suffix}"))
-        path = _first_existing(candidates)
+        path = _first_existing(candidates, video=(field == "video_path"))
         if path:
             found[field] = path
     _DISCOVER_ART_CACHE[cache_key] = dict(found)
@@ -687,7 +688,10 @@ def apply_local_metadata(db: GameDatabase, game_id: int, metadata: dict) -> dict
         if value in (None, ""):
             continue
         if field.endswith("_path"):
-            usable = usable_art_path(str(value))
+            if field == "video_path":
+                usable = usable_video_path(str(value))
+            else:
+                usable = usable_art_path(str(value))
             if not usable:
                 continue
             updates[field] = usable
