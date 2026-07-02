@@ -9,6 +9,7 @@ import xbmcgui
 import xbmcplugin
 
 from resources.lib.app_title import app_title
+from resources.lib.browse_ui import clear_browse_back, set_browse_back
 from resources.lib.db import GameDatabase
 from resources.lib.game_info import show_game_info
 from resources.lib.home_state import refresh_home_platform_properties, refresh_home_properties
@@ -254,10 +255,18 @@ def render_library_menu(router: Router) -> None:
     xbmcplugin.endOfDirectory(HANDLE)
 
 
-def render_game_list(games: list[dict]) -> None:
+def render_game_list(games: list[dict], *, browse_path: str = "") -> None:
     for game in games:
         add_game(game)
+    if browse_path:
+        set_browse_back(browse_path)
     xbmcplugin.setContent(HANDLE, "games")
+    xbmcplugin.endOfDirectory(HANDLE)
+
+
+def finish_browse_directory(path: str, *, content: str = "games") -> None:
+    set_browse_back(path)
+    xbmcplugin.setContent(HANDLE, content)
     xbmcplugin.endOfDirectory(HANDLE)
 
 
@@ -423,24 +432,28 @@ def main() -> None:
     try:
         if path in {"/home", "/library"}:
             refresh_home_properties(db)
+            clear_browse_back()
             render_library_menu(router)
         elif path == "/all":
-            render_game_list(router.all_games())
+            render_game_list(router.all_games(), browse_path=path)
         elif path == "/continue":
             limit, _ = list_route_options(params)
             games = router.continue_playing()
             if limit:
                 games = games[:limit]
-            render_game_list(games)
+            render_game_list(games, browse_path="" if limit else path)
         elif path == "/recent":
             limit, _ = list_route_options(params)
-            render_game_list(router.recently_added(limit=limit or 50))
+            render_game_list(
+                router.recently_added(limit=limit or 50),
+                browse_path="" if limit else path,
+            )
         elif path == "/favorites":
             limit, _ = list_route_options(params)
             games = router.favorites()
             if limit:
                 games = games[:limit]
-            render_game_list(games)
+            render_game_list(games, browse_path="" if limit else path)
         elif path == "/platforms":
             for platform in router.platforms():
                 count = int(platform.get("game_count") or 0)
@@ -449,8 +462,7 @@ def main() -> None:
                     f"/platform/{platform['id']}",
                     f"{count} games",
                 )
-            xbmcplugin.setContent(HANDLE, "games")
-            xbmcplugin.endOfDirectory(HANDLE)
+            finish_browse_directory(path)
         elif path == "/platforms/icons":
             for platform in router.platforms():
                 add_action(
@@ -469,24 +481,25 @@ def main() -> None:
             platform_id = path.rsplit("/", 1)[-1]
             limit, verify_rom = list_route_options(params)
             render_game_list(
-                router.by_platform(platform_id, limit=limit, verify_rom=verify_rom)
+                router.by_platform(platform_id, limit=limit, verify_rom=verify_rom),
+                browse_path="" if limit else path,
             )
         elif path == "/genres":
             for genre in router.genres():
                 add_directory(genre["name"], f"/genre/{genre['id']}")
-            xbmcplugin.endOfDirectory(HANDLE)
+            finish_browse_directory(path)
         elif path.startswith("/genre/"):
             genre_id = path.rsplit("/", 1)[-1]
             limit, verify_rom = list_route_options(params)
             render_game_list(
-                router.by_genre(genre_id, limit=limit, verify_rom=verify_rom)
+                router.by_genre(genre_id, limit=limit, verify_rom=verify_rom),
+                browse_path="" if limit else path,
             )
         elif path == "/sources":
             add_action("Add Game Source...", "/sources/add")
             for source in router.sources():
                 add_source_item(source)
-            xbmcplugin.setContent(HANDLE, "files")
-            xbmcplugin.endOfDirectory(HANDLE)
+            finish_browse_directory(path, content="files")
         elif path == "/sources/add":
             platform_id = params.get("platform_id") or pick_platform_id()
             if not platform_id:

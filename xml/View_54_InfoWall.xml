@@ -371,10 +371,12 @@
 				<top>0</top>
 				<right>15</right>
 				<height>100%</height>
+				<include>ZiroGamesBrowseGridSlide</include>
 				<onleft>9000</onleft>
 				<onright>531</onright>
+				<onup condition="$EXP[ziro_games_browse_back] + !Integer.IsGreater(Container.NumPages,1)">18903</onup>
+				<onup condition="String.IsEmpty(Window.Property(ZiroGames.BrowseBack)) + !Integer.IsGreater(Container.NumPages,1)">9000</onup>
 				<onup condition="Integer.IsGreater(Container.NumPages,1)">54</onup>
-				<onup condition="!Integer.IsGreater(Container.NumPages,1)">9000</onup>
 				<ondown>54</ondown>
 				<viewtype label="31101">icon</viewtype>
 				<preloaditems>2</preloaditems>
@@ -402,6 +404,7 @@
 				</focusedlayout>
 				<itemlayout height="445" width="320" condition="Container.Content(games)">
 					<control type="group">
+						<visible>!String.IsEqual(ListItem.Property(ziro_nav_back),1)</visible>
 						<left>30</left>
 						<top>120</top>
 						<include content="InfoWallGamePosterLayout">
@@ -411,6 +414,7 @@
 				</itemlayout>
 				<focusedlayout height="445" width="320" condition="Container.Content(games)">
 					<control type="group">
+						<visible>!String.IsEqual(ListItem.Property(ziro_nav_back),1)</visible>
 						<depth>DepthContentPopout</depth>
 						<left>30</left>
 						<animation effect="zoom" start="100" end="110" time="200" tween="sine" easing="inout" center="190,300">Focus</animation>
