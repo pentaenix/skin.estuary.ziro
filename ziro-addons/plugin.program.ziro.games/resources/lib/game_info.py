@@ -22,12 +22,14 @@ RES_FOLDERS = ("xml", "1080i", "720p")
 POSTER_CONTROL_ID = 200
 PLOT_TEXTBOX_IDS = (141, 142)
 PLOT_BUTTON_IDS = (138, 139)
-VIDEO_CLOSE_BUTTON_ID = 2502
-VIDEO_EXIT_ACTIONS = (
+DIALOG_CLOSE_ACTIONS = {
     xbmcgui.ACTION_NAV_BACK,
     xbmcgui.ACTION_PREVIOUS_MENU,
-    xbmcgui.ACTION_STOP,
-)
+}
+try:
+    DIALOG_CLOSE_ACTIONS.add(xbmcgui.ACTION_CLOSE_DIALOG)
+except AttributeError:
+    pass
 APP_NAME = app_title()
 
 _GAME_DETAIL_CACHE: dict[int, dict] = {}
@@ -137,16 +139,10 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
         xbmc.executebuiltin("ActivateWindow(1102)")
 
     def _stop_game_video(self) -> None:
-        if self.getProperty("ZiroGame.VideoPlaying") != "1":
-            return
         player = xbmc.Player()
         if player.isPlayingVideo():
             player.stop()
         self.clearProperty("ZiroGame.VideoPlaying")
-        try:
-            self.setFocusId(8)
-        except RuntimeError:
-            pass
 
     def _play_game_video(self) -> None:
         art = self._game.get("_art") or _resolve_art_for_game(
@@ -160,12 +156,8 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
             player = xbmc.Player()
             if player.isPlaying():
                 player.stop()
-            self.setProperty("ZiroGame.VideoPlaying", "1")
-            player.play(video_path, windowed=True)
-            try:
-                self.setFocusId(VIDEO_CLOSE_BUTTON_ID)
-            except RuntimeError:
-                pass
+            # Fullscreen so the trailer is in front; Back exits the player.
+            player.play(video_path, windowed=False)
             return
 
         title = display_title(self._game.get("title", ""), rom_path=self._game.get("rom_path", ""))
@@ -180,9 +172,11 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
 
     def onAction(self, action) -> None:
         action_id = action.getId() if hasattr(action, "getId") else int(action)
-        if action_id in VIDEO_EXIT_ACTIONS and self.getProperty("ZiroGame.VideoPlaying") == "1":
+        if action_id == xbmcgui.ACTION_STOP and xbmc.Player().isPlayingVideo():
             self._stop_game_video()
             return
+        if action_id in DIALOG_CLOSE_ACTIONS:
+            self.close()
 
     def onClose(self) -> None:
         self._stop_game_video()
@@ -192,8 +186,6 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
         if control_id == 8:
             self.close()
             xbmc.executebuiltin(f"RunScript(script.ziro.games.launcher,game_id={game_id})")
-        elif control_id == VIDEO_CLOSE_BUTTON_ID:
-            self._stop_game_video()
         elif control_id in {11, 110}:
             self._play_game_video()
         elif control_id in PLOT_BUTTON_IDS:
