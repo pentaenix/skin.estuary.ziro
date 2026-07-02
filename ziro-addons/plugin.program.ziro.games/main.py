@@ -18,6 +18,7 @@ from resources.lib.paths_filter import is_allowed_source_folder
 from resources.lib.platforms import get_platform, platform_choices
 from resources.lib.routes import Router
 from resources.lib.scan_jobs import scan_in_background
+from resources.lib.scanner import configure_defaults
 from resources.lib.art_paths import usable_art_path
 from resources.lib.metadata.local_metadata import discover_local_art
 from resources.lib.titles import display_title
@@ -135,7 +136,7 @@ def add_source_item(source: dict) -> None:
 
 
 def _play_on_click() -> bool:
-    return (ADDON.getSetting("game_click_action") or "info").strip().lower() == "play"
+    return (ADDON.getSetting("game_click_action") or "play").strip().lower() == "play"
 
 
 def _game_item_url(game_id: int) -> str:
@@ -539,6 +540,7 @@ def main() -> None:
             game_id = params.get("game_id")
             if not game_id:
                 raise ValueError("Missing game_id")
+            configure_defaults(db)
             xbmc.executebuiltin(f"RunScript(script.ziro.games.launcher,game_id={game_id})")
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/info":

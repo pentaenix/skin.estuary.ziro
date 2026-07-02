@@ -6,6 +6,7 @@ import shlex
 import sqlite3
 import subprocess
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -15,6 +16,7 @@ import xbmcvfs
 
 # Shared platform catalog lives in the plugin add-on.
 sys.path.insert(0, xbmcvfs.translatePath("special://addons/plugin.program.ziro.games"))
+from resources.lib.launch_resolve import resolve_executable_path, resolve_rom_path  # noqa: E402
 from resources.lib.platforms import get_platform, resolve_core_path  # noqa: E402
 
 ADDON_DATA = Path(xbmcvfs.translatePath("special://profile/addon_data/plugin.program.ziro.games"))
@@ -46,43 +48,83 @@ def get_launch_data(game_id: int) -> tuple[dict, dict]:
         return dict(game), dict(profile)
 
 
+def process_running(process_name: str) -> bool:
+    if not process_name:
+        return False
+    if os.name == "nt":
+        try:
+            out = subprocess.check_output(
+                ["tasklist", "/FI", f"IMAGENAME eq {process_name}"],
+                text=True,
+                stderr=subprocess.DEVNULL,
+            )
+            return process_name.lower() in out.lower()
+        except Exception:
+            return False
+    return False
+
+
+def verify_process_started(proc: subprocess.Popen, process_name: str, executable_path: str) -> None:
+    names = [name for name in {process_name, Path(executable_path).name} if name]
+    time.sleep(1.0)
+    if os.name == "nt":
+        if any(process_running(name) for name in names):
+            return
+        code = proc.poll()
+        if code is not None:
+            raise RuntimeError(f"Emulator exited immediately (code {code}). Check Dolphin path and ROM.")
+        label = names[0] if names else "emulator"
+        raise RuntimeError(f"Emulator did not start ({label}). Check Games settings and kodi.log.")
+    if proc.poll() is not None:
+        raise RuntimeError(f"Emulator exited immediately (code {proc.returncode})")
+
+
 def launch(game_id: int) -> None:
     game, profile = get_launch_data(game_id)
-    executable = Path(profile["executable_path"])
-    rom_path = Path(game["rom_path"])
-    if not executable.exists():
-        raise RuntimeError(f"Emulator executable missing: {executable}")
-    if not rom_path.exists():
-        raise RuntimeError(f"ROM path missing: {rom_path}")
+    executable_path = resolve_executable_path(profile, game["platform_id"])
+    rom_path = resolve_rom_path(game["rom_path"])
+    if not executable_path:
+        platform = get_platform(game["platform_id"])
+        label = platform.emulator_name if platform else "Emulator"
+        raise RuntimeError(f"{label} path not configured. Set it in Games settings, then scan.")
+    if not xbmcvfs.exists(executable_path):
+        raise RuntimeError(f"Emulator executable missing: {executable_path}")
+    if not xbmcvfs.exists(rom_path):
+        raise RuntimeError(f"Game file not found: {rom_path}")
 
     args_template = profile["arguments_template"] or '"{rom_path}"'
     platform = get_platform(game["platform_id"])
-    core_path = resolve_core_path(str(executable), platform.retroarch_core if platform else "")
+    core_path = resolve_core_path(executable_path, platform.retroarch_core if platform else "")
     args = args_template.format(
-        rom_path=str(rom_path),
-        rom_dir=str(rom_path.parent),
-        rom_file=rom_path.name,
-        rom_name=rom_path.stem,
-        executable_path=str(executable),
+        rom_path=rom_path,
+        rom_dir=str(Path(rom_path).parent),
+        rom_file=Path(rom_path).name,
+        rom_name=Path(rom_path).stem,
+        executable_path=executable_path,
         core_path=core_path,
     )
-    cwd = profile.get("working_directory") or str(executable.parent)
+    cwd = profile.get("working_directory") or str(Path(executable_path).parent)
+    if cwd and not xbmcvfs.exists(cwd):
+        cwd = str(Path(executable_path).parent)
+    process_name = profile.get("process_name") or Path(executable_path).name
 
     if os.name == "nt":
-        # On Windows, avoid pre-splitting quoted paths. Let CreateProcess/cmd parse the command line.
-        command = subprocess.list2cmdline([str(executable)]) + " " + args
+        command = subprocess.list2cmdline([executable_path]) + " " + args
         xbmc.log(f"[Ziro Games Launcher] launch game={game['title']} command={command} cwd={cwd}", xbmc.LOGINFO)
         proc = subprocess.Popen(command, cwd=cwd, shell=True)
     else:
-        command = [str(executable)] + shlex.split(args)
+        command = [executable_path] + shlex.split(args)
         xbmc.log(f"[Ziro Games Launcher] launch game={game['title']} command={command} cwd={cwd}", xbmc.LOGINFO)
         proc = subprocess.Popen(command, cwd=cwd)
+
+    verify_process_started(proc, process_name, executable_path)
+
     ADDON_DATA.mkdir(parents=True, exist_ok=True)
     SESSION_PATH.write_text(json.dumps({
         "game_id": game_id,
         "title": game["title"],
         "pid": proc.pid,
-        "process_name": profile.get("process_name") or executable.name,
+        "process_name": process_name,
         "started_at": datetime.now().isoformat(timespec="seconds"),
         "return_focus_to_kodi": bool(profile.get("return_focus_to_kodi", 1)),
     }, indent=2), encoding="utf-8")
