@@ -259,13 +259,13 @@ def render_game_list(games: list[dict], *, browse_path: str = "") -> None:
     for game in games:
         add_game(game)
     if browse_path:
-        set_browse_back(browse_path)
+        set_browse_back(browse_path, HANDLE)
     xbmcplugin.setContent(HANDLE, "games")
     xbmcplugin.endOfDirectory(HANDLE)
 
 
 def finish_browse_directory(path: str, *, content: str = "games") -> None:
-    set_browse_back(path)
+    set_browse_back(path, HANDLE)
     xbmcplugin.setContent(HANDLE, content)
     xbmcplugin.endOfDirectory(HANDLE)
 

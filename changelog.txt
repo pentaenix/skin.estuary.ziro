@@ -1,3 +1,6 @@
+[B]2.5.17[/B]
+• Fix games browse back bar (use Container.Property, position below top bar)
+
 [B]2.5.16[/B]
 • Fix Kodi crash when exiting game info video (defer dialog reopen)
 

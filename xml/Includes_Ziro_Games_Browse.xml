@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <includes>
-	<constant name="ZiroGamesBrowseBackOffset">48</constant>
+	<constant name="ZiroGamesBrowseBackOffset">52</constant>
 	<include name="ZiroGamesBrowseBackBar">
 		<control type="group" id="18902">
 			<depth>DepthBars</depth>
@@ -8,16 +8,23 @@
 			<include>OpenClose_Right</include>
 			<animation effect="fade" start="0" end="100" time="200">Visible</animation>
 			<animation effect="fade" start="100" end="0" time="150">Hidden</animation>
-			<left>118</left>
-			<top>74</top>
-			<width>420</width>
-			<height>44</height>
+			<left>68</left>
+			<top>108</top>
+			<width>1780</width>
+			<height>52</height>
+			<control type="image">
+				<left>0</left>
+				<top>48</top>
+				<width>100%</width>
+				<height>1</height>
+				<texture colordiffuse="55FFFFFF">colors/white.png</texture>
+			</control>
 			<control type="button" id="18903">
 				<left>0</left>
-				<top>0</top>
-				<width>100%</width>
-				<height>44</height>
-				<label>&#x00AB;  $INFO[Window.Property(ZiroGames.BrowseBackLabel)]</label>
+				<top>4</top>
+				<width>460</width>
+				<height>40</height>
+				<label>&#x00AB;  $INFO[Container.Property(ZiroGames.BrowseBackLabel)]</label>
 				<font>font12</font>
 				<align>left</align>
 				<textoffsetx>20</textoffsetx>
@@ -35,6 +42,6 @@
 		</control>
 	</include>
 	<include name="ZiroGamesBrowseGridSlide">
-		<animation effect="slide" end="0,48" time="0" condition="$EXP[ziro_games_browse_back] + Container.Content(games)">Conditional</animation>
+		<animation effect="slide" end="0,52" time="0" condition="$EXP[ziro_games_browse_back] + Container.Content(games)">Conditional</animation>
 	</include>
 </includes>
