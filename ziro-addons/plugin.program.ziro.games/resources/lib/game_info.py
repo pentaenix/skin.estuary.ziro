@@ -152,12 +152,15 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
             self._game, local=self._game.get("_local")
         )
         if video_path:
+            video_path = xbmcvfs.translatePath(video_path)
             player = xbmc.Player()
             if player.isPlaying():
                 player.stop()
-            item = xbmcgui.ListItem(path=video_path)
             xbmc.log(f"[Games] game info play video: {video_path}", xbmc.LOGINFO)
-            player.play(item, windowed=False)
+            try:
+                player.play(video_path, windowed=False)
+            except TypeError:
+                xbmc.executebuiltin(f"PlayMedia({json.dumps(video_path)})")
             return
 
         title = display_title(self._game.get("title", ""), rom_path=self._game.get("rom_path", ""))

@@ -1,3 +1,6 @@
+[B]2.5.14[/B]
+• Fix game info video playback (pass path string to Player.play)
+
 [B]2.5.13[/B]
 • Fix game info Video button flicker; resolve and play .mp4 trailers correctly
 
