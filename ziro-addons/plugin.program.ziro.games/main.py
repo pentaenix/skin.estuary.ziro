@@ -260,6 +260,8 @@ def render_game_list(games: list[dict], *, browse_path: str = "") -> None:
         add_game(game)
     if browse_path:
         set_browse_back(browse_path, HANDLE)
+    else:
+        clear_browse_back(HANDLE)
     xbmcplugin.setContent(HANDLE, "games")
     xbmcplugin.endOfDirectory(HANDLE)
 
@@ -432,7 +434,7 @@ def main() -> None:
     try:
         if path in {"/home", "/library"}:
             refresh_home_properties(db)
-            clear_browse_back()
+            clear_browse_back(HANDLE)
             render_library_menu(router)
         elif path == "/all":
             render_game_list(router.all_games(), browse_path=path)
