@@ -1,3 +1,6 @@
+[B]2.5.15[/B]
+• Game info Video closes dialog during playback and reopens it when you exit
+
 [B]2.5.14[/B]
 • Fix game info video playback (pass path string to Player.play)
 
