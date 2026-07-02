@@ -1,3 +1,6 @@
+[B]2.5.10[/B]
+• Game info video plays in front overlay; Back/Close stops playback
+
 [B]2.5.9[/B]
 • Fix empty game description modal (open text viewer from Python)
 

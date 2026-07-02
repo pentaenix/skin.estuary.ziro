@@ -213,5 +213,33 @@
 				<param name="sub_label" value="$INFO[Window.Property(ZiroGame.Platform)]" />
 			</include>
 		</control>
+		<control type="group" id="2500">
+			<visible>String.IsEqual(Window.Property(ZiroGame.VideoPlaying),1)</visible>
+			<depth>DepthMax</depth>
+			<animation effect="fade" start="0" end="100" time="200">Visible</animation>
+			<animation effect="fade" start="100" end="0" time="150">Hidden</animation>
+			<control type="image">
+				<include>FullScreenDimensions</include>
+				<texture colordiffuse="E0000000">colors/black.png</texture>
+			</control>
+			<control type="videowindow" id="2501">
+				<left>210</left>
+				<top>120</top>
+				<width>1500</width>
+				<height>844</height>
+				<aspectratio>scale</aspectratio>
+			</control>
+			<control type="button" id="2502">
+				<left>1680</left>
+				<top>140</top>
+				<width>200</width>
+				<height>72</height>
+				<font>font12</font>
+				<label>Close</label>
+				<align>center</align>
+				<texturefocus border="21" colordiffuse="button_focus">buttons/button-fo.png</texturefocus>
+				<texturenofocus border="21">buttons/button-nofo.png</texturenofocus>
+			</control>
+		</control>
 	</controls>
 </window>
