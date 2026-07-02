@@ -1,3 +1,6 @@
+[B]2.5.16[/B]
+• Fix Kodi crash when exiting game info video (defer dialog reopen)
+
 [B]2.5.15[/B]
 • Game info Video closes dialog during playback and reopens it when you exit
 

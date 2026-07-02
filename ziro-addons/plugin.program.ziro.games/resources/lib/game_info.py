@@ -63,6 +63,7 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
     _plot: str = ""
     _video_path: str = ""
     _pending_video_path: str = ""
+    _pending_reopen_game_id: int = 0
     _close_for_video: bool = False
 
     def __init__(
@@ -81,12 +82,17 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
     @classmethod
     def clear_pending_video(cls) -> None:
         cls._pending_video_path = ""
+        cls._pending_reopen_game_id = 0
 
     @classmethod
-    def consume_pending_video(cls) -> str:
+    def consume_pending_video_playback(cls) -> tuple[int, str] | None:
         path = cls._pending_video_path
+        game_id = int(cls._pending_reopen_game_id or 0)
         cls._pending_video_path = ""
-        return path
+        cls._pending_reopen_game_id = 0
+        if path and game_id:
+            return game_id, path
+        return None
 
     def onInit(self) -> None:
         self._apply_properties(self._game)
@@ -165,6 +171,7 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
         )
         if video_path:
             ZiroGameInfoDialog._pending_video_path = xbmcvfs.translatePath(video_path)
+            ZiroGameInfoDialog._pending_reopen_game_id = int(self._game["id"])
             self._close_for_video = True
             self.close()
             return
@@ -493,9 +500,19 @@ def _wait_for_video_start(player: xbmc.Player, *, timeout_s: float = 8.0) -> boo
     return player.isPlayingVideo()
 
 
-def _play_game_video_fullscreen_and_wait(video_path: str) -> bool:
+def _wait_for_ui_after_video(monitor: xbmc.Monitor) -> None:
+    for _ in range(40):
+        if not xbmc.getCondVisibility("Window.IsActive(fullscreenvideo)"):
+            break
+        if monitor.waitForAbort(0.05):
+            return
+    monitor.waitForAbort(0.4)
+
+
+def _play_game_info_video_and_schedule_reopen(game_id: int, video_path: str) -> None:
     video_path = xbmcvfs.translatePath(video_path)
     player = xbmc.Player()
+    monitor = xbmc.Monitor()
     if player.isPlaying():
         player.stop()
     xbmc.log(f"[Games] game info play video: {video_path}", xbmc.LOGINFO)
@@ -505,63 +522,62 @@ def _play_game_video_fullscreen_and_wait(video_path: str) -> bool:
         xbmc.executebuiltin(f"PlayMedia({json.dumps(video_path)})")
     if not _wait_for_video_start(player):
         xbmc.log(f"[Games] game info video failed to start: {video_path}", xbmc.LOGWARNING)
-        return False
-    monitor = xbmc.Monitor()
+        xbmc.executebuiltin(
+            f"RunPlugin(plugin://plugin.program.ziro.games/?path=/info&game_id={game_id})"
+        )
+        return
     while player.isPlayingVideo():
         if monitor.abortRequested():
-            return False
+            return
         monitor.waitForAbort(0.25)
-    return True
+    _wait_for_ui_after_video(monitor)
+    if monitor.abortRequested():
+        return
+    xbmc.executebuiltin(
+        f"RunPlugin(plugin://plugin.program.ziro.games/?path=/info&game_id={game_id})"
+    )
 
 
 def show_game_info(game_id: int) -> None:
-    while True:
-        game = _load_game_details(game_id)
-        if not game:
-            xbmcgui.Dialog().notification(APP_NAME, "Game not found", xbmcgui.NOTIFICATION_ERROR, 3000)
-            return
-
-        active_skin_id = _current_skin_id()
-        last_error = ""
-        ZiroGameInfoDialog.clear_pending_video()
-        ZiroGameInfoDialog.set_game(game)
-        opened = False
-        for skin_path, res_folder in resolve_game_info_targets():
-            try:
-                dialog = ZiroGameInfoDialog(DIALOG_XML, skin_path, "", res_folder)
-                dialog.doModal()
-                del dialog
-                opened = True
-                break
-            except Exception as exc:
-                last_error = str(exc)
-                xbmc.log(
-                    f"[Games] game info open failed ({skin_path}/{res_folder}): {exc}",
-                    xbmc.LOGWARNING,
-                )
-
-        if not opened:
-            if active_skin_id in SKIN_IDS:
-                message = (
-                    "Could not open the game info dialog.\n\n"
-                    f"Active skin: {active_skin_id}\n"
-                    f"Missing file: xml/{DIALOG_XML}\n\n"
-                    "Re-run dev_deploy_to_kodi.bat, restart Kodi, then try again."
-                )
-            else:
-                message = (
-                    "Estuary Ziro is required for the game info screen.\n\n"
-                    f"Active skin: {active_skin_id or 'unknown'}\n"
-                    "Set skin.estuary.ziro as the active skin, then try again."
-                )
-            if last_error:
-                message += f"\n\nDetails: {last_error}"
-            xbmcgui.Dialog().ok(APP_NAME, message)
-            return
-
-        pending_video = ZiroGameInfoDialog.consume_pending_video()
-        if pending_video:
-            _play_game_video_fullscreen_and_wait(pending_video)
-            continue
-
+    game = _load_game_details(game_id)
+    if not game:
+        xbmcgui.Dialog().notification(APP_NAME, "Game not found", xbmcgui.NOTIFICATION_ERROR, 3000)
         return
+
+    active_skin_id = _current_skin_id()
+    last_error = ""
+    ZiroGameInfoDialog.clear_pending_video()
+    ZiroGameInfoDialog.set_game(game)
+    for skin_path, res_folder in resolve_game_info_targets():
+        try:
+            dialog = ZiroGameInfoDialog(DIALOG_XML, skin_path, "", res_folder)
+            dialog.doModal()
+            del dialog
+            pending = ZiroGameInfoDialog.consume_pending_video_playback()
+            if pending:
+                reopen_id, video_path = pending
+                _play_game_info_video_and_schedule_reopen(reopen_id, video_path)
+            return
+        except Exception as exc:
+            last_error = str(exc)
+            xbmc.log(
+                f"[Games] game info open failed ({skin_path}/{res_folder}): {exc}",
+                xbmc.LOGWARNING,
+            )
+
+    if active_skin_id in SKIN_IDS:
+        message = (
+            "Could not open the game info dialog.\n\n"
+            f"Active skin: {active_skin_id}\n"
+            f"Missing file: xml/{DIALOG_XML}\n\n"
+            "Re-run dev_deploy_to_kodi.bat, restart Kodi, then try again."
+        )
+    else:
+        message = (
+            "Estuary Ziro is required for the game info screen.\n\n"
+            f"Active skin: {active_skin_id or 'unknown'}\n"
+            "Set skin.estuary.ziro as the active skin, then try again."
+        )
+    if last_error:
+        message += f"\n\nDetails: {last_error}"
+    xbmcgui.Dialog().ok(APP_NAME, message)
