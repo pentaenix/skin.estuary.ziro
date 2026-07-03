@@ -242,3 +242,27 @@ msgstr ""
 msgctxt "#30080"
 msgid "Library maintenance"
 msgstr ""
+
+msgctxt "#30081"
+msgid "Play games"
+msgstr "Play games"
+
+msgctxt "#30082"
+msgid "Ziro Games is your catalog. Launch EmulationStation to play games."
+msgstr "Ziro Games is your catalog. Launch EmulationStation to play games."
+
+msgctxt "#30083"
+msgid "EmulationStation"
+msgstr "EmulationStation"
+
+msgctxt "#30084"
+msgid "EmulationStation executable"
+msgstr "EmulationStation executable"
+
+msgctxt "#30085"
+msgid "Path to ES-DE or EmulationStation. Used by the Launch EmulationStation button in the games library."
+msgstr "Path to ES-DE or EmulationStation. Used by the Launch EmulationStation button in the games library."
+
+msgctxt "#30086"
+msgid "Legacy emulator paths kept for reference. Game launching is handled by EmulationStation."
+msgstr "Legacy emulator paths kept for reference. Game launching is handled by EmulationStation."

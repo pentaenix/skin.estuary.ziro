@@ -95,7 +95,13 @@ def session_still_active(data: dict) -> bool:
     return bool(pid and pid_alive(pid))
 
 
-def focus_kodi() -> None:
+def focus_kodi(data: dict | None = None) -> None:
+    return_path = ""
+    if data:
+        return_path = (data.get("return_path") or "").strip()
+    if return_path:
+        xbmc.executebuiltin(f"ActivateWindow(Programs,{return_path},return)")
+        return
     xbmc.executebuiltin("ActivateWindow(Home)")
 
 
@@ -146,7 +152,7 @@ def main() -> None:
                     xbmc.log(f"[Ziro Games Service] session ended pid={pid}", xbmc.LOGINFO)
                     SESSION_PATH.unlink(missing_ok=True)
                     if data.get("return_focus_to_kodi", True):
-                        focus_kodi()
+                        focus_kodi(data)
                     last_pid = None
             except Exception as exc:
                 xbmc.log(f"[Ziro Games Service] session read failed: {exc}", xbmc.LOGWARNING)

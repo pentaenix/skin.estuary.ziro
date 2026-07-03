@@ -202,10 +202,7 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
 
     def onClick(self, control_id: int) -> None:
         game_id = int(self._game["id"])
-        if control_id == 8:
-            self.close()
-            xbmc.executebuiltin(f"RunScript(script.ziro.games.launcher,game_id={game_id})")
-        elif control_id == 11:
+        if control_id == 11:
             self._play_game_video()
         elif control_id in PLOT_BUTTON_IDS:
             self._open_plot_viewer()

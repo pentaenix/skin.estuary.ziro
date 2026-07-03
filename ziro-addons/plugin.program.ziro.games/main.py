@@ -18,7 +18,6 @@ from resources.lib.paths_filter import is_allowed_source_folder
 from resources.lib.platforms import get_platform, platform_choices
 from resources.lib.routes import Router
 from resources.lib.scan_jobs import scan_in_background
-from resources.lib.scanner import configure_defaults
 from resources.lib.art_paths import usable_art_path
 from resources.lib.metadata.local_metadata import discover_local_art
 from resources.lib.titles import display_title
@@ -135,13 +134,7 @@ def add_source_item(source: dict) -> None:
     xbmcplugin.addDirectoryItem(HANDLE, plugin_url("/sources"), item, False)
 
 
-def _play_on_click() -> bool:
-    return (ADDON.getSetting("game_click_action") or "play").strip().lower() == "play"
-
-
 def _game_item_url(game_id: int) -> str:
-    if _play_on_click():
-        return plugin_url("/launch", game_id=str(game_id))
     return plugin_url("/info", game_id=str(game_id))
 
 
@@ -201,10 +194,9 @@ def _resolve_list_art(game: dict) -> dict[str, str]:
 
 
 def add_game(game: dict) -> None:
-    play_on_click = _play_on_click()
     label = display_title(game.get("title", ""), rom_path=game.get("rom_path", ""))
     item = xbmcgui.ListItem(label=label)
-    item.setProperty("IsPlayable", "true" if play_on_click else "false")
+    item.setProperty("IsPlayable", "false")
     item.setProperty("ziro_game_id", str(game["id"]))
     art = _resolve_list_art(game)
     if art:
@@ -221,7 +213,6 @@ def add_game(game: dict) -> None:
     }
     _set_list_item_info(item, info)
     item.addContextMenuItems([
-        ("Play", f"RunScript(script.ziro.games.launcher,game_id={game['id']})"),
         ("Game info", f"RunPlugin({plugin_url('/info', game_id=str(game['id']))})"),
         ("Toggle favorite", f"RunPlugin({plugin_url('/favorite', game_id=str(game['id']))})"),
         ("Refresh metadata", f"RunPlugin({plugin_url('/refresh', game_id=str(game['id']))})"),
@@ -239,8 +230,6 @@ def render_library_menu(router: Router) -> None:
         xbmcplugin.endOfDirectory(HANDLE)
         return
 
-    if router.continue_playing():
-        add_library_entry("Continue Playing", "/continue", "Games you have launched recently")
     if router.recently_added(limit=1):
         add_library_entry("Recently Added", "/recent", "Newest games in your library")
     if router.favorites():
@@ -536,12 +525,8 @@ def main() -> None:
             source_id = int(params["source_id"])
             confirm_remove_source(router, source_id)
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
-        elif path == "/launch":
-            game_id = params.get("game_id")
-            if not game_id:
-                raise ValueError("Missing game_id")
-            configure_defaults(db)
-            xbmc.executebuiltin(f"RunScript(script.ziro.games.launcher,game_id={game_id})")
+        elif path == "/launch_emulationstation":
+            xbmc.executebuiltin("RunScript(script.ziro.games.launcher,mode=emulationstation)")
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/info":
             game_id = params.get("game_id")

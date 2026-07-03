@@ -15,8 +15,9 @@
 				<include>ZiroGamesBrowseGridSlide</include>
 				<onleft>9000</onleft>
 				<onright>531</onright>
-				<onup condition="$EXP[ziro_games_browse_back] + !Integer.IsGreater(Container.NumPages,1)">18903</onup>
-				<onup condition="String.IsEmpty(Container.Property(ZiroGames.BrowseBack)) + !Integer.IsGreater(Container.NumPages,1)">9000</onup>
+				<onup condition="$EXP[ziro_games_catalog] + $EXP[ziro_games_browse_back] + !Integer.IsGreater(Container.NumPages,1)">18903</onup>
+				<onup condition="$EXP[ziro_games_catalog] + !$EXP[ziro_games_browse_back] + !Integer.IsGreater(Container.NumPages,1)">18901</onup>
+				<onup condition="!$EXP[ziro_games_catalog] + String.IsEmpty(Container.Property(ZiroGames.BrowseBack)) + !Integer.IsGreater(Container.NumPages,1)">9000</onup>
 				<onup condition="Integer.IsGreater(Container.NumPages,1)">500</onup>
 				<ondown>500</ondown>
 				<viewtype label="31102">icon</viewtype>

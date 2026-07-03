@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="plugin.program.ziro.games" name="Games" version="0.6.18" provider-name="Ziro">
+<addon id="plugin.program.ziro.games" name="Games" version="0.7.0" provider-name="Ziro">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
-    <import addon="script.ziro.games.launcher" version="0.1.0"/>
+    <import addon="script.ziro.games.launcher" version="0.2.0"/>
   </requires>
   <extension point="xbmc.python.pluginsource" library="main.py">
     <provides>executable</provides>
@@ -11,8 +11,8 @@
     <provides>executable</provides>
   </extension>
   <extension point="xbmc.addon.metadata">
-    <summary lang="en_GB">Kodi-native game library with home rows, sources, and emulator launch.</summary>
-    <description lang="en_GB">Provides browsable, artwork-ready game rows, source management, scanning, and launch routes for emulator-backed games.</description>
+    <summary lang="en_GB">Game catalog with Skraper metadata and EmulationStation launch.</summary>
+    <description lang="en_GB">Browse your game collection, artwork, and metadata in Kodi. Play games through EmulationStation.</description>
     <platform>all</platform>
     <license>GPL-2.0-or-later</license>
   </extension>

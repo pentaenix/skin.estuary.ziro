@@ -21,6 +21,7 @@
 			<include content="TopBar">
 				<param name="breadcrumbs_label" value="$LOCALIZE[10001]" />
 			</include>
+			<include>ZiroGamesEmulationStationBar</include>
 			<include>ZiroGamesBrowseBackBar</include>
 			<include content="BottomBar">
 				<param name="info_visible" value="true" />
