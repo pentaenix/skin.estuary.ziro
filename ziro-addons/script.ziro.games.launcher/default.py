@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import shlex
@@ -9,6 +10,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
+from types import ModuleType
 
 import xbmc
 import xbmcaddon
@@ -17,13 +19,61 @@ import xbmcvfs
 
 PLUGIN_ID = "plugin.program.ziro.games"
 
-# Shared platform catalog lives in the plugin add-on.
-sys.path.insert(0, xbmcvfs.translatePath(f"special://addons/{PLUGIN_ID}"))
-from resources.lib.platforms import get_platform, resolve_core_path  # noqa: E402
+# platform_id -> Games settings key (fallback if plugin module cannot be loaded)
+_EMULATOR_SETTING_KEYS: dict[str, str] = {
+    "gamecube": "emulator_dolphin",
+    "wii": "emulator_dolphin",
+    "gba": "emulator_mgba",
+    "nes": "emulator_retroarch",
+    "snes": "emulator_retroarch",
+    "n64": "emulator_retroarch",
+    "gb": "emulator_retroarch",
+    "gbc": "emulator_retroarch",
+    "nds": "emulator_retroarch",
+    "ps1": "emulator_retroarch",
+    "ps2": "emulator_pcsx2",
+    "ps3": "emulator_rpcs3",
+    "psp": "emulator_ppsspp",
+}
 
 ADDON_DATA = Path(xbmcvfs.translatePath("special://profile/addon_data/plugin.program.ziro.games"))
 DB_PATH = ADDON_DATA / "games.db"
 SESSION_PATH = ADDON_DATA / "session.json"
+
+
+def _load_plugin_platforms() -> ModuleType | None:
+    plugin_root = xbmcvfs.translatePath(f"special://addons/{PLUGIN_ID}")
+    module_path = os.path.join(plugin_root, "resources", "lib", "platforms.py")
+    if not os.path.isfile(module_path):
+        xbmc.log(f"[Ziro Games Launcher] platforms module missing at {module_path}", xbmc.LOGWARNING)
+        return None
+    spec = importlib.util.spec_from_file_location("ziro_games_platforms", module_path)
+    if spec is None or spec.loader is None:
+        xbmc.log(f"[Ziro Games Launcher] failed to load platforms spec from {module_path}", xbmc.LOGWARNING)
+        return None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_PLATFORMS = _load_plugin_platforms()
+
+
+def _emulator_setting_key(platform_id: str) -> str:
+    if _PLATFORMS is not None:
+        platform = _PLATFORMS.get_platform(platform_id)
+        if platform is not None:
+            return platform.emulator_setting
+    return _EMULATOR_SETTING_KEYS.get(platform_id, "")
+
+
+def _resolve_core_path(executable: str, platform_id: str) -> str:
+    if _PLATFORMS is None:
+        return ""
+    platform = _PLATFORMS.get_platform(platform_id)
+    if platform is None:
+        return ""
+    return _PLATFORMS.resolve_core_path(executable, platform.retroarch_core)
 
 
 def _path_exists(path: str) -> bool:
@@ -59,19 +109,19 @@ def _normalize_launch_path(path: str) -> str:
 
 def resolve_executable_path(profile: dict, platform_id: str) -> str:
     addon = xbmcaddon.Addon(PLUGIN_ID)
-    platform = get_platform(platform_id)
+    setting_key = _emulator_setting_key(platform_id)
     candidates: list[str] = []
     db_exe = (profile.get("executable_path") or "").strip()
     if db_exe:
         candidates.extend(_path_candidates(db_exe))
-    if platform:
-        setting_exe = (addon.getSetting(platform.emulator_setting) or "").strip()
+    if setting_key:
+        setting_exe = (addon.getSetting(setting_key) or "").strip()
         if setting_exe:
             candidates.extend(_path_candidates(setting_exe))
     for candidate in candidates:
         if _path_exists(candidate):
             return _normalize_launch_path(candidate)
-    fallback = db_exe or ((addon.getSetting(platform.emulator_setting) or "").strip() if platform else "")
+    fallback = db_exe or ((addon.getSetting(setting_key) or "").strip() if setting_key else "")
     return _normalize_launch_path(fallback)
 
 
@@ -139,20 +189,18 @@ def verify_process_started(proc: subprocess.Popen, process_name: str, executable
 
 def launch(game_id: int) -> None:
     game, profile = get_launch_data(game_id)
-    executable_path = resolve_executable_path(profile, game["platform_id"])
+    platform_id = game["platform_id"]
+    executable_path = resolve_executable_path(profile, platform_id)
     rom_path = resolve_rom_path(game["rom_path"])
     if not executable_path:
-        platform = get_platform(game["platform_id"])
-        label = platform.emulator_name if platform else "Emulator"
-        raise RuntimeError(f"{label} path not configured. Set it in Games settings, then scan.")
+        raise RuntimeError("Emulator path not configured. Set it in Games settings, then scan.")
     if not xbmcvfs.exists(executable_path):
         raise RuntimeError(f"Emulator executable missing: {executable_path}")
     if not xbmcvfs.exists(rom_path):
         raise RuntimeError(f"Game file not found: {rom_path}")
 
     args_template = profile["arguments_template"] or '"{rom_path}"'
-    platform = get_platform(game["platform_id"])
-    core_path = resolve_core_path(executable_path, platform.retroarch_core if platform else "")
+    core_path = _resolve_core_path(executable_path, platform_id)
     args = args_template.format(
         rom_path=rom_path,
         rom_dir=str(Path(rom_path).parent),
