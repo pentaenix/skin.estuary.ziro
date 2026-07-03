@@ -234,6 +234,7 @@ def verify_process_started(proc: subprocess.Popen, process_name: str) -> None:
     deadline = time.time() + 12.0
     while time.time() < deadline:
         if process_running(process_name):
+            bring_pid_to_front(proc.pid)
             return
         if os.name != "nt" and proc.poll() is not None:
             raise RuntimeError(f"Emulator exited immediately (code {proc.returncode})")
@@ -244,13 +245,46 @@ def verify_process_started(proc: subprocess.Popen, process_name: str) -> None:
     raise RuntimeError(f"Emulator did not start ({process_name}). Check Games settings and kodi.log.")
 
 
+def bring_pid_to_front(pid: int, retries: int = 24) -> None:
+    """Raise the emulator window above Kodi without minimizing Kodi."""
+    if os.name != "nt" or pid <= 0:
+        return
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        user32 = ctypes.windll.user32
+        SW_SHOW = 5
+        user32.AllowSetForegroundWindow(pid)
+
+        for _ in range(retries):
+            found = False
+
+            def callback(hwnd: int, _lparam: int) -> bool:
+                nonlocal found
+                proc_id = wintypes.DWORD()
+                user32.GetWindowThreadProcessId(hwnd, ctypes.byref(proc_id))
+                if proc_id.value != pid or not user32.IsWindowVisible(hwnd):
+                    return True
+                user32.ShowWindow(hwnd, SW_SHOW)
+                user32.SetForegroundWindow(hwnd)
+                found = True
+                return False
+
+            enum_proc = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)(callback)
+            user32.EnumWindows(enum_proc, 0)
+            if found:
+                return
+            time.sleep(0.25)
+    except Exception as exc:
+        xbmc.log(f"[Ziro Games Launcher] bring to front failed: {exc}", xbmc.LOGDEBUG)
+
+
 def restore_kodi() -> None:
     xbmc.executebuiltin("ActivateWindow(Home)")
 
 
 def launch(game_id: int) -> None:
-    xbmc.executebuiltin("Minimize")
-
     game, profile = get_launch_data(game_id)
     platform_id = game["platform_id"]
     executable_path = resolve_executable_path(profile, platform_id)

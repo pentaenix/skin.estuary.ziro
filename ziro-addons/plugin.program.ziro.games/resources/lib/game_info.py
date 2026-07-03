@@ -204,7 +204,6 @@ class ZiroGameInfoDialog(xbmcgui.WindowXMLDialog):
         game_id = int(self._game["id"])
         if control_id == 8:
             self.close()
-            xbmc.executebuiltin("Minimize")
             xbmc.executebuiltin(f"RunScript(script.ziro.games.launcher,game_id={game_id})")
         elif control_id == 11:
             self._play_game_video()
