@@ -11,17 +11,75 @@ from datetime import datetime
 from pathlib import Path
 
 import xbmc
+import xbmcaddon
 import xbmcgui
 import xbmcvfs
 
+PLUGIN_ID = "plugin.program.ziro.games"
+
 # Shared platform catalog lives in the plugin add-on.
-sys.path.insert(0, xbmcvfs.translatePath("special://addons/plugin.program.ziro.games"))
-from resources.lib.launch_resolve import resolve_executable_path, resolve_rom_path  # noqa: E402
+sys.path.insert(0, xbmcvfs.translatePath(f"special://addons/{PLUGIN_ID}"))
 from resources.lib.platforms import get_platform, resolve_core_path  # noqa: E402
 
 ADDON_DATA = Path(xbmcvfs.translatePath("special://profile/addon_data/plugin.program.ziro.games"))
 DB_PATH = ADDON_DATA / "games.db"
 SESSION_PATH = ADDON_DATA / "session.json"
+
+
+def _path_exists(path: str) -> bool:
+    if not path or not str(path).strip():
+        return False
+    try:
+        return bool(xbmcvfs.exists(path))
+    except Exception:
+        return False
+
+
+def _path_candidates(path: str) -> list[str]:
+    raw = (path or "").strip()
+    if not raw:
+        return []
+    translated = xbmcvfs.translatePath(raw)
+    seen: set[str] = set()
+    result: list[str] = []
+    for item in (raw, translated):
+        if item and item not in seen:
+            seen.add(item)
+            result.append(item)
+    return result
+
+
+def _normalize_launch_path(path: str) -> str:
+    if not path:
+        return ""
+    if os.name == "nt":
+        return path.replace("/", "\\")
+    return path
+
+
+def resolve_executable_path(profile: dict, platform_id: str) -> str:
+    addon = xbmcaddon.Addon(PLUGIN_ID)
+    platform = get_platform(platform_id)
+    candidates: list[str] = []
+    db_exe = (profile.get("executable_path") or "").strip()
+    if db_exe:
+        candidates.extend(_path_candidates(db_exe))
+    if platform:
+        setting_exe = (addon.getSetting(platform.emulator_setting) or "").strip()
+        if setting_exe:
+            candidates.extend(_path_candidates(setting_exe))
+    for candidate in candidates:
+        if _path_exists(candidate):
+            return _normalize_launch_path(candidate)
+    fallback = db_exe or ((addon.getSetting(platform.emulator_setting) or "").strip() if platform else "")
+    return _normalize_launch_path(fallback)
+
+
+def resolve_rom_path(rom_path: str) -> str:
+    for candidate in _path_candidates(rom_path):
+        if _path_exists(candidate):
+            return _normalize_launch_path(candidate)
+    return _normalize_launch_path((rom_path or "").strip())
 
 
 def parse_args() -> dict[str, str]:
