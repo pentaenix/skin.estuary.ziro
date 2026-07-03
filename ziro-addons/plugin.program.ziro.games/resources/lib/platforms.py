@@ -51,8 +51,8 @@ _add(PlatformDef("gbc", "Game Boy Color", "GBC", "Nintendo", 50, (".gbc", ".zip"
 _add(PlatformDef("gba", "Game Boy Advance", "GBA", "Nintendo", 60, (".gba", ".agb", ".zip", ".7z", ".rar"), "mgba_gba", "emulator_mgba", "mGBA", '-f "{rom_path}"', "mGBA.exe"))
 _add(PlatformDef("nds", "Nintendo DS", "NDS", "Nintendo", 70, (".nds", ".zip"), "retroarch_nds", "emulator_retroarch", "RetroArch", '-L "{core_path}" "{rom_path}"', "retroarch.exe", "melonds_libretro.dll"))
 _add(PlatformDef("3ds", "Nintendo 3DS", "3DS", "Nintendo", 80, (".3ds", ".cia", ".cxi", ".zip"), "citra_3ds", "emulator_citra", "Citra", '"{rom_path}"', "citra-qt.exe"))
-_add(PlatformDef("gamecube", "Nintendo GameCube", "GameCube", "Nintendo", 90, (".rvz", ".iso", ".gcm", ".gcz"), "dolphin_gamecube", "emulator_dolphin", "Dolphin", '-b -e "{rom_path}"', "Dolphin.exe"))
-_add(PlatformDef("wii", "Nintendo Wii", "Wii", "Nintendo", 100, (".rvz", ".iso", ".wbfs", ".wad"), "dolphin_wii", "emulator_dolphin", "Dolphin", '-b -e "{rom_path}"', "Dolphin.exe"))
+_add(PlatformDef("gamecube", "Nintendo GameCube", "GameCube", "Nintendo", 90, (".rvz", ".iso", ".gcm", ".gcz"), "dolphin_gamecube", "emulator_dolphin", "Dolphin", '-b -e "{rom_path}" -C Dolphin.Display.Fullscreen=True -C GFX.BorderlessFullscreen=False -C Dolphin.Interface.ConfirmStop=False', "Dolphin.exe"))
+_add(PlatformDef("wii", "Nintendo Wii", "Wii", "Nintendo", 100, (".rvz", ".iso", ".wbfs", ".wad"), "dolphin_wii", "emulator_dolphin", "Dolphin", '-b -e "{rom_path}" -C Dolphin.Display.Fullscreen=True -C GFX.BorderlessFullscreen=False -C Dolphin.Interface.ConfirmStop=False', "Dolphin.exe"))
 _add(PlatformDef("wiiu", "Nintendo Wii U", "Wii U", "Nintendo", 110, (".wud", ".wux", ".rpx", ".wua"), "cemu_wiiu", "emulator_cemu", "Cemu", '-g "{rom_path}"', "Cemu.exe"))
 _add(PlatformDef("switch", "Nintendo Switch", "Switch", "Nintendo", 120, (".nsp", ".xci", ".nca"), "yuzu_switch", "emulator_yuzu", "yuzu", '-g "{rom_path}"', "yuzu.exe"))
 

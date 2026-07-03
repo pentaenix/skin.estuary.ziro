@@ -19,6 +19,12 @@ import xbmcvfs
 
 PLUGIN_ID = "plugin.program.ziro.games"
 
+_DOLPHIN_FULLSCREEN_ARGS = (
+    "-C Dolphin.Display.Fullscreen=True "
+    "-C GFX.BorderlessFullscreen=False "
+    "-C Dolphin.Interface.ConfirmStop=False"
+)
+
 # platform_id -> Games settings key (fallback if plugin module cannot be loaded)
 _EMULATOR_SETTING_KEYS: dict[str, str] = {
     "gamecube": "emulator_dolphin",
@@ -132,6 +138,20 @@ def resolve_rom_path(rom_path: str) -> str:
     return _normalize_launch_path((rom_path or "").strip())
 
 
+def _append_dolphin_fullscreen_args(args: str, platform_id: str) -> str:
+    if platform_id not in {"gamecube", "wii"}:
+        return args
+    if "Fullscreen=True" in args:
+        return args
+    return f"{args} {_DOLPHIN_FULLSCREEN_ARGS}".strip()
+
+
+def _split_command_args(args: str) -> list[str]:
+    if os.name == "nt":
+        return shlex.split(args, posix=False)
+    return shlex.split(args)
+
+
 def parse_args() -> dict[str, str]:
     result: dict[str, str] = {}
     for raw in sys.argv[1:]:
@@ -172,22 +192,55 @@ def process_running(process_name: str) -> bool:
     return False
 
 
+def focus_emulator(process_name: str) -> None:
+    if os.name != "nt" or not process_name:
+        return
+    base = process_name[:-4] if process_name.lower().endswith(".exe") else process_name
+    script = (
+        f"$p = Get-Process -Name '{base}' -ErrorAction SilentlyContinue | "
+        "Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1; "
+        "if ($p) { "
+        "Add-Type @'"
+        "using System; using System.Runtime.InteropServices; "
+        "public class ZiroWin32 { "
+        "[DllImport(\"user32.dll\")] public static extern bool SetForegroundWindow(IntPtr hWnd); "
+        "[DllImport(\"user32.dll\")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); "
+        "}"
+        "'@; "
+        "[ZiroWin32]::ShowWindow($p.MainWindowHandle, 5) | Out-Null; "
+        "[ZiroWin32]::SetForegroundWindow($p.MainWindowHandle) | Out-Null "
+        "}"
+    )
+    try:
+        subprocess.Popen(
+            ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except Exception as exc:
+        xbmc.log(f"[Ziro Games Launcher] focus emulator failed: {exc}", xbmc.LOGDEBUG)
+
+
 def verify_process_started(proc: subprocess.Popen, process_name: str, executable_path: str) -> None:
     names = [name for name in {process_name, Path(executable_path).name} if name]
-    time.sleep(1.0)
-    if os.name == "nt":
+    deadline = time.time() + 8.0
+    while time.time() < deadline:
         if any(process_running(name) for name in names):
+            focus_emulator(names[0])
             return
-        code = proc.poll()
-        if code is not None:
-            raise RuntimeError(f"Emulator exited immediately (code {code}). Check Dolphin path and ROM.")
-        label = names[0] if names else "emulator"
-        raise RuntimeError(f"Emulator did not start ({label}). Check Games settings and kodi.log.")
-    if proc.poll() is not None:
-        raise RuntimeError(f"Emulator exited immediately (code {proc.returncode})")
+        if os.name != "nt" and proc.poll() is not None:
+            raise RuntimeError(f"Emulator exited immediately (code {proc.returncode})")
+        time.sleep(0.25)
+    code = proc.poll()
+    if code is not None:
+        raise RuntimeError(f"Emulator exited immediately (code {code}). Check Dolphin path and ROM.")
+    label = names[0] if names else "emulator"
+    raise RuntimeError(f"Emulator did not start ({label}). Check Games settings and kodi.log.")
 
 
 def launch(game_id: int) -> None:
+    xbmc.executebuiltin("Minimize")
+
     game, profile = get_launch_data(game_id)
     platform_id = game["platform_id"]
     executable_path = resolve_executable_path(profile, platform_id)
@@ -209,19 +262,15 @@ def launch(game_id: int) -> None:
         executable_path=executable_path,
         core_path=core_path,
     )
+    args = _append_dolphin_fullscreen_args(args, platform_id)
     cwd = profile.get("working_directory") or str(Path(executable_path).parent)
     if cwd and not xbmcvfs.exists(cwd):
         cwd = str(Path(executable_path).parent)
     process_name = profile.get("process_name") or Path(executable_path).name
 
-    if os.name == "nt":
-        command = subprocess.list2cmdline([executable_path]) + " " + args
-        xbmc.log(f"[Ziro Games Launcher] launch game={game['title']} command={command} cwd={cwd}", xbmc.LOGINFO)
-        proc = subprocess.Popen(command, cwd=cwd, shell=True)
-    else:
-        command = [executable_path] + shlex.split(args)
-        xbmc.log(f"[Ziro Games Launcher] launch game={game['title']} command={command} cwd={cwd}", xbmc.LOGINFO)
-        proc = subprocess.Popen(command, cwd=cwd)
+    command = [executable_path] + _split_command_args(args)
+    xbmc.log(f"[Ziro Games Launcher] launch game={game['title']} command={command} cwd={cwd}", xbmc.LOGINFO)
+    proc = subprocess.Popen(command, cwd=cwd)
 
     verify_process_started(proc, process_name, executable_path)
 

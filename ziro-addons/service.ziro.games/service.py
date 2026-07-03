@@ -5,6 +5,7 @@ import os
 import platform
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import xbmc
@@ -13,6 +14,7 @@ import xbmcvfs
 
 PLUGIN_ID = "plugin.program.ziro.games"
 SESSION_PATH = Path(xbmcvfs.translatePath(f"special://profile/addon_data/{PLUGIN_ID}/session.json"))
+SESSION_GRACE_SECONDS = 4
 
 
 def _plugin_installed() -> bool:
@@ -51,6 +53,45 @@ def pid_alive(pid: int) -> bool:
         return True
     except OSError:
         return False
+
+
+def process_running(process_name: str) -> bool:
+    if not process_name:
+        return False
+    if platform.system().lower() != "windows":
+        return False
+    try:
+        out = subprocess.check_output(
+            ["tasklist", "/FI", f"IMAGENAME eq {process_name}"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        )
+        return process_name.lower() in out.lower()
+    except Exception:
+        return False
+
+
+def _session_age_seconds(data: dict) -> float | None:
+    started = data.get("started_at")
+    if not started:
+        return None
+    try:
+        return (datetime.now() - datetime.fromisoformat(str(started))).total_seconds()
+    except Exception:
+        return None
+
+
+def session_still_active(data: dict) -> bool:
+    age = _session_age_seconds(data)
+    if age is not None and age < SESSION_GRACE_SECONDS:
+        return True
+
+    process_name = (data.get("process_name") or "").strip()
+    if process_name and process_running(process_name):
+        return True
+
+    pid = int(data.get("pid", 0))
+    return bool(pid and pid_alive(pid))
 
 
 def focus_kodi() -> None:
@@ -105,9 +146,12 @@ def main() -> None:
                 data = json.loads(SESSION_PATH.read_text(encoding="utf-8"))
                 pid = int(data.get("pid", 0))
                 if pid != last_pid:
-                    xbmc.log(f"[Ziro Games Service] watching pid={pid} title={data.get('title')}", xbmc.LOGINFO)
+                    xbmc.log(
+                        f"[Ziro Games Service] watching pid={pid} process={data.get('process_name')} title={data.get('title')}",
+                        xbmc.LOGINFO,
+                    )
                     last_pid = pid
-                if pid and not pid_alive(pid):
+                if not session_still_active(data):
                     xbmc.log(f"[Ziro Games Service] session ended pid={pid}", xbmc.LOGINFO)
                     SESSION_PATH.unlink(missing_ok=True)
                     if data.get("return_focus_to_kodi", True):

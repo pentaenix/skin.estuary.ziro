@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="script.ziro.games.launcher" name="Games Launcher" version="0.1.4" provider-name="Ziro">
+<addon id="script.ziro.games.launcher" name="Games Launcher" version="0.1.5" provider-name="Ziro">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
   </requires>
