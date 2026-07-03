@@ -4,29 +4,36 @@
 	<backgroundcolor>background</backgroundcolor>
 	<views>50,54,55,500</views>
 	<menucontrol>9000</menucontrol>
+	<onload condition="$EXP[ziro_games_launch_hub]">SetFocus(18910)</onload>
 	<controls>
 		<include>DefaultBackground</include>
 		<control type="group">
 			<animation effect="fade" start="100" end="0" time="200" tween="sine" condition="$EXP[infodialog_active]">Conditional</animation>
-			<include>View_50_List</include>
-			<include>View_54_InfoWall</include>
-			<include>View_55_WideList</include>
-			<include>View_500_Wall</include>
 			<control type="group">
-				<include>OpenClose_Left</include>
-				<include>Visible_Left</include>
-				<visible>Control.IsVisible(55)</visible>
-				<include>ListThumbInfoPanel</include>
+				<visible>!$EXP[ziro_games_launch_hub]</visible>
+				<include>View_50_List</include>
+				<include>View_54_InfoWall</include>
+				<include>View_55_WideList</include>
+				<include>View_500_Wall</include>
+				<control type="group">
+					<include>OpenClose_Left</include>
+					<include>Visible_Left</include>
+					<visible>Control.IsVisible(55)</visible>
+					<include>ListThumbInfoPanel</include>
+				</control>
 			</control>
 			<include content="TopBar">
 				<param name="breadcrumbs_label" value="$LOCALIZE[10001]" />
 			</include>
-			<include>ZiroGamesEmulationStationBar</include>
+			<include>ZiroGamesLaunchHub</include>
 			<include>ZiroGamesBrowseBackBar</include>
 			<include content="BottomBar">
-				<param name="info_visible" value="true" />
+				<param name="info_visible" value="!$EXP[ziro_games_launch_hub]" />
 			</include>
-			<include>CommonScrollbars</include>
+			<control type="group">
+				<visible>!$EXP[ziro_games_launch_hub]</visible>
+				<include>CommonScrollbars</include>
+			</control>
 			<include>MediaMenuMouseOverlay</include>
 			<control type="group">
 				<include>MediaMenuCommon</include>

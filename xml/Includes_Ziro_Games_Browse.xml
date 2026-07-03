@@ -1,11 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <includes>
-	<constant name="ZiroGamesESBarHeight">52</constant>
 	<constant name="ZiroGamesBrowseBackOffset">52</constant>
-	<include name="ZiroGamesEmulationStationBar">
+	<include name="ZiroGamesLaunchHub">
 		<control type="group" id="18900">
 			<depth>DepthBars</depth>
-			<visible>$EXP[ziro_games_catalog]</visible>
+			<visible>$EXP[ziro_games_launch_hub]</visible>
+			<include>OpenClose_Right</include>
+			<animation effect="fade" start="0" end="100" time="200">Visible</animation>
+			<animation effect="fade" start="100" end="0" time="150">Hidden</animation>
+			<left>68</left>
+			<top>130</top>
+			<width>1780</width>
+			<height>800</height>
+			<control type="button" id="18910">
+				<left>0</left>
+				<top>300</top>
+				<width>100%</width>
+				<height>88</height>
+				<label>Go to games   →</label>
+				<font>font45</font>
+				<align>center</align>
+				<textoffsetx>0</textoffsetx>
+				<texturefocus border="16" colordiffuse="button_focus">buttons/button-fo.png</texturefocus>
+				<texturenofocus border="16">buttons/button-nofo.png</texturenofocus>
+				<onclick>RunPlugin(plugin://plugin.program.ziro.games/?path=/launch_emulationstation)</onclick>
+				<onleft>9000</onleft>
+				<onright>18910</onright>
+				<onup>9000</onup>
+				<ondown>18910</ondown>
+			</control>
+		</control>
+	</include>
+	<include name="ZiroGamesBrowseBackBar">
+		<control type="group" id="18902">
+			<depth>DepthBars</depth>
+			<visible>$EXP[ziro_games_browse_back]</visible>
 			<include>OpenClose_Right</include>
 			<animation effect="fade" start="0" end="100" time="200">Visible</animation>
 			<animation effect="fade" start="100" end="0" time="150">Hidden</animation>
@@ -20,49 +49,10 @@
 				<height>1</height>
 				<texture colordiffuse="55FFFFFF">colors/white.png</texture>
 			</control>
-			<control type="button" id="18901">
-				<left>0</left>
-				<top>4</top>
-				<width>1780</width>
-				<height>40</height>
-				<label>Launch EmulationStation</label>
-				<font>font12</font>
-				<align>center</align>
-				<texturefocus border="12" colordiffuse="button_focus">buttons/button-fo.png</texturefocus>
-				<texturenofocus border="12">buttons/button-nofo.png</texturenofocus>
-				<onclick>RunPlugin(plugin://plugin.program.ziro.games/?path=/launch_emulationstation)</onclick>
-				<onleft>18901</onleft>
-				<onright>18901</onright>
-				<onup>18901</onup>
-				<ondown condition="Control.IsVisible(18903)">18903</ondown>
-				<ondown condition="!Control.IsVisible(18903) + Control.IsVisible(500)">500</ondown>
-				<ondown condition="!Control.IsVisible(18903) + Control.IsVisible(54)">54</ondown>
-				<ondown condition="!Control.IsVisible(18903) + Control.IsVisible(50)">50</ondown>
-			</control>
-		</control>
-	</include>
-	<include name="ZiroGamesBrowseBackBar">
-		<control type="group" id="18902">
-			<depth>DepthBars</depth>
-			<visible>$EXP[ziro_games_browse_back]</visible>
-			<include>OpenClose_Right</include>
-			<animation effect="fade" start="0" end="100" time="200">Visible</animation>
-			<animation effect="fade" start="100" end="0" time="150">Hidden</animation>
-			<left>68</left>
-			<top>160</top>
-			<width>1780</width>
-			<height>52</height>
-			<control type="image">
-				<left>0</left>
-				<top>48</top>
-				<width>100%</width>
-				<height>1</height>
-				<texture colordiffuse="55FFFFFF">colors/white.png</texture>
-			</control>
 			<control type="button" id="18903">
 				<left>0</left>
 				<top>4</top>
-				<width>460</width>
+				<width>520</width>
 				<height>40</height>
 				<label>&#x00AB;  $INFO[Container.Property(ZiroGames.BrowseBackLabel)]</label>
 				<font>font12</font>
@@ -75,7 +65,7 @@
 				<onright condition="Control.IsVisible(500)">500</onright>
 				<onright condition="Control.IsVisible(54)">54</onright>
 				<onright condition="Control.IsVisible(50)">50</onright>
-				<onup>18901</onup>
+				<onup>18903</onup>
 				<ondown condition="Control.IsVisible(500)">500</ondown>
 				<ondown condition="Control.IsVisible(54)">54</ondown>
 				<ondown condition="Control.IsVisible(50)">50</ondown>
@@ -83,7 +73,6 @@
 		</control>
 	</include>
 	<include name="ZiroGamesBrowseGridSlide">
-		<animation effect="slide" end="0,104" time="0" condition="$EXP[ziro_games_catalog] + $EXP[ziro_games_browse_back] + Container.Content(games)">Conditional</animation>
-		<animation effect="slide" end="0,52" time="0" condition="$EXP[ziro_games_catalog] + !$EXP[ziro_games_browse_back] + Container.Content(games)">Conditional</animation>
+		<animation effect="slide" end="0,52" time="0" condition="$EXP[ziro_games_browse_back] + Container.Content(games)">Conditional</animation>
 	</include>
 </includes>

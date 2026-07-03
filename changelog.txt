@@ -1,3 +1,6 @@
+[B]2.6.1[/B]
+• Games library: single “Go to games →” button launches EmulationStation; home widgets still browse the catalog
+
 [B]2.5.17[/B]
 • Fix games browse back bar (use Container.Property, position below top bar)
 

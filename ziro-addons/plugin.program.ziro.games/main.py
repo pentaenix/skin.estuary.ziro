@@ -9,7 +9,7 @@ import xbmcgui
 import xbmcplugin
 
 from resources.lib.app_title import app_title
-from resources.lib.browse_ui import clear_browse_back, set_browse_back
+from resources.lib.browse_ui import clear_browse_back, clear_launch_hub, set_browse_back, set_launch_hub
 from resources.lib.db import GameDatabase
 from resources.lib.game_info import show_game_info
 from resources.lib.home_state import refresh_home_platform_properties, refresh_home_properties
@@ -222,30 +222,14 @@ def add_game(game: dict) -> None:
 
 
 def render_library_menu(router: Router) -> None:
-    has_games = bool(router.all_games(limit=1))
-    if not has_games:
-        add_action("Add Game Source", "/sources/add")
-        add_action("Scan / Refresh Library", "/scan")
-        xbmcplugin.setContent(HANDLE, "games")
-        xbmcplugin.endOfDirectory(HANDLE)
-        return
-
-    if router.recently_added(limit=1):
-        add_library_entry("Recently Added", "/recent", "Newest games in your library")
-    if router.favorites():
-        add_library_entry("Favorites", "/favorites", "Games you marked as favorites")
-    add_library_entry("Platforms", "/platforms", "Browse by console")
-    add_library_entry("Genres", "/genres", "Browse by genre")
-    add_library_entry("All Games", "/all", "Full game list")
-    add_action("Scan / Refresh Library", "/scan")
-    add_action("Refresh All Artwork", "/refresh_artwork")
-    add_library_entry("Sources", "/sources", "ROM folders and platforms")
-    add_action("Settings", "/settings")
+    clear_browse_back(HANDLE)
+    set_launch_hub(HANDLE)
     xbmcplugin.setContent(HANDLE, "games")
     xbmcplugin.endOfDirectory(HANDLE)
 
 
 def render_game_list(games: list[dict], *, browse_path: str = "") -> None:
+    clear_launch_hub(HANDLE)
     for game in games:
         add_game(game)
     if browse_path:
@@ -257,6 +241,7 @@ def render_game_list(games: list[dict], *, browse_path: str = "") -> None:
 
 
 def finish_browse_directory(path: str, *, content: str = "games") -> None:
+    clear_launch_hub(HANDLE)
     set_browse_back(path, HANDLE)
     xbmcplugin.setContent(HANDLE, content)
     xbmcplugin.endOfDirectory(HANDLE)

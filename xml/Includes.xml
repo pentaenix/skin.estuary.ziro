@@ -38,6 +38,7 @@
 	<expression name="infodialog_active">Window.IsActive(musicinformation) | Window.IsActive(songinformation) | Window.IsActive(movieinformation) | Window.IsActive(addoninformation) | Window.IsActive(pvrguideinfo) | Window.IsActive(pvrrecordinginfo) | Window.IsActive(pictureinfo) | Window.IsVisible(script-script.extendedinfo-DialogVideoInfo.xml) | Window.IsVisible(script-script.extendedinfo-DialogInfo.xml) | Window.IsVisible(script-script.extendedinfo-VideoList.xml) | Window.IsVisible(Custom_1110_DialogZiroGameInfo.xml)</expression>
 	<expression name="sidebar_visible">ControlGroup(9000).HasFocus | Control.HasFocus(6130) | Control.HasFocus(6131) | Window.IsActive(MyPlaylist.xml)</expression>
 	<expression name="ziro_games_catalog">String.Contains(Container.FolderPath,plugin.program.ziro.games)</expression>
+	<expression name="ziro_games_launch_hub">String.Contains(Container.FolderPath,plugin.program.ziro.games) + !String.IsEmpty(Container.Property(ZiroGames.LaunchHub))</expression>
 	<expression name="ziro_games_browse_back">String.Contains(Container.FolderPath,plugin.program.ziro.games) + !String.IsEmpty(Container.Property(ZiroGames.BrowseBack))</expression>
 	<include name="CommonScrollbars">
 		<control type="group">

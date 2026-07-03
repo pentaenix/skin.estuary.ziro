@@ -52,3 +52,17 @@ def clear_browse_back(handle: int | None = None) -> None:
         return
     xbmcplugin.setProperty(resolved, "ZiroGames.BrowseBack", "")
     xbmcplugin.setProperty(resolved, "ZiroGames.BrowseBackLabel", "")
+
+
+def set_launch_hub(handle: int | None = None) -> None:
+    resolved = _plugin_handle(handle)
+    if resolved is None:
+        return
+    xbmcplugin.setProperty(resolved, "ZiroGames.LaunchHub", "1")
+
+
+def clear_launch_hub(handle: int | None = None) -> None:
+    resolved = _plugin_handle(handle)
+    if resolved is None:
+        return
+    xbmcplugin.setProperty(resolved, "ZiroGames.LaunchHub", "")
