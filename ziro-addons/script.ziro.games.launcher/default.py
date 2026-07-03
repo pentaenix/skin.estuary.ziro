@@ -3,7 +3,6 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
-import shlex
 import sqlite3
 import subprocess
 import sys
@@ -19,11 +18,7 @@ import xbmcvfs
 
 PLUGIN_ID = "plugin.program.ziro.games"
 
-_DOLPHIN_FULLSCREEN_ARGS = (
-    "-C Dolphin.Display.Fullscreen=True "
-    "-C GFX.BorderlessFullscreen=False "
-    "-C Dolphin.Interface.ConfirmStop=False"
-)
+_CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 # platform_id -> Games settings key (fallback if plugin module cannot be loaded)
 _EMULATOR_SETTING_KEYS: dict[str, str] = {
@@ -138,18 +133,49 @@ def resolve_rom_path(rom_path: str) -> str:
     return _normalize_launch_path((rom_path or "").strip())
 
 
-def _append_dolphin_fullscreen_args(args: str, platform_id: str) -> str:
-    if platform_id not in {"gamecube", "wii"}:
-        return args
-    if "Fullscreen=True" in args:
-        return args
-    return f"{args} {_DOLPHIN_FULLSCREEN_ARGS}".strip()
+def build_launch_command(
+    executable_path: str,
+    rom_path: str,
+    platform_id: str,
+    profile: dict,
+    core_path: str,
+) -> list[str]:
+    """Build argv without shell parsing so paths with spaces/! stay intact."""
+    if platform_id in {"gamecube", "wii"}:
+        return [
+            executable_path,
+            "-b",
+            "-e",
+            rom_path,
+            "-C",
+            "Dolphin.Display.Fullscreen=True",
+            "-C",
+            "GFX.BorderlessFullscreen=False",
+            "-C",
+            "Dolphin.Interface.ConfirmStop=False",
+        ]
+    if platform_id == "gba":
+        return [executable_path, "-f", rom_path]
+    if platform_id == "ps2":
+        return [executable_path, "-batch", "-nogui", rom_path]
+    if core_path:
+        return [executable_path, "-L", core_path, rom_path]
 
+    template = (profile.get("arguments_template") or "").strip()
+    if not template or template in {'"{rom_path}"', '"{rom_path}"'}:
+        return [executable_path, rom_path]
 
-def _split_command_args(args: str) -> list[str]:
-    if os.name == "nt":
-        return shlex.split(args, posix=False)
-    return shlex.split(args)
+    # Last resort for uncommon templates: one shell line, hidden console.
+    args = template.format(
+        rom_path=rom_path,
+        rom_dir=str(Path(rom_path).parent),
+        rom_file=Path(rom_path).name,
+        rom_name=Path(rom_path).stem,
+        executable_path=executable_path,
+        core_path=core_path,
+    )
+    command_line = subprocess.list2cmdline([executable_path]) + " " + args
+    return [command_line]  # sentinel: caller uses shell mode
 
 
 def parse_args() -> dict[str, str]:
@@ -179,63 +205,47 @@ def get_launch_data(game_id: int) -> tuple[dict, dict]:
 def process_running(process_name: str) -> bool:
     if not process_name:
         return False
-    if os.name == "nt":
-        try:
-            out = subprocess.check_output(
-                ["tasklist", "/FI", f"IMAGENAME eq {process_name}"],
-                text=True,
-                stderr=subprocess.DEVNULL,
-            )
-            return process_name.lower() in out.lower()
-        except Exception:
-            return False
-    return False
-
-
-def focus_emulator(process_name: str) -> None:
-    if os.name != "nt" or not process_name:
-        return
-    base = process_name[:-4] if process_name.lower().endswith(".exe") else process_name
-    script = (
-        f"$p = Get-Process -Name '{base}' -ErrorAction SilentlyContinue | "
-        "Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1; "
-        "if ($p) { "
-        "Add-Type @'"
-        "using System; using System.Runtime.InteropServices; "
-        "public class ZiroWin32 { "
-        "[DllImport(\"user32.dll\")] public static extern bool SetForegroundWindow(IntPtr hWnd); "
-        "[DllImport(\"user32.dll\")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); "
-        "}"
-        "'@; "
-        "[ZiroWin32]::ShowWindow($p.MainWindowHandle, 5) | Out-Null; "
-        "[ZiroWin32]::SetForegroundWindow($p.MainWindowHandle) | Out-Null "
-        "}"
-    )
+    if os.name != "nt":
+        return False
     try:
-        subprocess.Popen(
-            ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script],
-            stdout=subprocess.DEVNULL,
+        out = subprocess.check_output(
+            ["tasklist", "/FI", f"IMAGENAME eq {process_name}"],
+            text=True,
             stderr=subprocess.DEVNULL,
+            creationflags=_CREATE_NO_WINDOW,
         )
-    except Exception as exc:
-        xbmc.log(f"[Ziro Games Launcher] focus emulator failed: {exc}", xbmc.LOGDEBUG)
+        return process_name.lower() in out.lower()
+    except Exception:
+        return False
 
 
-def verify_process_started(proc: subprocess.Popen, process_name: str, executable_path: str) -> None:
-    names = [name for name in {process_name, Path(executable_path).name} if name]
-    deadline = time.time() + 8.0
+def start_process(command: list[str], cwd: str) -> subprocess.Popen:
+    popen_kwargs: dict = {"cwd": cwd}
+    if os.name == "nt":
+        popen_kwargs["creationflags"] = _CREATE_NO_WINDOW
+
+    if len(command) == 1:
+        popen_kwargs["shell"] = True
+        return subprocess.Popen(command[0], **popen_kwargs)
+    return subprocess.Popen(command, **popen_kwargs)
+
+
+def verify_process_started(proc: subprocess.Popen, process_name: str) -> None:
+    deadline = time.time() + 12.0
     while time.time() < deadline:
-        if any(process_running(name) for name in names):
-            focus_emulator(names[0])
+        if process_running(process_name):
             return
         if os.name != "nt" and proc.poll() is not None:
             raise RuntimeError(f"Emulator exited immediately (code {proc.returncode})")
         time.sleep(0.25)
     code = proc.poll()
     if code is not None:
-        raise RuntimeError(f"Emulator exited immediately (code {code}). Check Dolphin path and ROM.")
-    label = names[0] if names else "emulator"
-    raise RuntimeError(f"Emulator did not start ({label}). Check Games settings and kodi.log.")
+        raise RuntimeError(f"Emulator exited immediately (code {code}). Check emulator path and ROM.")
+    raise RuntimeError(f"Emulator did not start ({process_name}). Check Games settings and kodi.log.")
+
+
+def restore_kodi() -> None:
+    xbmc.executebuiltin("ActivateWindow(Home)")
 
 
 def launch(game_id: int) -> None:
@@ -252,27 +262,16 @@ def launch(game_id: int) -> None:
     if not xbmcvfs.exists(rom_path):
         raise RuntimeError(f"Game file not found: {rom_path}")
 
-    args_template = profile["arguments_template"] or '"{rom_path}"'
     core_path = _resolve_core_path(executable_path, platform_id)
-    args = args_template.format(
-        rom_path=rom_path,
-        rom_dir=str(Path(rom_path).parent),
-        rom_file=Path(rom_path).name,
-        rom_name=Path(rom_path).stem,
-        executable_path=executable_path,
-        core_path=core_path,
-    )
-    args = _append_dolphin_fullscreen_args(args, platform_id)
+    command = build_launch_command(executable_path, rom_path, platform_id, profile, core_path)
     cwd = profile.get("working_directory") or str(Path(executable_path).parent)
     if cwd and not xbmcvfs.exists(cwd):
         cwd = str(Path(executable_path).parent)
-    process_name = profile.get("process_name") or Path(executable_path).name
+    process_name = Path(executable_path).name
 
-    command = [executable_path] + _split_command_args(args)
     xbmc.log(f"[Ziro Games Launcher] launch game={game['title']} command={command} cwd={cwd}", xbmc.LOGINFO)
-    proc = subprocess.Popen(command, cwd=cwd)
-
-    verify_process_started(proc, process_name, executable_path)
+    proc = start_process(command, cwd)
+    verify_process_started(proc, process_name)
 
     ADDON_DATA.mkdir(parents=True, exist_ok=True)
     SESSION_PATH.write_text(json.dumps({
@@ -295,6 +294,7 @@ def main() -> None:
         launch(int(args["game_id"]))
     except Exception as exc:
         xbmc.log(f"[Ziro Games Launcher] failed: {exc}", xbmc.LOGERROR)
+        restore_kodi()
         xbmcgui.Dialog().notification("Games", str(exc), xbmcgui.NOTIFICATION_ERROR, 6000)
 
 

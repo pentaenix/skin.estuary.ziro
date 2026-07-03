@@ -14,7 +14,7 @@ import xbmcvfs
 
 PLUGIN_ID = "plugin.program.ziro.games"
 SESSION_PATH = Path(xbmcvfs.translatePath(f"special://profile/addon_data/{PLUGIN_ID}/session.json"))
-SESSION_GRACE_SECONDS = 4
+SESSION_GRACE_SECONDS = 10
 
 
 def _plugin_installed() -> bool:
@@ -44,7 +44,7 @@ def pid_alive(pid: int) -> bool:
     system = platform.system().lower()
     if system == "windows":
         try:
-            out = subprocess.check_output(["tasklist", "/FI", f"PID eq {pid}"], text=True, stderr=subprocess.DEVNULL)
+            out = subprocess.check_output(["tasklist", "/FI", f"PID eq {pid}"], text=True, stderr=subprocess.DEVNULL, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
             return str(pid) in out
         except Exception:
             return False
@@ -65,6 +65,7 @@ def process_running(process_name: str) -> bool:
             ["tasklist", "/FI", f"IMAGENAME eq {process_name}"],
             text=True,
             stderr=subprocess.DEVNULL,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
         return process_name.lower() in out.lower()
     except Exception:
@@ -95,17 +96,7 @@ def session_still_active(data: dict) -> bool:
 
 
 def focus_kodi() -> None:
-    system = platform.system().lower()
-    if system == "windows":
-        try:
-            subprocess.Popen([
-                "powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
-                "$wshell = New-Object -ComObject WScript.Shell; $wshell.AppActivate('Kodi') | Out-Null"
-            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        except Exception as exc:
-            xbmc.log(f"[Ziro Games Service] focus Kodi failed: {exc}", xbmc.LOGWARNING)
-    else:
-        xbmc.executebuiltin("ActivateWindow(Home)")
+    xbmc.executebuiltin("ActivateWindow(Home)")
 
 
 def refresh_home_state(monitor: xbmc.Monitor | None = None) -> None:
