@@ -2,7 +2,6 @@
 <window>
 	<defaultcontrol>9000</defaultcontrol>
 	<onload condition="System.HasAddon(plugin.program.ziro.games)">RunPlugin(plugin://plugin.program.ziro.games/?path=/sync_home)</onload>
-	<oninfo condition="String.IsEqual(Container(9000).ListItem.Property(id),games) + !String.IsEmpty(ListItem.Property(ziro_game_id))">RunPlugin(plugin://plugin.program.ziro.games/?path=/info&amp;game_id=$INFO[ListItem.Property(ziro_game_id)])</oninfo>
 	<backgroundcolor>background</backgroundcolor>
 	<controls>
 		<control type="button" id="20000">
@@ -771,42 +770,22 @@
 						<onup>17002</onup>
 						<ondown>17003</ondown>
 						<pagecontrol>17010</pagecontrol>
-						<include content="WidgetListCategories" condition="System.HasAddon(plugin.program.ziro.games) + !Skin.HasSetting(home_no_categories_widget) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">
-							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/library"/>
-							<param name="widget_header" value="Games Library"/>
-							<param name="widget_target" value="programs"/>
-							<param name="list_id" value="17290"/>
+						<include content="ImageWidget" condition="System.HasAddon(plugin.program.ziro.games)">
+							<param name="text_label" value="" />
+							<param name="button_label" value="Go to games   →" />
+							<param name="button_onclick" value="RunPlugin(plugin://plugin.program.ziro.games/?path=/launch_retrobat)"/>
+							<param name="button_id" value="17100"/>
+							<param name="visible" value="true"/>
+							<param name="visible_2" value="false"/>
 						</include>
-						<include content="ZiroGamesWidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">
-							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/recent&widget_limit=15"/>
-							<param name="widget_header" value="Recently Added"/>
-							<param name="widget_target" value="programs"/>
-							<param name="list_id" value="17310"/>
-						</include>
-						<include content="ZiroGamesWidgetListPoster" condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">
-							<param name="content_path" value="plugin://plugin.program.ziro.games/?path=/favorites&widget_limit=15"/>
-							<param name="widget_header" value="Favorites"/>
-							<param name="widget_target" value="programs"/>
-							<param name="list_id" value="17320"/>
-						</include>
-						<include condition="System.HasAddon(plugin.program.ziro.games) + !String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)">ZiroGamesPlatformWidgets</include>
 					</control>
 					<include content="ImageWidget" condition="!System.HasAddon(plugin.program.ziro.games)">
 						<param name="text_label" value="$LOCALIZE[31162]" />
 						<param name="button_label" value="Open Games" />
 						<param name="button_onclick" value="ActivateWindow(Programs,plugin://plugin.program.ziro.games/?path=/library,return)"/>
-						<param name="button_id" value="17100"/>
+						<param name="button_id" value="17110"/>
 						<param name="visible" value="true"/>
 						<param name="button2_onclick" value="Skin.SetBool(HomeMenuNoGamesButton)"/>
-					</include>
-					<include content="ImageWidget" condition="System.HasAddon(plugin.program.ziro.games)">
-						<param name="text_label" value="No games in your library yet." />
-						<param name="button_label" value="Add Game Source" />
-						<param name="button_onclick" value="ActivateWindow(Programs,plugin://plugin.program.ziro.games/?path=/sources/add,return)"/>
-						<param name="button_id" value="17110"/>
-						<param name="visible" value="String.IsEqual(Window(Home).Property(ZiroGames.HasLibrary),0)"/>
-						<param name="button2_label" value="Scan Library"/>
-						<param name="button2_onclick" value="RunPlugin(plugin://plugin.program.ziro.games/?path=/scan)"/>
 					</include>
 					<include content="WidgetScrollbar" condition="Skin.HasSetting(touchmode)">
 						<param name="scrollbar_id" value="17010"/>

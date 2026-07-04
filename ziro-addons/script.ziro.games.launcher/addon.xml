@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="script.ziro.games.launcher" name="Games Launcher" version="0.2.0" provider-name="Ziro">
+<addon id="script.ziro.games.launcher" name="Games Launcher" version="0.2.1" provider-name="Ziro">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
   </requires>
   <extension point="xbmc.python.script" library="default.py"/>
   <extension point="xbmc.addon.metadata">
-    <summary lang="en_GB">Launches configured emulator profiles for the Games library.</summary>
-    <description lang="en_GB">Launches EmulationStation from the Games catalog and records session state for return to Kodi.</description>
+    <summary lang="en_GB">Launches RetroBat for the Games hub.</summary>
+    <description lang="en_GB">Launches RetroBat from the Games hub and records session state for return to Kodi.</description>
     <platform>all</platform>
     <license>GPL-2.0-or-later</license>
   </extension>

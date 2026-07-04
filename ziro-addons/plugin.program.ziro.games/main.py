@@ -221,26 +221,25 @@ def add_game(game: dict) -> None:
     xbmcplugin.addDirectoryItem(HANDLE, _game_item_url(int(game["id"])), item, False)
 
 
-def render_library_menu(router: Router) -> None:
+def render_launch_hub() -> None:
     clear_browse_back(HANDLE)
     set_launch_hub(HANDLE)
     xbmcplugin.setContent(HANDLE, "games")
     xbmcplugin.endOfDirectory(HANDLE)
 
 
+def render_library_menu(router: Router) -> None:
+    render_launch_hub()
+
+
 def render_game_list(games: list[dict], *, browse_path: str = "") -> None:
-    clear_launch_hub(HANDLE)
-    for game in games:
-        add_game(game)
-    if browse_path:
-        set_browse_back(browse_path, HANDLE)
-    else:
-        clear_browse_back(HANDLE)
-    xbmcplugin.setContent(HANDLE, "games")
-    xbmcplugin.endOfDirectory(HANDLE)
+    render_launch_hub()
 
 
 def finish_browse_directory(path: str, *, content: str = "games") -> None:
+    if content == "games":
+        render_launch_hub()
+        return
     clear_launch_hub(HANDLE)
     set_browse_back(path, HANDLE)
     xbmcplugin.setContent(HANDLE, content)
@@ -432,14 +431,7 @@ def main() -> None:
                 games = games[:limit]
             render_game_list(games, browse_path="" if limit else path)
         elif path == "/platforms":
-            for platform in router.platforms():
-                count = int(platform.get("game_count") or 0)
-                add_platform_directory(
-                    platform,
-                    f"/platform/{platform['id']}",
-                    f"{count} games",
-                )
-            finish_browse_directory(path)
+            render_library_menu(router)
         elif path == "/platforms/icons":
             for platform in router.platforms():
                 add_action(
@@ -462,9 +454,7 @@ def main() -> None:
                 browse_path="" if limit else path,
             )
         elif path == "/genres":
-            for genre in router.genres():
-                add_directory(genre["name"], f"/genre/{genre['id']}")
-            finish_browse_directory(path)
+            render_library_menu(router)
         elif path.startswith("/genre/"):
             genre_id = path.rsplit("/", 1)[-1]
             limit, verify_rom = list_route_options(params)
@@ -510,8 +500,8 @@ def main() -> None:
             source_id = int(params["source_id"])
             confirm_remove_source(router, source_id)
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
-        elif path == "/launch_emulationstation":
-            xbmc.executebuiltin("RunScript(script.ziro.games.launcher,mode=emulationstation)")
+        elif path in {"/launch_retrobat", "/launch_emulationstation"}:
+            xbmc.executebuiltin("RunScript(script.ziro.games.launcher,mode=retrobat)")
             xbmcplugin.endOfDirectory(HANDLE, succeeded=True, updateListing=False)
         elif path == "/info":
             game_id = params.get("game_id")

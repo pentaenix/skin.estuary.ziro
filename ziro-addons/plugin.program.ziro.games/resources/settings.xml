@@ -3,7 +3,7 @@
   <section id="plugin.program.ziro.games">
     <category id="launch" label="30081" help="30082">
       <group id="1" label="30083">
-        <setting id="emulator_emulationstation" type="path" label="30084" help="30085">
+        <setting id="emulator_retrobat" type="path" label="30084" help="30085">
           <level>0</level>
           <default></default>
           <constraints>

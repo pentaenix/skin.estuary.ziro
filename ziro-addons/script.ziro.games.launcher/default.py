@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import sqlite3
 import subprocess
 import sys
 import time
@@ -51,6 +50,14 @@ def _resolve_executable(setting_key: str) -> str:
     return raw.replace("/", "\\") if os.name == "nt" else raw
 
 
+def _resolve_retrobat_executable() -> str:
+    executable = _resolve_executable("emulator_retrobat")
+    if executable:
+        return executable
+    # Fall back to the old EmulationStation setting id during upgrades.
+    return _resolve_executable("emulator_emulationstation")
+
+
 def process_running(process_name: str) -> bool:
     if not process_name or os.name != "nt":
         return False
@@ -79,32 +86,32 @@ def verify_process_started(proc: subprocess.Popen, process_name: str) -> None:
         if process_running(process_name):
             return
         if os.name != "nt" and proc.poll() is not None:
-            raise RuntimeError(f"EmulationStation exited immediately (code {proc.returncode})")
+            raise RuntimeError(f"RetroBat exited immediately (code {proc.returncode})")
         time.sleep(0.25)
     code = proc.poll()
     if code is not None:
-        raise RuntimeError(f"EmulationStation exited immediately (code {code}). Check the executable path.")
-    raise RuntimeError(f"EmulationStation did not start ({process_name}). Check Games settings and kodi.log.")
+        raise RuntimeError(f"RetroBat exited immediately (code {code}). Check the executable path.")
+    raise RuntimeError(f"RetroBat did not start ({process_name}). Check Games settings and kodi.log.")
 
 
-def launch_emulationstation() -> None:
-    executable_path = _resolve_executable("emulator_emulationstation")
+def launch_retrobat() -> None:
+    executable_path = _resolve_retrobat_executable()
     if not executable_path:
-        raise RuntimeError("EmulationStation path not configured. Set it in Games settings.")
+        raise RuntimeError("RetroBat path not configured. Set it in Games settings.")
     if not _path_exists(executable_path):
-        raise RuntimeError(f"EmulationStation executable missing: {executable_path}")
+        raise RuntimeError(f"RetroBat executable missing: {executable_path}")
 
     cwd = str(Path(executable_path).parent)
     process_name = Path(executable_path).name
     command = [executable_path]
-    xbmc.log(f"[Ziro Games Launcher] launch EmulationStation command={command} cwd={cwd}", xbmc.LOGINFO)
+    xbmc.log(f"[Ziro Games Launcher] launch RetroBat command={command} cwd={cwd}", xbmc.LOGINFO)
     proc = start_process(command, cwd)
     verify_process_started(proc, process_name)
 
     ADDON_DATA.mkdir(parents=True, exist_ok=True)
     SESSION_PATH.write_text(json.dumps({
-        "mode": "emulationstation",
-        "title": "EmulationStation",
+        "mode": "retrobat",
+        "title": "RetroBat",
         "pid": proc.pid,
         "process_name": process_name,
         "started_at": datetime.now().isoformat(timespec="seconds"),
@@ -117,12 +124,12 @@ def main() -> None:
     args = parse_args()
     try:
         mode = (args.get("mode") or "").strip().lower()
-        if mode in {"emulationstation", "es"}:
-            launch_emulationstation()
+        if mode in {"retrobat", "emulationstation", "es"}:
+            launch_retrobat()
         elif "game_id" in args:
-            raise RuntimeError("Per-game launching is disabled. Open EmulationStation to play games.")
+            raise RuntimeError("Per-game launching is disabled. Open RetroBat to play games.")
         else:
-            raise RuntimeError("Missing launch mode. Use mode=emulationstation.")
+            raise RuntimeError("Missing launch mode. Use mode=retrobat.")
     except Exception as exc:
         xbmc.log(f"[Ziro Games Launcher] failed: {exc}", xbmc.LOGERROR)
         xbmc.executebuiltin(f"ActivateWindow(Programs,{RETURN_PATH},return)")

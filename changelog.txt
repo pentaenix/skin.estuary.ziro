@@ -1,3 +1,6 @@
+[B]2.6.2[/B]
+• Games: RetroBat launch only — no game lists on Home or Programs, just “Go to games →”
+
 [B]2.6.1[/B]
 • Games library: single “Go to games →” button launches EmulationStation; home widgets still browse the catalog
 
